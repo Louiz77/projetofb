@@ -1,25 +1,112 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Products from "./pages/Products";
+import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Account from "./pages/Account";
+import Contact from "./pages/Contact";
 
-function App() {
+const App = () => {
+  const [currentPage, setCurrentPage] = useState("home");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [cart, setCart] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
+  const [notification, setNotification] = useState("");
+  const [user, setUser] = useState(null);
+
+  const addToCart = (product, quantity = 1) => {
+    setCart([...cart, { ...product, quantity }]);
+    setNotification("Adicionado ao carrinho");
+  };
+
+  const removeFromCart = (item) => {
+    setCart(cart.filter((cartItem) => cartItem.id !== item.id));
+    setNotification("Removido do carrinho");
+  };
+
+  const addToWishlist = (product) => {
+    if (wishlist.some((p) => p.id === product.id)) {
+      setWishlist(wishlist.filter((p) => p.id !== product.id));
+      setNotification("Removido da lista de desejos");
+    } else {
+      setWishlist([...wishlist, product]);
+      setNotification("Adicionado à lista de desejos");
+    }
+  };
+
+  const showNotification = (message) => {
+    setNotification(message);
+    setTimeout(() => setNotification(""), 3000);
+  };
+
+  const checkout = () => {
+    setCart([]);
+    showNotification("Pedido realizado com sucesso! Você receberá um email de confirmação.");
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Header
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
+      <main>
+        <Routes>
+          <Route path="/" element={<Home setCurrentPage={setCurrentPage} />} />
+          <Route
+            path="/products"
+            element={
+              <Products
+                setCurrentPage={setCurrentPage}
+                searchQuery={searchQuery}
+                addToCart={addToCart}
+                addToWishlist={addToWishlist}
+                wishlist={wishlist}
+              />
+            }
+          />
+          <Route
+            path="/product/:id"
+            element={
+              <ProductDetail
+                setCurrentPage={setCurrentPage}
+                addToCart={addToCart}
+              />
+            }
+          />
+          <Route
+            path="/cart"
+            element={
+              <Cart
+                cart={cart}
+                onRemoveItem={removeFromCart}
+                onCheckout={checkout}
+              />
+            }
+          />
+          <Route
+            path="/checkout"
+            element={<Checkout setCurrentPage={setCurrentPage} />}
+          />
+          <Route
+            path="/account"
+            element={<Account setUser={setUser} user={user} />}
+          />
+          <Route
+            path="/contact"
+            element={<Contact />}
+          />
+        </Routes>
+      </main>
+      <Footer />
+    </Router>
   );
-}
+};
 
 export default App;
