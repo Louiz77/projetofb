@@ -21,7 +21,9 @@ const Header = ({ currentPage, setCurrentPage, searchQuery, setSearchQuery }) =>
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           <button onClick={() => handleNavigation("")}>
-            <h1 className="text-2xl font-bold text-blue-600">VANADUS</h1>
+            <img className="fluid w-100 h-10" src="logo.jpeg"></img>
+            <p style={{fontFamily:'GotFont', fontSize: '20'}}>VANADUS</p>
+            {/*<h1 className="text-2xl font-bold text-blue-600">VANADUS</h1>*/}
           </button>
         </div>
 
@@ -98,12 +100,12 @@ const Header = ({ currentPage, setCurrentPage, searchQuery, setSearchQuery }) =>
             </div>
             <button
               onClick={() => {
-                handleNavigation("home")
+                handleNavigation("")
                 setMobileMenuOpen(false);
               }}
               className="text-gray-700 hover:text-blue-600 py-2"
             >
-              Início
+              Home
             </button>
             <button
               onClick={() => {
@@ -112,7 +114,7 @@ const Header = ({ currentPage, setCurrentPage, searchQuery, setSearchQuery }) =>
               }}
               className="text-gray-700 hover:text-blue-600 py-2"
             >
-              Produtos
+              Products
             </button>
             <button
               onClick={() => {
@@ -121,7 +123,7 @@ const Header = ({ currentPage, setCurrentPage, searchQuery, setSearchQuery }) =>
               }}
               className="text-gray-700 hover:text-blue-600 py-2"
             >
-              Carrinho
+              Cart
             </button>
             <button
               onClick={() => {
@@ -130,7 +132,7 @@ const Header = ({ currentPage, setCurrentPage, searchQuery, setSearchQuery }) =>
               }}
               className="text-gray-700 hover:text-blue-600 py-2"
             >
-              Conta
+              Account
             </button>
           </div>
         </div>

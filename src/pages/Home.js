@@ -88,7 +88,7 @@ const Home = ({ setCurrentPage }) => {
                 opacity: Math.max(0, 1 - scrollY / 500)
               }}
             >
-              <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              <h1 className="text-5xl md:text-8xl font-bold mb-6 leading-tight">
                 <span className="block bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                   Discover our 
                 </span>
@@ -119,7 +119,7 @@ const Home = ({ setCurrentPage }) => {
             <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
               <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse" />
             </div>
-            <p className="text-sm mt-2 font-light ">Scroll down</p>
+            {/*<p className="text-sm mt-2 font-light ">Scroll down</p>*/}
           </div>
           
           <div className="absolute top-20 left-20 w-32 h-32 bg-white/10 rounded-full blur-xl animate-pulse" />
