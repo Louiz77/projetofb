@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Card } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import ProductsPage from "./ProductsPage";
@@ -133,6 +134,123 @@ const Home = ({ setCurrentPage }) => {
           <p className="text-lg font-semibold">
             🎉 10% de desconto na primeira compra! Use o cupom: BEMVINDO10
           </p>
+        </div>
+      </section>
+
+      {/* BUY NOW BANNER - MODERNIZADO */}
+      <section className="py-20 bg-gradient-to-br from-slate-50 via-white to-gray-50 relative overflow-hidden">
+        {/* Elementos decorativos de fundo */}
+        <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-l from-blue-100 to-indigo-100 rounded-full blur-3xl opacity-30 translate-x-1/2 translate-y-1/2"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          {/* Header melhorado */}
+          <div className="text-center mb-16">
+            <h2 className="text-5xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent mb-4">
+              Collection Drop
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Discover the latest fashion trends with our exclusive collection
+            </p>
+            <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto mt-6 rounded-full"></div>
+          </div>
+
+          {/* Grid de 3 cards modernos */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            
+            {/* Card 1 */}
+            <div className="group relative">
+              <div className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-gray-200">
+                {/* Container da imagem */}
+                <div className="relative h-80 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+                  <img
+                    src="https://videos.openai.com/vg-assets/assets%2Ftask_01jxv7mnk0ezw8nv26m1efxr2p%2F1750039490_img_1.webp?st=2025-06-16T00%3A47%3A01Z&se=2025-06-22T01%3A47%3A01Z&sks=b&skt=2025-06-16T00%3A47%3A01Z&ske=2025-06-22T01%3A47%3A01Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=8ebb0df1-a278-4e2e-9c20-f2d373479b3a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=CiJhdiKIT7qOj496K%2BkJrXUQSJ0ODxRFJZQBrof2wqo%3D&az=oaivgprodscus"
+                    alt="Roupa 1"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  {/* Overlay gradiente */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                
+                {/* Área do botão */}
+                <div className="p-6">
+                  <button className="w-full bg-gradient-to-r from-gray-900 to-gray-800 text-white font-semibold py-4 px-6 rounded-2xl hover:from-gray-800 hover:to-gray-700 transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl">
+                    <span className="flex items-center justify-center gap-2">
+                      <span>Buy Now</span>
+                      <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2 */}
+            <div className="group relative">
+              <div className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-gray-200">
+                {/* Container da imagem */}
+                <div className="relative h-80 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+                  <img
+                    src="https://videos.openai.com/vg-assets/assets%2Ftask_01jxv7mnk0ezw8nv26m1efxr2p%2F1750039490_img_3.webp?st=2025-06-16T01%3A16%3A29Z&se=2025-06-22T02%3A16%3A29Z&sks=b&skt=2025-06-16T01%3A16%3A29Z&ske=2025-06-22T02%3A16%3A29Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=8ebb0df1-a278-4e2e-9c20-f2d373479b3a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=WG5cWg%2Fc%2B4DXhFGxdTDf96BaUVtm3UQsQP7C%2F1qmL3w%3D&az=oaivgprodscus"
+                    alt="Roupa 2"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  {/* Overlay gradiente */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                
+                {/* Área do botão */}
+                <div className="p-6">
+                  <button className="w-full bg-gradient-to-r from-gray-900 to-gray-800 text-white font-semibold py-4 px-6 rounded-2xl hover:from-gray-800 hover:to-gray-700 transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl">
+                    <span className="flex items-center justify-center gap-2">
+                      <span>Buy Now</span>
+                      <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3 */}
+            <div className="group relative">
+              <div className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 group-hover:border-gray-200">
+                {/* Container da imagem */}
+                <div className="relative h-80 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+                  <img
+                    src="https://videos.openai.com/vg-assets/assets%2Ftask_01jxv7mnk0ezw8nv26m1efxr2p%2F1750039490_img_2.webp?st=2025-06-16T00%3A47%3A01Z&se=2025-06-22T01%3A47%3A01Z&sks=b&skt=2025-06-16T00%3A47%3A01Z&ske=2025-06-22T01%3A47%3A01Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=8ebb0df1-a278-4e2e-9c20-f2d373479b3a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=9hxEJG1b9D0yinyvuaertkifaKtCIPDLKZH5JSSlw6A%3D&az=oaivgprodscus"
+                    alt="Roupa 3"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  {/* Overlay gradiente */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                
+                {/* Área do botão */}
+                <div className="p-6">
+                  <button className="w-full bg-gradient-to-r from-gray-900 to-gray-800 text-white font-semibold py-4 px-6 rounded-2xl hover:from-gray-800 hover:to-gray-700 transform hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl">
+                    <span className="flex items-center justify-center gap-2">
+                      <span>Buy Now</span>
+                      <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* CTA adicional opcional */}
+          <div className="text-center mt-16">
+            <p className="text-gray-600 mb-6">Didn't find what you were looking for?</p>
+            <button className="bg-white text-gray-900 border-2 border-gray-900 font-semibold py-3 px-8 rounded-full hover:bg-gray-900 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl">
+              See Full Collection
+            </button>
+          </div>
         </div>
       </section>
 
