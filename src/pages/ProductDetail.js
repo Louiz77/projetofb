@@ -139,7 +139,7 @@ const ProductDetail = () => {
       </div>
     );
   }
-
+  
   const getOrCreateCartId = async () => {
     let cartId = localStorage.getItem('shopifyCartId');
 
@@ -172,38 +172,47 @@ const ProductDetail = () => {
   const product = data.product;
 
   const handleAddToCart = async () => {
-    const selectedVariantId = product.variants.edges[selectedVariant].node.id;
-    const variantPrice = product.variants.edges[selectedVariant].node.price.amount;
-    const quantity = 1;
-    const cartId = localStorage.getItem('shopifyCartId');
+    // Validação de dados do produto
+    if (!product || !product.variants || !product.variants.edges.length) {
+      alert("Dados do produto incompletos. Tente novamente.");
+      return;
+    }
+
+    const selectedVariantId = product.variants.edges[selectedVariant]?.node?.id;
+    const variantPrice = product.variants.edges[selectedVariant]?.node?.price?.amount;
+
+    if (!selectedVariantId || !variantPrice) {
+      alert("Falha ao obter dados da variante. Tente novamente.");
+      return;
+    }
 
     try {
+      // Garantir que o carrinho do Shopify existe
+      const cartId = await getOrCreateCartId();
+
+      // Adicionar item ao Shopify
       const { data } = await client.mutate({
         mutation: ADD_TO_CART,
         variables: {
-          cartId: cartId || (await getOrCreateCartId()),
+          cartId,
           lines: [
             {
               merchandiseId: selectedVariantId,
-              quantity: quantity,
+              quantity: 1,
             },
           ],
         },
       });
 
-      // Obter o lineId após adição
-      const lineId = data.cartLinesAdd.cart.lines.edges[0]?.node?.id;
-
+      // Adicionar item ao carrinho local
       const item = {
         id: selectedVariantId,
         name: product.title,
         price: parseFloat(variantPrice),
-        quantity: quantity,
-        image: product.image,
-        lineId: lineId, // Salva o lineId retornado
+        quantity: 1,
+        image: product.images.edges[selectedImageIndex]?.node?.url || product.image,
       };
 
-      // Salva no Firebase ou localStorage com lineId
       const user = auth.currentUser;
       if (user) {
         const cartRef = doc(db, 'carts', user.uid);

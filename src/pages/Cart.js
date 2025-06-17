@@ -77,7 +77,7 @@ const Cart = () => {
       const cartId = localStorage.getItem('shopifyCartId');
       if (!cartId) return;
 
-      // Buscar linhas do carrinho do Shopify
+      // Buscar linhas do carrinho do Shopify (apenas ProductVariant)
       const { data } = await client.query({
         query: gql`
           query ($cartId: ID!) {
@@ -89,7 +89,9 @@ const Cart = () => {
                     id
                     quantity
                     merchandise {
-                      id
+                      ... on ProductVariant {
+                        id
+                      }
                     }
                   }
                 }
@@ -100,9 +102,9 @@ const Cart = () => {
         variables: { cartId },
       });
 
-      // Encontrar a linha correspondente ao item (via merchandiseId)
+      // Encontrar a linha correspondente ao item (via merchandise.id)
       const lineToRemove = data.cart.lines.edges.find(
-        ({ node }) => node.merchandise.id === item.id
+        ({ node }) => node.merchandise?.id === item.id
       );
 
       if (lineToRemove) {
@@ -113,7 +115,6 @@ const Cart = () => {
               cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
                 cart {
                   id
-                  checkoutUrl
                 }
               }
             }
