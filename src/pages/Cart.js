@@ -72,6 +72,68 @@ const Cart = () => {
     return () => unsubscribe();
   }, []);
 
+  const syncRemoveWithShopify = async (item) => {
+    try {
+      const cartId = localStorage.getItem('shopifyCartId');
+      if (!cartId) return;
+
+      // Buscar linhas do carrinho do Shopify
+      const { data } = await client.query({
+        query: gql`
+          query ($cartId: ID!) {
+            cart(id: $cartId) {
+              id
+              lines(first: 10) {
+                edges {
+                  node {
+                    id
+                    quantity
+                    merchandise {
+                      id
+                    }
+                  }
+                }
+              }
+            }
+          }
+        `,
+        variables: { cartId },
+      });
+
+      // Encontrar a linha correspondente ao item (via merchandiseId)
+      const lineToRemove = data.cart.lines.edges.find(
+        ({ node }) => node.merchandise.id === item.id
+      );
+
+      if (lineToRemove) {
+        // Remover linha do carrinho do Shopify
+        const { data } = await client.mutate({
+          mutation: gql`
+            mutation ($cartId: ID!, $lineIds: [ID!]!) {
+              cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
+                cart {
+                  id
+                  checkoutUrl
+                }
+              }
+            }
+          `,
+          variables: {
+            cartId,
+            lineIds: [lineToRemove.node.id],
+          },
+        });
+
+        console.log("Item removido do Shopify:", data.cartLinesRemove.cart);
+      } else {
+        console.warn("Linha não encontrada no Shopify para o item:", item.id);
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar remoção com Shopify:", error);
+      alert("Falha ao atualizar o carrinho do Shopify. Tente novamente.");
+    }
+  };
+
   // Função para remover item do carrinho
   const removeItem = async (item) => {
     const updatedCart = cart.filter((cartItem) => cartItem.id !== item.id);
@@ -83,6 +145,9 @@ const Cart = () => {
     } else {
       localStorage.setItem('guestCart', JSON.stringify(updatedCart));
     }
+
+    // Sincronizar remoção com o Shopify
+    await syncRemoveWithShopify(item);
   };
 
   // Função para finalizar compra
@@ -162,14 +227,10 @@ const Cart = () => {
                 {cart.map((item) => (
                   <div key={item.id} className="bg-white rounded-lg shadow-lg p-6">
                     <div className="flex items-center space-x-4">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-20 h-20 object-cover rounded-lg"
-                      />
+                      <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-lg" />
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{item.name}</h3>
-                        <p className="text-gray-500">$ {item.price.toFixed(2)}</p>
+                        <p className="text-gray-500">R$ {item.price.toFixed(2)}</p>
                       </div>
                       <button
                         onClick={() => removeItem(item)}

@@ -139,7 +139,7 @@ const ProductDetail = () => {
       </div>
     );
   }
-  
+
   const getOrCreateCartId = async () => {
     let cartId = localStorage.getItem('shopifyCartId');
 
@@ -175,34 +175,35 @@ const ProductDetail = () => {
     const selectedVariantId = product.variants.edges[selectedVariant].node.id;
     const variantPrice = product.variants.edges[selectedVariant].node.price.amount;
     const quantity = 1;
+    const cartId = localStorage.getItem('shopifyCartId');
 
     try {
-      // Garantir que o carrinho do Shopify existe
-      const cartId = await getOrCreateCartId();
-
-      // Adicionar item ao Shopify
       const { data } = await client.mutate({
         mutation: ADD_TO_CART,
         variables: {
-          cartId,
+          cartId: cartId || (await getOrCreateCartId()),
           lines: [
             {
               merchandiseId: selectedVariantId,
-              quantity,
+              quantity: quantity,
             },
           ],
         },
       });
 
-      // Adicionar item ao carrinho do Firebase ou localStorage
+      // Obter o lineId após adição
+      const lineId = data.cartLinesAdd.cart.lines.edges[0]?.node?.id;
+
       const item = {
         id: selectedVariantId,
         name: product.title,
         price: parseFloat(variantPrice),
-        quantity,
-        image: product.images.edges[selectedImageIndex]?.node.url || product.image,
+        quantity: quantity,
+        image: product.image,
+        lineId: lineId, // Salva o lineId retornado
       };
 
+      // Salva no Firebase ou localStorage com lineId
       const user = auth.currentUser;
       if (user) {
         const cartRef = doc(db, 'carts', user.uid);
