@@ -139,6 +139,35 @@ const ProductDetail = () => {
       </div>
     );
   }
+  
+  const getOrCreateCartId = async () => {
+    let cartId = localStorage.getItem('shopifyCartId');
+
+    if (!cartId) {
+      try {
+        const { data } = await client.mutate({
+          mutation: gql`
+            mutation {
+              cartCreate(input: {}) {
+                cart {
+                  id
+                  checkoutUrl
+                }
+              }
+            }
+          `,
+        });
+        cartId = data.cartCreate.cart.id;
+        localStorage.setItem('shopifyCartId', cartId);
+      } catch (error) {
+        console.error("Erro ao criar carrinho do Shopify:", error);
+        alert("Falha ao iniciar o carrinho. Tente recarregar a página.");
+        throw error;
+      }
+    }
+
+    return cartId;
+  };
 
   const product = data.product;
 
@@ -146,30 +175,32 @@ const ProductDetail = () => {
     const selectedVariantId = product.variants.edges[selectedVariant].node.id;
     const variantPrice = product.variants.edges[selectedVariant].node.price.amount;
     const quantity = 1;
-    const existingCartId = localStorage.getItem('shopifyCartId');
 
     try {
-      // eslint-disable-next-line
+      // Garantir que o carrinho do Shopify existe
+      const cartId = await getOrCreateCartId();
+
+      // Adicionar item ao Shopify
       const { data } = await client.mutate({
         mutation: ADD_TO_CART,
         variables: {
-          cartId: existingCartId,
+          cartId,
           lines: [
             {
               merchandiseId: selectedVariantId,
-              quantity: quantity,
+              quantity,
             },
           ],
         },
       });
 
-      // Adicionar item ao Firebase
+      // Adicionar item ao carrinho do Firebase ou localStorage
       const item = {
         id: selectedVariantId,
         name: product.title,
         price: parseFloat(variantPrice),
-        quantity: quantity,
-        image: product.images.edges[selectedImageIndex]?.node.url
+        quantity,
+        image: product.images.edges[selectedImageIndex]?.node.url || product.image,
       };
 
       const user = auth.currentUser;
