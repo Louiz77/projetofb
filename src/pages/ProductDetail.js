@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, gql } from '@apollo/client';
 import client from '../client/ShopifyClient';
-import { ArrowLeft, Check, Star, Minus, Plus, ShoppingCart, Zap, Shield, Truck } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Star, Minus, Plus, Zap, Shield, Truck, Check } from 'lucide-react';
+import { auth, db, doc, setDoc, getDoc } from '../client/firebaseConfig';
 
 // Mutação para adicionar ao carrinho
 const ADD_TO_CART = gql`
@@ -53,48 +54,46 @@ const GET_PRODUCT_DETAILS = gql`
 const ProductDetail = () => {
   const { productId } = useParams();
   const decodedId = decodeURIComponent(productId);
+  const navigate = useNavigate();
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState(0);
+  const [selectedSize, setSelectedSize] = []
   const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [selectedSize, setSelectedSize] = useState([]);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
 
-  const getOrCreateCartId = async () => {
-    let cartId = localStorage.getItem('shopifyCartId');
+  // eslint-disable-next-line
+  const [addToCartMutation] = useMutation(ADD_TO_CART, {
+    onCompleted: async (data) => {
+      const cartId = data.cartCreate?.cart?.id || localStorage.getItem('shopifyCartId');
 
-    if (!cartId) {
-      try {
-        const { data } = await client.mutate({
-          mutation: gql`
-            mutation {
-              cartCreate(input: {}) {
-                cart {
-                  id
-                  checkoutUrl
-                }
-              }
-            }
-          `,
-        });
-        cartId = data.cartCreate.cart.id;
+      if (cartId) {
         localStorage.setItem('shopifyCartId', cartId);
-      } catch (error) {
-        console.error("Erro ao criar carrinho:", error);
-        alert("Falha ao iniciar o carrinho. Tente recarregar a página.");
-        throw error;
-      }
-    }
 
-    return cartId;
-  };
+        // Adicionar item ao carrinho do Firebase
+        const user = auth.currentUser;
+        const selectedVariantId = product.variants.edges[selectedVariant].node.id;
+        const variantPrice = product.variants.edges[selectedVariant].node.price.amount;
 
-  const [addToCart] = useMutation(ADD_TO_CART, {
-    onCompleted: ({ cartLinesAdd }) => {
-      const checkoutUrl = cartLinesAdd?.cart?.checkoutUrl;
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
+        const item = {
+          id: selectedVariantId,
+          name: product.title,
+          price: parseFloat(variantPrice),
+          quantity: quantity,
+        };
+
+        if (user) {
+          const cartRef = doc(db, 'carts', user.uid);
+          const cartSnap = await getDoc(cartRef);
+          const existingItems = cartSnap.exists() ? cartSnap.data().items : [];
+          await setDoc(cartRef, { items: [...existingItems, item] }, { merge: true });
+        } else {
+          const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+          guestCart.push(item);
+          localStorage.setItem('guestCart', JSON.stringify(guestCart));
+        }
+
+        alert("Item adicionado ao carrinho!");
       } else {
         alert("Falha ao adicionar ao carrinho. Tente novamente.");
       }
@@ -104,33 +103,6 @@ const ProductDetail = () => {
       alert("Falha ao adicionar ao carrinho. Verifique os dados do produto.");
     },
   });
-
-  useEffect(() => {
-    if (!localStorage.getItem('shopifyCartId')) {
-      const createCart = async () => {
-        try {
-          const { data } = await client.mutate({
-            mutation: gql`
-              mutation {
-                cartCreate(input: {}) {
-                  cart {
-                    id
-                    checkoutUrl
-                  }
-                }
-              }
-            `,
-          });
-          localStorage.setItem('shopifyCartId', data.cartCreate.cart.id);
-        } catch (error) {
-          console.error("Erro ao criar carrinho:", error);
-          alert("Falha ao iniciar o carrinho. Tente recarregar a página.");
-        }
-      };
-
-      createCart();
-    }
-  }, []);
 
   const { loading, error, data } = useQuery(GET_PRODUCT_DETAILS, {
     variables: { productId: decodedId },
@@ -170,18 +142,18 @@ const ProductDetail = () => {
 
   const product = data.product;
 
-  // Função de adição ao carrinho
   const handleAddToCart = async () => {
     const selectedVariantId = product.variants.edges[selectedVariant].node.id;
+    const variantPrice = product.variants.edges[selectedVariant].node.price.amount;
     const quantity = 1;
+    const existingCartId = localStorage.getItem('shopifyCartId');
 
     try {
-      const cartId = await getOrCreateCartId();
-
+      // eslint-disable-next-line
       const { data } = await client.mutate({
         mutation: ADD_TO_CART,
         variables: {
-          cartId: cartId,
+          cartId: existingCartId,
           lines: [
             {
               merchandiseId: selectedVariantId,
@@ -191,7 +163,28 @@ const ProductDetail = () => {
         },
       });
 
-      window.location.href = data.cartLinesAdd.cart.checkoutUrl;
+      // Adicionar item ao Firebase
+      const item = {
+        id: selectedVariantId,
+        name: product.title,
+        price: parseFloat(variantPrice),
+        quantity: quantity,
+        image: product.images.edges[selectedImageIndex]?.node.url
+      };
+
+      const user = auth.currentUser;
+      if (user) {
+        const cartRef = doc(db, 'carts', user.uid);
+        const cartSnap = await getDoc(cartRef);
+        const existingItems = cartSnap.exists() ? cartSnap.data().items : [];
+        await setDoc(cartRef, { items: [...existingItems, item] }, { merge: true });
+      } else {
+        const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+        guestCart.push(item);
+        localStorage.setItem('guestCart', JSON.stringify(guestCart));
+      }
+
+      alert("Item adicionado ao carrinho!");
     } catch (error) {
       console.error("Erro ao adicionar ao carrinho:", error);
       alert("Falha ao adicionar ao carrinho. Verifique os dados do produto.");
@@ -272,7 +265,7 @@ const ProductDetail = () => {
                 <Truck size={20} className="text-blue-500" />
                 <div>
                   <p className="text-sm text-gray-600">Frete Grátis</p>
-                  <p className="text-sm text-gray-900">Acima de R$ 299,90</p>
+                  <p className="text-sm text-gray-900">Acima de $ 299,90</p>
                 </div>
               </div>
             </div>
@@ -297,7 +290,7 @@ const ProductDetail = () => {
                 </h1>
                 <div className="flex items-center space-x-4">
                   <span className="text-3xl font-bold text-indigo-600">
-                    R$ {product.variants.edges[selectedVariant]?.node.price.amount || product.priceRange.minVariantPrice.amount}
+                    $ {product.variants.edges[selectedVariant]?.node.price.amount || product.priceRange.minVariantPrice.amount}
                   </span>
                   <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">Em estoque</span>
                 </div>
@@ -318,7 +311,7 @@ const ProductDetail = () => {
                             : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                         }`}
                       >
-                        {variant.node.title} - R$ {variant.node.price.amount}
+                        {variant.node.title} - $ {variant.node.price.amount}
                       </button>
                     ))}
                   </div>
@@ -327,19 +320,7 @@ const ProductDetail = () => {
 
               {/* Botão de Adicionar ao Carrinho */}
               <button
-                onClick={() => {
-                  const selectedVariantId = product.variants.edges[selectedVariant].node.id;
-                  const quantity = 1;
-                  const existingCartId = localStorage.getItem('shopifyCartId');
-
-                  handleAddToCart({
-                    variables: {
-                      variantId: selectedVariantId,
-                      quantity: quantity,
-                      cartId: existingCartId,
-                    },
-                  });
-                }}
+                onClick={handleAddToCart}
                 className="w-full group relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-indigo-300"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -347,6 +328,12 @@ const ProductDetail = () => {
                   <ShoppingCart className="w-6 h-6 transition-transform group-hover:scale-110" />
                   <span>Adicionar ao Carrinho</span>
                 </div>
+              </button>
+              <button
+                onClick={() => navigate("/cart")}
+                className="w-full mt-4 bg-gray-100 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Ver Carrinho
               </button>
 
               {/* Controle de Quantidade */}

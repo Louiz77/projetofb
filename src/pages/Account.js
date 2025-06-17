@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from 'react';
+import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from '../client/firebaseConfig';
 
 const Account = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,33 +11,70 @@ const Account = () => {
     confirmPassword: "",
   });
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogin = (e) => {
+  // Observar mudanças no estado de autenticação
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+      if (firebaseUser) {
+        setUser({
+          criado: firebaseUser.metadata.creationTime || "Date",
+          email: firebaseUser.email,
+          ultimoLogin: firebaseUser.metadata.lastSignInTime || "Date",
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Função de login com Firebase
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setUser({ name: "João Silva", email: loginData.email });
-    alert("Login realizado com sucesso!");
+    try {
+      await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
+      alert("Login realizado com sucesso!");
+    } catch (error) {
+      alert(`Erro no login: ${error.message}`);
+    }
   };
 
-  const handleRegister = (e) => {
+  // Função de cadastro com Firebase
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (registerData.password !== registerData.confirmPassword) {
       alert("As senhas não coincidem!");
       return;
     }
-    setUser({ name: registerData.name, email: registerData.email });
-    alert("Conta criada com sucesso!");
+    try {
+      await createUserWithEmailAndPassword(auth, registerData.email, registerData.password);
+      alert("Conta criada com sucesso!");
+    } catch (error) {
+      alert(`Erro no cadastro: ${error.message}`);
+    }
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    alert("Logout realizado com sucesso!");
+  // Função de logout com Firebase
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      alert("Logout realizado com sucesso!");
+    } catch (error) {
+      alert(`Erro ao sair: ${error.message}`);
+    }
   };
 
   return (
     <div className="py-8">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          {user ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <p>Carregando...</p>
+            </div>
+          ) : user ? (
             <div>
               <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
                 <div className="flex justify-between items-center mb-6">
@@ -52,17 +90,17 @@ const Account = () => {
                   <div>
                     <h2 className="text-xl font-semibold mb-4">Informações Pessoais</h2>
                     <div className="space-y-2">
-                      <p><strong>Nome:</strong> {user.name}</p>
                       <p><strong>Email:</strong> {user.email}</p>
-                      <p><strong>Membro desde:</strong> Janeiro 2024</p>
+                      <p><strong>Last Login:</strong> {user.ultimoLogin}</p>
+                      <p><strong>Member since:</strong> {user.criado}</p>
                     </div>
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold mb-4">Estatísticas</h2>
                     <div className="space-y-2">
-                      <p><strong>Pedidos realizados:</strong> 12</p>
+                      {/*<p><strong>Pedidos realizados:</strong> 12</p>
                       <p><strong>Produtos no carrinho:</strong> 3</p>
-                      <p><strong>Produtos na lista de desejos:</strong> 5</p>
+                      <p><strong>Produtos na lista de desejos:</strong> 5</p>*/}
                     </div>
                   </div>
                 </div>
@@ -154,7 +192,7 @@ const Account = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Confirm Password</label>
+                    <label className="block text-sm font-medium mb-2">Confirmar Senha</label>
                     <input
                       type="password"
                       required
@@ -172,7 +210,7 @@ const Account = () => {
                     type="submit"
                     className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Create account
+                    Criar Conta
                   </button>
                   <p className="text-center text-sm text-gray-600 mt-4">
                     Já tem conta?{" "}
