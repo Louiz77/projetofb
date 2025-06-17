@@ -71,14 +71,9 @@ const App = () => {
               />
             }
           />
-          <Route
-            path="/product/:id"
-            element={
-              <ProductDetail
-                setCurrentPage={setCurrentPage}
-                addToCart={addToCart}
-              />
-            }
+          <Route 
+            path="/product/:productId" 
+            element={<ProductDetail />} 
           />
           <Route
             path="/cart"
