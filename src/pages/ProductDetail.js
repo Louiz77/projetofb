@@ -86,12 +86,28 @@ const ProductDetail = () => {
           const cartRef = doc(db, 'carts', user.uid);
           const cartSnap = await getDoc(cartRef);
           const existingItems = cartSnap.exists() ? cartSnap.data().items : [];
-          await setDoc(cartRef, { items: [...existingItems, item] }, { merge: true });
+
+          const existingItemIndex = existingItems.findIndex((i) => i.id === item.id);
+          if (existingItemIndex !== -1) {
+            existingItems[existingItemIndex].quantity += item.quantity;
+          } else {
+            existingItems.push(item);
+          }
+
+          await setDoc(cartRef, { items: existingItems }, { merge: true });
         } else {
           const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-          guestCart.push(item);
-          localStorage.setItem('guestCart', JSON.stringify(guestCart));
-        }
+          const existingItemIndex = guestCart.findIndex((i) => i.id === item.id);
+
+  if (existingItemIndex !== -1) {
+    guestCart[existingItemIndex].quantity += item.quantity;
+  } else {
+    guestCart.push(item);
+  }
+
+  localStorage.setItem('guestCart', JSON.stringify(guestCart));
+}
+
 
         alert("Item adicionado ao carrinho!");
       } else {

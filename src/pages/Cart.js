@@ -151,40 +151,54 @@ const Cart = () => {
     await syncRemoveWithShopify(item);
   };
 
-  // Função para finalizar compra
-  const handleCheckout = async () => {
-    const user = auth.currentUser;
-    const cartItems = user ? cart : JSON.parse(localStorage.getItem('guestCart') || '[]');
-
-    if (cartItems.length === 0) {
-      alert("Seu carrinho está vazio. Adicione produtos antes de finalizar.");
-      return;
-    }
-
+  const createNewCartAndCheckout = async () => {
     try {
-      const cartId = await getOrCreateCartId();
+      const { data } = await client.mutate({
+        mutation: gql`
+          mutation {
+            cartCreate(input: {}) {
+              cart {
+                id
+                checkoutUrl
+              }
+            }
+          }
+        `,
+      });
 
-      // Adicionar itens ao Shopify
-      const lines = cartItems.map(item => ({
+      const cartId = data.cartCreate.cart.id;
+      localStorage.setItem('shopifyCartId', cartId);
+
+      const lines = cart.map(item => ({
         merchandiseId: item.id,
         quantity: item.quantity,
       }));
 
-      const { data } = await client.mutate({
+      const response = await client.mutate({
         mutation: ADD_ITEMS_TO_CART,
         variables: {
-          cartId: cartId,
-          lines: lines,
+          cartId,
+          lines,
         },
       });
 
-      // Redirecionar para checkout do Shopify
-      window.location.href = data.cartLinesAdd.cart.checkoutUrl;
+      window.location.href = response.data.cartLinesAdd.cart.checkoutUrl;
     } catch (error) {
-      console.error("Erro ao finalizar compra:", error);
-      alert("Falha ao sincronizar o carrinho com o Shopify. Tente novamente.");
+      console.error("Erro ao criar novo carrinho para checkout:", error);
+      alert("Erro ao finalizar compra.");
     }
   };
+
+  // Função para finalizar compra
+  const handleCheckout = async () => {
+    if (cart.length === 0) {
+      alert("Seu carrinho está vazio.");
+      return;
+    }
+
+    await createNewCartAndCheckout();
+  };
+
 
   if (loading) {
     return (
