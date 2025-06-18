@@ -214,7 +214,7 @@ const ProductDetail = () => {
           lines: [
             {
               merchandiseId: selectedVariantId,
-              quantity: 1,
+              quantity: quantity,
             },
           ],
         },
@@ -225,7 +225,7 @@ const ProductDetail = () => {
         id: selectedVariantId,
         name: product.title,
         price: parseFloat(variantPrice),
-        quantity: 1,
+        quantity: quantity,
         image: product.images.edges[selectedImageIndex]?.node?.url || product.image,
       };
 

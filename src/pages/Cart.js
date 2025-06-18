@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db, doc, getDoc, setDoc } from '../client/firebaseConfig';
-import { ShoppingCart, Trash2 } from 'lucide-react';
+import { ShoppingCart, Trash2, Minus, Plus } from 'lucide-react';
 import client from '../client/ShopifyClient';
 import { gql } from '@apollo/client';
 
@@ -14,6 +14,41 @@ const ADD_ITEMS_TO_CART = gql`
     }
   }
 `;
+
+const UPDATE_CART_LINE = gql`
+  mutation ($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
+    cartLinesUpdate(cartId: $cartId, lines: $lines) {
+      cart {
+        id
+      }
+    }
+  }
+`;
+
+const updateQuantityInShopify = async (item, newQuantity) => {
+  try {
+    const cartId = localStorage.getItem('shopifyCartId');
+    if (!cartId || !item.lineId) return;
+
+    const { data } = await client.mutate({
+      mutation: UPDATE_CART_LINE,
+      variables: {
+        cartId,
+        lines: [
+          {
+            id: item.lineId,
+            quantity: newQuantity,
+          },
+        ],
+      },
+    });
+
+    console.log("Quantidade atualizada no Shopify:", data.cartLinesUpdate);
+  } catch (error) {
+    console.error("Erro ao atualizar quantidade no Shopify:", error);
+    alert("Falha ao atualizar quantidade. Tente novamente.");
+  }
+};
 
 const getOrCreateCartId = async () => {
   let cartId = localStorage.getItem('shopifyCartId');
@@ -246,6 +281,51 @@ const Cart = () => {
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{item.name}</h3>
                         <p className="text-gray-500">R$ {item.price.toFixed(2)}</p>
+                        <div className="flex items-center mt-2">
+                          <button
+                            onClick={() => {
+                              const newQuantity = Math.max(1, item.quantity - 1);
+                              const updatedCart = cart.map(cartItem =>
+                                cartItem.id === item.id ? { ...cartItem, quantity: newQuantity } : cartItem
+                              );
+                              setCart(updatedCart);
+
+                              if (user) {
+                                setDoc(doc(db, 'carts', user.uid), { items: updatedCart }, { merge: true });
+                              } else {
+                                localStorage.setItem('guestCart', JSON.stringify(updatedCart));
+                              }
+
+                              // Atualizar quantidade no Shopify
+                              updateQuantityInShopify(item, newQuantity);
+                            }}
+                            className="text-gray-500 hover:text-red-500"
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <span className="mx-2 font-medium">{item.quantity}</span>
+                          <button
+                            onClick={() => {
+                              const newQuantity = item.quantity + 1;
+                              const updatedCart = cart.map(cartItem =>
+                                cartItem.id === item.id ? { ...cartItem, quantity: newQuantity } : cartItem
+                              );
+                              setCart(updatedCart);
+
+                              if (user) {
+                                setDoc(doc(db, 'carts', user.uid), { items: updatedCart }, { merge: true });
+                              } else {
+                                localStorage.setItem('guestCart', JSON.stringify(updatedCart));
+                              }
+
+                              // Atualizar quantidade no Shopify
+                              updateQuantityInShopify(item, newQuantity);
+                            }}
+                            className="text-gray-500 hover:text-green-500"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
                       </div>
                       <button
                         onClick={() => removeItem(item)}
