@@ -1,14 +1,85 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Search, Menu, X } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { auth, db, doc, onSnapshot, getDoc } from '../client/firebaseConfig';
+import { Search, Menu, X } from 'lucide-react';
 
 const Header = ({ currentPage, setCurrentPage, searchQuery, setSearchQuery }) => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
 
   const handleNavigation = (page) => {
     navigate(`/${page}`);
   };
+
+  const getCartCount = async () => {
+    const user = auth.currentUser;
+    let total = 0;
+
+    if (user) {
+      try {
+        const cartRef = doc(db, 'carts', user.uid);
+        const cartSnap = await getDoc(cartRef);
+        if (cartSnap.exists()) {
+          const items = cartSnap.data().items || [];
+          total = items.reduce((sum, item) => sum + item.quantity, 0);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar carrinho:", error);
+        total = 0;
+      }
+    } else {
+      const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+      total = guestCart.reduce((sum, item) => sum + item.quantity, 0);
+    }
+
+    setCartCount(total);
+  };
+
+  useEffect(() => {
+    getCartCount();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+      if (firebaseUser) {
+        const cartRef = doc(db, 'carts', firebaseUser.uid);
+        const unsubscribeCart = onSnapshot(cartRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const items = docSnap.data().items || [];
+            const total = items.reduce((sum, item) => sum + item.quantity, 0);
+            setCartCount(total);
+          } else {
+            setCartCount(0);
+          }
+        });
+        return () => unsubscribeCart();
+      } else {
+        setCartCount(0);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const handleGuestCartUpdate = () => {
+      getCartCount();
+    };
+
+    window.addEventListener('guestCartUpdated', handleGuestCartUpdate);
+    return () => window.removeEventListener('guestCartUpdated', handleGuestCartUpdate);
+  }, []);
+
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'guestCart') {
+        getCartCount();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -57,9 +128,11 @@ const Header = ({ currentPage, setCurrentPage, searchQuery, setSearchQuery }) =>
                 d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
               />
             </svg>
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-              3
-            </span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-6 h-6 flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => handleNavigation("account")}
