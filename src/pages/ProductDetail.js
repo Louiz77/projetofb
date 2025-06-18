@@ -406,12 +406,6 @@ const ProductDetail = () => {
                   <span>Adicionar ao Carrinho</span>
                 </div>
               </button>
-              <button
-                onClick={() => navigate("/cart")}
-                className="w-full mt-4 bg-gray-100 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Ver Carrinho
-              </button>
 
               {/* Controle de Quantidade */}
               <div className="flex items-center space-x-3 mt-4">
