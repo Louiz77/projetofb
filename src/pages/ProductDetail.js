@@ -188,7 +188,6 @@ const ProductDetail = () => {
   const product = data.product;
 
   const handleAddToCart = async () => {
-    // Validação de dados do produto
     if (!product || !product.variants || !product.variants.edges.length) {
       alert("Dados do produto incompletos. Tente novamente.");
       return;
@@ -203,10 +202,8 @@ const ProductDetail = () => {
     }
 
     try {
-      // Garantir que o carrinho do Shopify existe
       const cartId = await getOrCreateCartId();
 
-      // Adicionar item ao Shopify
       const { data } = await client.mutate({
         mutation: ADD_TO_CART,
         variables: {
@@ -220,7 +217,7 @@ const ProductDetail = () => {
         },
       });
 
-      // Adicionar item ao carrinho local
+      // Adicionar item ao Firebase ou localStorage
       const item = {
         id: selectedVariantId,
         name: product.title,
@@ -234,10 +231,33 @@ const ProductDetail = () => {
         const cartRef = doc(db, 'carts', user.uid);
         const cartSnap = await getDoc(cartRef);
         const existingItems = cartSnap.exists() ? cartSnap.data().items : [];
-        await setDoc(cartRef, { items: [...existingItems, item] }, { merge: true });
+
+        // Consolidar itens no Firebase
+        const existingItemIndex = existingItems.findIndex(
+          (cartItem) => cartItem.id === item.id
+        );
+
+        if (existingItemIndex !== -1) {
+          existingItems[existingItemIndex].quantity += item.quantity;
+        } else {
+          existingItems.push(item);
+        }
+
+        await setDoc(cartRef, { items: existingItems }, { merge: true });
       } else {
         const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-        guestCart.push(item);
+
+        // Consolidar itens no localStorage
+        const existingItemIndex = guestCart.findIndex(
+          (cartItem) => cartItem.id === item.id
+        );
+
+        if (existingItemIndex !== -1) {
+          guestCart[existingItemIndex].quantity += item.quantity;
+        } else {
+          guestCart.push(item);
+        }
+
         localStorage.setItem('guestCart', JSON.stringify(guestCart));
       }
 

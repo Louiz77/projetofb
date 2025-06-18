@@ -50,35 +50,6 @@ const updateQuantityInShopify = async (item, newQuantity) => {
   }
 };
 
-const getOrCreateCartId = async () => {
-  let cartId = localStorage.getItem('shopifyCartId');
-
-  if (!cartId) {
-    try {
-      const { data } = await client.mutate({
-        mutation: gql`
-          mutation {
-            cartCreate(input: {}) {
-              cart {
-                id
-                checkoutUrl
-              }
-            }
-          }
-        `,
-      });
-      cartId = data.cartCreate.cart.id;
-      localStorage.setItem('shopifyCartId', cartId);
-    } catch (error) {
-      console.error("Erro ao criar carrinho no Shopify:", error);
-      alert("Falha ao iniciar o carrinho. Tente recarregar a página.");
-      throw error;
-    }
-  }
-
-  return cartId;
-};
-
 const Cart = () => {
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
@@ -280,6 +251,7 @@ const Cart = () => {
                       <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-lg" />
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{item.name}</h3>
+                        <p className="text-gray-500">{item.price.toFixed(2)}</p>
                         <p className="text-gray-500">R$ {item.price.toFixed(2)}</p>
                         <div className="flex items-center mt-2">
                           <button
