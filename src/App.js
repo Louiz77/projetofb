@@ -9,6 +9,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
 import Contact from "./pages/Contact";
+import { Analytics } from "@vercel/analytics/react"
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState("home");
@@ -50,6 +51,7 @@ const App = () => {
 
   return (
     <Router>
+      <Analytics />
       <Header
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
