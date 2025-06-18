@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db, doc, getDoc, setDoc } from '../client/firebaseConfig';
-import { ShoppingCart, Trash2, Minus, Plus } from 'lucide-react';
+import { auth, db, doc, getDoc, setDoc, onSnapshot } from '../client/firebaseConfig';
+import { ShoppingCart, Trash2, Minus, Plus, X, Shield } from 'lucide-react';
 import client from '../client/ShopifyClient';
 import { gql } from '@apollo/client';
+import { useCart } from '../hooks/useCart';
 
-// Mutação para adicionar múltiplos itens ao carrinho do Shopify
+// Mutações GraphQL (mantendo a lógica original)
 const ADD_ITEMS_TO_CART = gql`
   mutation ($cartId: ID!, $lines: [CartLineInput!]!) {
     cartLinesAdd(cartId: $cartId, lines: $lines) {
@@ -50,32 +51,91 @@ const updateQuantityInShopify = async (item, newQuantity) => {
   }
 };
 
-const Cart = () => {
+const CartModal = () => {
+  const { isCartOpen, closeCart } = useCart();
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Verifica se o usuário está autenticado
+  // Listener personalizado para mudanças no localStorage (para usuários convidados)
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        try {
-          const docRef = doc(db, 'carts', firebaseUser.uid);
-          const docSnap = await getDoc(docRef);
-          setCart(docSnap.exists() ? docSnap.data().items : []);
-        } catch (error) {
-          console.error("Erro ao carregar carrinho:", error);
-          alert("Falha ao carregar carrinho. Tente novamente.");
-        }
-      } else {
-        setUser(null);
-        const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-        setCart(guestCart);
+    const handleStorageChange = (event) => {
+      if (event.key === 'guestCart') {
+        const updatedCart = JSON.parse(event.newValue || '[]');
+        setCart(updatedCart);
       }
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Listener customizado para mudanças no localStorage da mesma aba
+  useEffect(() => {
+    const checkGuestCartChanges = () => {
+      if (!user) {
+        const currentGuestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+        setCart(currentGuestCart);
+      }
+    };
+
+    // Verificar mudanças a cada 500ms quando não há usuário logado
+    let interval;
+    if (!user) {
+      interval = setInterval(checkGuestCartChanges, 500);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [user]);
+
+  // Lógica de autenticação e carregamento do carrinho com listeners em tempo real
+  useEffect(() => {
+    let unsubscribeAuth;
+    let unsubscribeFirestore;
+
+    const setupAuthListener = async () => {
+      unsubscribeAuth = auth.onAuthStateChanged(async (firebaseUser) => {
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          
+          // Configurar listener do Firestore para tempo real
+          const docRef = doc(db, 'carts', firebaseUser.uid);
+          
+          unsubscribeFirestore = onSnapshot(
+            docRef,
+            (docSnap) => {
+              const cartData = docSnap.exists() ? docSnap.data().items : [];
+              setCart(cartData);
+              setLoading(false);
+            },
+            (error) => {
+              console.error("Erro ao escutar mudanças no carrinho:", error);
+              setLoading(false);
+            }
+          );
+        } else {
+          // Limpar listener do Firestore se existir
+          if (unsubscribeFirestore) {
+            unsubscribeFirestore();
+            unsubscribeFirestore = null;
+          }
+          
+          setUser(null);
+          const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+          setCart(guestCart);
+          setLoading(false);
+        }
+      });
+    };
+
+    setupAuthListener();
+
+    return () => {
+      if (unsubscribeAuth) unsubscribeAuth();
+      if (unsubscribeFirestore) unsubscribeFirestore();
+    };
   }, []);
 
   const syncRemoveWithShopify = async (item) => {
@@ -83,7 +143,6 @@ const Cart = () => {
       const cartId = localStorage.getItem('shopifyCartId');
       if (!cartId) return;
 
-      // Buscar linhas do carrinho do Shopify (apenas ProductVariant)
       const { data } = await client.query({
         query: gql`
           query ($cartId: ID!) {
@@ -108,13 +167,11 @@ const Cart = () => {
         variables: { cartId },
       });
 
-      // Encontrar a linha correspondente ao item (via merchandise.id)
       const lineToRemove = data.cart.lines.edges.find(
         ({ node }) => node.merchandise?.id === item.id
       );
 
       if (lineToRemove) {
-        // Remover linha do carrinho do Shopify
         const { data } = await client.mutate({
           mutation: gql`
             mutation ($cartId: ID!, $lineIds: [ID!]!) {
@@ -141,19 +198,24 @@ const Cart = () => {
     }
   };
 
-  // Função para remover item do carrinho
   const removeItem = async (item) => {
     const updatedCart = cart.filter((cartItem) => cartItem.id !== item.id);
-    setCart(updatedCart);
 
-    const user = auth.currentUser;
-    if (user) {
-      await setDoc(doc(db, 'carts', user.uid), { items: updatedCart }, { merge: true });
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      // Para usuários logados, o onSnapshot vai atualizar automaticamente
+      await setDoc(doc(db, 'carts', currentUser.uid), { items: updatedCart }, { merge: true });
     } else {
+      // Para usuários convidados, atualizar localStorage e estado local
       localStorage.setItem('guestCart', JSON.stringify(updatedCart));
+      setCart(updatedCart);
+      
+      // Disparar evento customizado para outras abas/componentes
+      window.dispatchEvent(new CustomEvent('guestCartUpdated', { 
+        detail: { cart: updatedCart } 
+      }));
     }
 
-    // Sincronizar remoção com o Shopify
     await syncRemoveWithShopify(item);
   };
 
@@ -195,146 +257,169 @@ const Cart = () => {
     }
   };
 
-  // Função para finalizar compra
   const handleCheckout = async () => {
     if (cart.length === 0) {
       alert("Seu carrinho está vazio.");
       return;
     }
-
     await createNewCartAndCheckout();
   };
 
-
-  if (loading) {
-    return (
-      <div className="py-8 text-center">
-        <p>Carregando seu carrinho...</p>
-      </div>
+  const updateQuantity = async (item, newQuantity) => {
+    const updatedCart = cart.map(cartItem =>
+      cartItem.id === item.id ? { ...cartItem, quantity: newQuantity } : cartItem
     );
-  }
+
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      // Para usuários logados, o onSnapshot vai atualizar automaticamente
+      await setDoc(doc(db, 'carts', currentUser.uid), { items: updatedCart }, { merge: true });
+    } else {
+      // Para usuários convidados, atualizar localStorage e estado local
+      localStorage.setItem('guestCart', JSON.stringify(updatedCart));
+      setCart(updatedCart);
+      
+      // Disparar evento customizado para outras abas/componentes
+      window.dispatchEvent(new CustomEvent('guestCartUpdated', { 
+        detail: { cart: updatedCart } 
+      }));
+    }
+
+    await updateQuantityInShopify(item, newQuantity);
+  };
+
+  // Listener para evento customizado de atualização do carrinho de convidado
+  useEffect(() => {
+    const handleGuestCartUpdate = (event) => {
+      if (!user) {
+        setCart(event.detail.cart);
+      }
+    };
+
+    window.addEventListener('guestCartUpdated', handleGuestCartUpdate);
+    return () => window.removeEventListener('guestCartUpdated', handleGuestCartUpdate);
+  }, [user]);
+
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  if (!isCartOpen) return null;
 
   return (
-    <div className="py-8">
-      <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-8">Carrinho de Compras</h1>
-        {cart.length === 0 && !user ? (
-          <div className="text-center py-12">
-            <ShoppingCart size={80} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg mb-6">Seu carrinho está vazio</p>
-            <button
-              onClick={() => window.history.back()}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Continuar Comprando
-            </button>
+    <div className="fixed inset-0 z-50 flex">
+      {/* Backdrop com blur */}
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={closeCart}
+      />
+      
+      {/* Cart Panel */}
+      <div className="relative ml-auto h-full w-full max-w-md bg-[#1C1C1C] shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-[#8A0101]/20">
+          <h2 className="text-xl font-bold text-[#F3ECE7] tracking-wide">
+            CART {cart.length > 0 && `(${cart.reduce((sum, item) => sum + item.quantity, 0)})`}
+          </h2>
+          <button
+            onClick={closeCart}
+            className="p-2 text-[#F3ECE7] hover:text-[#8A0101] transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8A0101]"></div>
+            <div className="text-[#F3ECE7] ml-3">Loading...</div>
           </div>
-        ) : cart.length === 0 && user ? (
-          <div className="text-center py-12">
-            <ShoppingCart size={80} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg mb-6">Seu carrinho está vazio</p>
+        ) : cart.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 px-6">
+            <ShoppingCart size={48} className="text-[#4B014E] mb-4" />
+            <p className="text-[#F3ECE7]/70 text-center mb-6">Your cart is empty</p>
             <button
-              onClick={() => window.history.back()}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={closeCart}
+              className="px-6 py-2 bg-[#8A0101] text-[#F3ECE7] hover:bg-[#8A0101]/80 transition-colors"
             >
-              Continuar Comprando
+              Continue Shopping
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Itens do Carrinho */}
-            <div className="lg:col-span-2">
-              <div className="space-y-4">
-                {cart.map((item) => (
-                  <div key={item.id} className="bg-white rounded-lg shadow-lg p-6">
-                    <div className="flex items-center space-x-4">
-                      <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-lg" />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{item.name}</h3>
-                        <p className="text-gray-500">R$ {item.price.toFixed(2)}</p>
-                        <div className="flex items-center mt-2">
-                          <button
-                            onClick={() => {
-                              const newQuantity = Math.max(1, item.quantity - 1);
-                              const updatedCart = cart.map(cartItem =>
-                                cartItem.id === item.id ? { ...cartItem, quantity: newQuantity } : cartItem
-                              );
-                              setCart(updatedCart);
-
-                              if (user) {
-                                setDoc(doc(db, 'carts', user.uid), { items: updatedCart }, { merge: true });
-                              } else {
-                                localStorage.setItem('guestCart', JSON.stringify(updatedCart));
-                              }
-
-                              // Atualizar quantidade no Shopify
-                              updateQuantityInShopify(item, newQuantity);
-                            }}
-                            className="text-gray-500 hover:text-red-500"
-                          >
-                            <Minus size={16} />
-                          </button>
-                          <span className="mx-2 font-medium">{item.quantity}</span>
-                          <button
-                            onClick={() => {
-                              const newQuantity = item.quantity + 1;
-                              const updatedCart = cart.map(cartItem =>
-                                cartItem.id === item.id ? { ...cartItem, quantity: newQuantity } : cartItem
-                              );
-                              setCart(updatedCart);
-
-                              if (user) {
-                                setDoc(doc(db, 'carts', user.uid), { items: updatedCart }, { merge: true });
-                              } else {
-                                localStorage.setItem('guestCart', JSON.stringify(updatedCart));
-                              }
-
-                              // Atualizar quantidade no Shopify
-                              updateQuantityInShopify(item, newQuantity);
-                            }}
-                            className="text-gray-500 hover:text-green-500"
-                          >
-                            <Plus size={16} />
-                          </button>
-                        </div>
+          <div className="flex flex-col h-90">
+            {/* Cart Items */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {cart.map((item) => (
+                <div key={item.id} className="bg-[#F3ECE7]/5 p-4 border border-[#4B014E]/20 transition-all duration-200">
+                  <div className="flex gap-4">
+                    <img 
+                      src={item.image} 
+                      alt={item.name}
+                      className="w-16 h-16 object-cover bg-[#4B014E]/10"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-[#F3ECE7] font-medium text-sm truncate">
+                        {item.name}
+                      </h3>
+                      <p className="text-[#F3ECE7]/70 text-sm">M</p>
+                      <p className="text-[#F3ECE7] font-bold text-sm">
+                        $ {item.price.toFixed(2)}
+                      </p>
+                      
+                      {/* Quantity Controls */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() => updateQuantity(item, Math.max(1, item.quantity - 1))}
+                          className="w-6 h-6 bg-[#4B014E]/20 text-[#F3ECE7] flex items-center justify-center hover:bg-[#4B014E]/40 transition-colors"
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <span className="text-[#F3ECE7] text-sm min-w-[20px] text-center font-medium">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item, item.quantity + 1)}
+                          className="w-6 h-6 bg-[#4B014E]/20 text-[#F3ECE7] flex items-center justify-center hover:bg-[#4B014E]/40 transition-colors"
+                        >
+                          <Plus size={12} />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => removeItem(item)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={20} />
-                      </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Resumo do Pedido */}
-            <div>
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h3 className="font-bold text-lg mb-4">Resumo do Pedido</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>$ {cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Frete</span>
-                    <span>Grátis</span>
-                  </div>
-                  <hr />
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Total</span>
-                    <span>$ {cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</span>
+                    <button
+                      onClick={() => removeItem(item)}
+                      className="text-[#8A0101] hover:text-[#8A0101]/70 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={handleCheckout}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors mt-6"
-                >
-                  Finalizar Compra
-                </button>
+              ))}
+            </div>
+
+            <div className="p-6 border-t border-[#8A0101]/20">
+              {/* Totals */}
+              <div className="space-y-2 mb-6">
+                <div className="flex justify-between text-[#F3ECE7] text-sm">
+                  <span>SUBTOTAL</span>
+                  <span className="font-medium">$ {subtotal.toFixed(2)}</span>
+                </div>
+                <div className="text-xs text-[#F3ECE7]/70">
+                  Shipping & taxes calculated at checkout
+                </div>
+              </div>
+
+              {/* Checkout Button */}
+              <button
+                onClick={handleCheckout}
+                className="w-full bg-[#F3ECE7] text-[#1C1C1C] py-3 font-bold hover:bg-[#F3ECE7]/90 transition-colors"
+              >
+                CHECK OUT
+              </button>
+
+              {/* Payment Icons */}
+              <div className="flex items-center justify-center gap-2 mt-4 text-xs text-[#F3ECE7]/50">
+                <Shield size={12} />
+                <span>Secure payments</span>
+                <span>•</span>
+                <span>Fast delivery</span>
               </div>
             </div>
           </div>
@@ -344,4 +429,4 @@ const Cart = () => {
   );
 };
 
-export default Cart;
+export default CartModal;

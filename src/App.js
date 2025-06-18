@@ -5,7 +5,8 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
-import Cart from "./pages/Cart";
+import CartModal from "./pages/Cart";
+import { CartProvider } from './hooks/useCart';
 import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
 import Contact from "./pages/Contact";
@@ -50,6 +51,7 @@ const App = () => {
   };
 
   return (
+  <CartProvider>
     <Router>
       <Analytics />
       <Header
@@ -78,16 +80,6 @@ const App = () => {
             element={<ProductDetail />} 
           />
           <Route
-            path="/cart"
-            element={
-              <Cart
-                cart={cart}
-                onRemoveItem={removeFromCart}
-                onCheckout={checkout}
-              />
-            }
-          />
-          <Route
             path="/checkout"
             element={<Checkout setCurrentPage={setCurrentPage} />}
           />
@@ -100,9 +92,11 @@ const App = () => {
             element={<Contact />}
           />
         </Routes>
+        <CartModal />
       </main>
       <Footer />
     </Router>
+  </CartProvider>
   );
 };
 
