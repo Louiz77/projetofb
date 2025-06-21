@@ -99,16 +99,14 @@ const ProductDetail = () => {
           const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
           const existingItemIndex = guestCart.findIndex((i) => i.id === item.id);
 
-  if (existingItemIndex !== -1) {
-    guestCart[existingItemIndex].quantity += item.quantity;
-  } else {
-    guestCart.push(item);
-  }
+        if (existingItemIndex !== -1) {
+          guestCart[existingItemIndex].quantity += item.quantity;
+        } else {
+          guestCart.push(item);
+        }
 
-  localStorage.setItem('guestCart', JSON.stringify(guestCart));
-}
-
-
+        localStorage.setItem('guestCart', JSON.stringify(guestCart));
+      }
         alert("Item adicionado ao carrinho!");
       } else {
         alert("Falha ao adicionar ao carrinho. Tente novamente.");

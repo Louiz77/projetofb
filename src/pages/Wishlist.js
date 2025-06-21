@@ -24,46 +24,7 @@ const Wishlist = () => {
           const wishlistSnap = await getDoc(wishlistRef);
           if (wishlistSnap.exists()) {
             const items = wishlistSnap.data().items || [];
-            const updatedItems = await Promise.all(
-              items.map(async (item) => {
-                // Se o item tiver ID de produto, busque a variante padrão
-                if (item.id.startsWith("gid://shopify/Product/")) {
-                  const { data } = await client.query({
-                    query: gql`
-                      query ($productId: ID!) {
-                        product(id: $productId) {
-                          id
-                          title
-                          variants(first: 1) {
-                            edges {
-                              node {
-                                id
-                                price {
-                                  amount
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    `,
-                    variables: { productId: item.id },
-                  });
-
-                  const variantId = data.product.variants.edges[0]?.node?.id;
-                  if (variantId) {
-                    return {
-                      ...item,
-                      id: variantId, // Substitui o ID do produto pelo da variante
-                      price: parseFloat(data.product.variants.edges[0].node.price.amount),
-                    };
-                  }
-                  return item;
-                }
-                return item;
-              })
-            );
-            setWishlistItems(updatedItems);
+            setWishlistItems(items);
           } else {
             setWishlistItems([]);
           }
@@ -125,8 +86,8 @@ const Wishlist = () => {
     return cartId;
   };
   
-  // Função para adicionar/remover da wishlist
-  const toggleWishlist = async (variantId) => {
+  // Função para remover da wishlist - CORRIGIDA
+  const removeFromWishlist = async (itemId) => {
     try {
       const user = auth.currentUser;
       if (user) {
@@ -134,105 +95,24 @@ const Wishlist = () => {
         const wishlistSnap = await getDoc(wishlistRef);
         const existingItems = wishlistSnap.exists() ? wishlistSnap.data().items || [] : [];
 
-        // Buscar dados completos do produto
-        const { data } = await client.query({
-          query: gql`
-            query ($variantId: ID!) {
-              productVariant(id: $variantId) {
-                id
-                title
-                price {
-                  amount
-                }
-                product {
-                  title
-                  images(first: 1) {
-                    edges {
-                      node {
-                        url
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          `,
-          variables: { variantId },
-        });
-
-        const variant = data.productVariant;
-        if (!variant) {
-          alert("Produto não encontrado.");
-          return;
-        }
-
-        const isAlreadyInWishlist = existingItems.some(item => item.id === variant.id);
-
-        const updatedItems = isAlreadyInWishlist
-          ? existingItems.filter(item => item.id !== variant.id)
-          : [...existingItems, {
-              id: variant.id,
-              name: variant.title,
-              price: parseFloat(variant.price.amount),
-              image: variant.product?.images?.edges[0]?.node?.url || "https://via.placeholder.com/400x400", 
-            }];
-
+        const updatedItems = existingItems.filter(item => item.id !== itemId);
         await setDoc(wishlistRef, { items: updatedItems }, { merge: true });
-
-        alert(isAlreadyInWishlist ? "Removido da lista de desejos" : "Adicionado à lista de desejos");
+        
+        // Atualizar estado local imediatamente
+        setWishlistItems(updatedItems);
+        alert("Removido da lista de desejos");
       } else {
         const guestWishlist = JSON.parse(localStorage.getItem('wishlistItems') || '[]');
-
-        const { data } = await client.query({
-          query: gql`
-            query ($variantId: ID!) {
-              productVariant(id: $variantId) {
-                id
-                title
-                price {
-                  amount
-                }
-                product {
-                  images(first: 1) {
-                    edges {
-                      node {
-                        url
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          `,
-          variables: { variantId },
-        });
-
-        const variant = data.productVariant;
-        if (!variant) {
-          alert("Produto não encontrado.");
-          return;
-        }
-
-        const isAlreadyInWishlist = guestWishlist.some(item => item.id === variant.id);
-
-        if (isAlreadyInWishlist) {
-          const updatedItems = guestWishlist.filter(item => item.id !== variant.id);
-          localStorage.setItem('wishlistItems', JSON.stringify(updatedItems));
-        } else {
-          guestWishlist.push({
-            id: variant.id,
-            name: variant.title,
-            price: parseFloat(variant.price.amount),
-            image: variant.product?.images?.edges[0]?.node?.url || "https://via.placeholder.com/400x400", 
-          });
-          localStorage.setItem('wishlistItems', JSON.stringify(guestWishlist));
-        }
-
-        alert(isAlreadyInWishlist ? "Removido da lista de desejos" : "Adicionado à lista de desejos");
+        const updatedItems = guestWishlist.filter(item => item.id !== itemId);
+        localStorage.setItem('wishlistItems', JSON.stringify(updatedItems));
+        
+        // Atualizar estado local imediatamente
+        setWishlistItems(updatedItems);
+        alert("Removido da lista de desejos");
       }
     } catch (error) {
-      console.error("Erro ao gerenciar wishlist:", error);
-      alert("Falha ao atualizar a lista de desejos. Tente novamente.");
+      console.error("Erro ao remover da wishlist:", error);
+      alert("Falha ao remover da lista de desejos. Tente novamente.");
     }
   };
 
@@ -241,8 +121,8 @@ const Wishlist = () => {
     try {
       const cartId = localStorage.getItem('shopifyCartId') || (await getOrCreateCartId());
 
-      // Garantir que o merchandiseId é válido
-      if (!item.id || !item.id.startsWith("gid://shopify/ProductVariant/")) {
+      // Validar que o merchandiseId é um variantId válido
+      if (!item.variantId || !item.variantId.startsWith("gid://shopify/ProductVariant/")) {
         alert("ID da variante inválido. Não foi possível adicionar ao carrinho.");
         return;
       }
@@ -261,25 +141,51 @@ const Wishlist = () => {
           cartId,
           lines: [
             {
-              merchandiseId: item.id,
-              quantity: item.quantity !== undefined ? item.quantity : 1, // ✅ Fallback para 1
+              merchandiseId: item.variantId, // ✅ Usa o variantId
+              quantity: item.quantity || 1,
             },
           ],
         },
       });
 
-      // Atualizar carrinho local
+      // Atualizar carrinho local com estrutura padronizada
+      const cartItem = {
+        id: item.variantId,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: item.quantity || 1,
+      };
+
+      // Lógica para atualizar carrinho no Firebase ou localStorage
       const user = auth.currentUser;
       if (user) {
         const cartRef = doc(db, 'carts', user.uid);
         const cartSnap = await getDoc(cartRef);
         const existingItems = cartSnap.exists() ? cartSnap.data().items || [] : [];
-        const updatedItems = [...existingItems, { ...item, quantity: item.quantity !== undefined ? item.quantity : 1 }];
+
+        const isAlreadyInCart = existingItems.some(cartItem => cartItem.id === cartItem.id);
+        const updatedItems = isAlreadyInCart
+          ? existingItems.map(cartItem => 
+              cartItem.id === cartItem.id 
+                ? { ...cartItem, quantity: cartItem.quantity + 1 } 
+                : cartItem
+            )
+          : [...existingItems, cartItem];
+
         await setDoc(cartRef, { items: updatedItems }, { merge: true });
       } else {
         const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-        guestCart.push({ ...item, quantity: item.quantity !== undefined ? item.quantity : 1 });
-        localStorage.setItem('guestCart', JSON.stringify(guestCart));
+        const isAlreadyInCart = guestCart.some(cartItem => cartItem.id === cartItem.id);
+        const updatedItems = isAlreadyInCart
+          ? guestCart.map(cartItem => 
+              cartItem.id === cartItem.id 
+                ? { ...cartItem, quantity: cartItem.quantity + 1 } 
+                : cartItem
+            )
+          : [...guestCart, cartItem];
+
+        localStorage.setItem('guestCart', JSON.stringify(updatedItems));
       }
 
       alert(`${item.name} adicionado ao carrinho`);
@@ -291,7 +197,20 @@ const Wishlist = () => {
 
   // Função para compartilhar wishlist
   const shareWishlist = () => {
-    alert("Link da wishlist copiado!");
+    if (navigator.share) {
+      navigator.share({
+        title: 'Minha Wishlist',
+        text: 'Confira minha lista de desejos!',
+        url: window.location.href,
+      });
+    } else {
+      // Fallback para copiar para área de transferência
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        alert("Link da wishlist copiado!");
+      }).catch(() => {
+        alert("Não foi possível copiar o link.");
+      });
+    }
   };
 
   // Filtrar e ordenar itens
@@ -450,18 +369,20 @@ const Wishlist = () => {
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg text-white">{item.name}</h3>
                         <p className="text-gray-400">R$ {item.price.toFixed(2)}</p>
-                        <button
-                          onClick={() => toggleWishlist(item)}
-                          className="mt-2 p-2 bg-gray-700 text-red-400 hover:bg-gray-600 rounded-full transition-colors"
-                        >
-                          <Heart size={18} fill="currentColor" />
-                        </button>
-                        <button
-                          onClick={() => addToCart(item)}
-                          className="bg-red-800 ml-5 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
-                        >
-                          Adicionar ao Carrinho
-                        </button>
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            onClick={() => removeFromWishlist(item.id)}
+                            className="p-2 bg-gray-700 text-red-400 hover:bg-gray-600 rounded-full transition-colors"
+                          >
+                            <Heart size={18} fill="currentColor" />
+                          </button>
+                          <button
+                            onClick={() => addToCart(item)}
+                            className="bg-red-800 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+                          >
+                            Adicionar ao Carrinho
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -489,7 +410,7 @@ const Wishlist = () => {
                           Adicionar ao Carrinho
                         </button>
                         <button
-                          onClick={() => toggleWishlist(item)}
+                          onClick={() => removeFromWishlist(item.id)}
                           className="p-2 bg-gray-700 text-red-400 hover:bg-gray-600 rounded-full transition-colors"
                         >
                           <Heart size={18} fill="currentColor" />
