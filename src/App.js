@@ -10,6 +10,7 @@ import { CartProvider } from './hooks/useCart';
 import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
 import Contact from "./pages/Contact";
+import WishlistPage from "./pages/Wishlist";
 import { Analytics } from "@vercel/analytics/react"
 
 const App = () => {
@@ -90,6 +91,10 @@ const App = () => {
           <Route
             path="/contact"
             element={<Contact />}
+          />
+          <Route
+            path="/wishlist"
+            element={<WishlistPage />}
           />
         </Routes>
         <CartModal />

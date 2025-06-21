@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { gql } from '@apollo/client';
 import ProductCard from '../components/ProductCard';
+import addWishlist from '../hooks/addWishlist';
 import { loadDevMessages, loadErrorMessages } from "@apollo/client/dev";
 
 // Carrega mensagens de erro apenas em ambiente de desenvolvimento
@@ -48,23 +49,17 @@ const ProductsPage = () => {
   const { loading, error, data } = useQuery(GET_PRODUCTS);
 
   const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
 
   const addToCart = (product) => {
     setCart([...cart, product]);
     console.log('Adicionado ao carrinho:', product);
   };
 
-  const addToWishlist = (product) => {
-    setWishlist([...wishlist, product]);
-    console.log('Adicionado à wishlist:', product);
-  };
-
   if (loading) return <div>Carregando produtos...</div>;
   if (error) return <div>Erro ao carregar produtos: {error.message}</div>;
 
   const products = data.products.edges.map(edge => edge.node);
-    console.log(products)
+
   return (
     <div className="py-8">
       <div className="container mx-auto px-4">
@@ -80,7 +75,7 @@ const ProductsPage = () => {
               }}
               onViewDetails={() => navigate(`/product/${product.id}`)}
               onAddToCart={addToCart}
-              onAddToWishlist={addToWishlist}
+              onAddToWishlist={addWishlist.addToWishlist}
             />
           ))}
         </div>

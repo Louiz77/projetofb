@@ -296,22 +296,6 @@ const Home = ({ setCurrentPage }) => {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Produtos em Destaque</h2>
           <div className="">
-            {/*<ProductCard
-              product={{
-                id: 1,
-                name: "Camisa",
-                price: 199.99,
-                originalPrice: 499.99,
-                category: "tecnologia",
-                image:
-                  "https://images.unsplash.com/photo-1618453292459-53424b66bb6a?q=80&w=1664&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                rating: 4.8,
-                reviews: 245,
-              }}
-              onViewDetails={() => handleNavigation(`product/1`)}
-              onAddToCart={() => console.log("Adicionado ao carrinho")}
-              onAddToWishlist={() => console.log("Adicionado à wishlist")}
-            />*/}
             <ProductsPage/>
           </div>
         </div>

@@ -236,7 +236,9 @@ const Header = ({ searchQuery, setSearchQuery }) => {
             <div className="flex items-center space-x-4">
 
               {/* Wishlist */}
-              <button className="p-2 hover:text-red-500 transition-colors duration-300">
+              <button 
+                className="p-2 hover:text-red-500 transition-colors duration-300"
+                onClick={() => handleNavigation("wishlist")}>
                 <Heart size={20} />
               </button>
 
