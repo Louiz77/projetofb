@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, User, Mail, Calendar, LogOut, Skull } from 'lucide-react';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from '../client/firebaseConfig';
 
 const Account = () => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -70,6 +72,10 @@ const Account = () => {
     } catch (error) {
       alert(`Erro ao sair: ${error.message}`);
     }
+  };
+
+  const handleNavigation = (page) => {
+    navigate(`/${page}`);
   };
 
   const formatDate = (dateString) => {
@@ -342,6 +348,13 @@ const Account = () => {
               </div>
             </div>
           )}
+          <div
+            onClick={() => handleNavigation("faq")}
+            className="group mt-10 bg-red-800 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-800/50 flex items-center space-x-2 border border-red-600"
+            >
+            <LogOut className="h-4 w-4" />
+            <span className="font-medium">FAQ</span>
+          </div>
         </div>
       </div>
     </div>

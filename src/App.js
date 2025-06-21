@@ -7,8 +7,8 @@ import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import CartModal from "./pages/Cart";
 import { CartProvider } from './hooks/useCart';
-import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
+import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
 import WishlistPage from "./pages/Wishlist";
 import { Analytics } from "@vercel/analytics/react"
@@ -81,8 +81,8 @@ const App = () => {
             element={<ProductDetail />} 
           />
           <Route
-            path="/checkout"
-            element={<Checkout setCurrentPage={setCurrentPage} />}
+            path="/faq"
+            element={<FAQ/>}
           />
           <Route
             path="/account"
