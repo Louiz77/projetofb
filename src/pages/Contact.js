@@ -16,15 +16,15 @@ const Contact = () => {
   const [submitStatus, setSubmitStatus] = useState(null);
 
   const subjectOptions = [
-    { value: '', label: 'Selecione um assunto' },
-    { value: 'pedido', label: 'Dúvidas sobre pedido' },
-    { value: 'produto', label: 'Informações sobre produto' },
-    { value: 'troca', label: 'Troca ou devolução' },
-    { value: 'pagamento', label: 'Problemas com pagamento' },
-    { value: 'entrega', label: 'Questões de entrega' },
-    { value: 'sugestao', label: 'Sugestões' },
-    { value: 'parceria', label: 'Parcerias e colaborações' },
-    { value: 'outro', label: 'Outros assuntos' }
+    { value: '', label: 'Select a subject' },
+    { value: 'pedido', label: 'Order inquiries' },
+    { value: 'produto', label: 'Product information' },
+    { value: 'troca', label: 'Return or exchange' },
+    { value: 'pagamento', label: 'Payment issues' },
+    { value: 'entrega', label: 'Shipping questions' },
+    { value: 'sugestao', label: 'Suggestions' },
+    { value: 'parceria', label: 'Partnerships & collaborations' },
+    { value: 'outro', label: 'Other topics' }
   ];
 
   const handleInputChange = (e) => {
@@ -48,50 +48,45 @@ const Contact = () => {
   };
 
   const handleSubmit = async (e) => {
-      e.preventDefault();
-      setIsSubmitting(true);
-      setSubmitStatus(null);
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus(null);
 
-      try {
-        // Configurações do EmailJS
-        const templateParams = {
-          from_name: formData.fullName,
-          from_email: formData.email,
-          subject: formData.subject,
-          message: [formData.message, "", formData.fullName, "", formData.email],
-          to_email: 'vanadusco@gmail.com',
-        };
+    try {
+      const templateParams = {
+        from_name: formData.fullName,
+        from_email: formData.email,
+        subject: formData.subject,
+        message: [formData.message, "", formData.fullName, "", formData.email],
+        to_email: 'vanadusco@gmail.com',
+      };
 
-        await emailjs.send(
-          'service_6tklno8', //  Service ID
-          'template_2vz1vnm', //  Template ID
-          templateParams,
-          'e2mKhZm5a6Rsr-_03' // Public Key
-        );
+      await emailjs.send(
+        'service_6tklno8',
+        'template_2vz1vnm',
+        templateParams,
+        'e2mKhZm5a6Rsr-_03'
+      );
 
-        // Resetar formulário
-        setFormData({
-          fullName: '',
-          email: '',
-          subject: '',
-          message: '',
-          files: [],
-        });
+      setFormData({
+        fullName: '',
+        email: '',
+        subject: '',
+        message: '',
+        files: [],
+      });
 
-        // Resetar input de arquivo
-        const fileInput = document.getElementById('file-input');
-        if (fileInput) fileInput.value = '';
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) fileInput.value = '';
 
-        // Exibir sucesso
-        setSubmitStatus('success');
-      } catch (error) {
-        console.error('Erro ao enviar mensagem:', error);
-        setSubmitStatus('error');
-      } finally {
-        setIsSubmitting(false);
-      }
+      setSubmitStatus('success');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-purple-900 py-8 px-4">
@@ -102,10 +97,10 @@ const Contact = () => {
             <Skull className="h-10 w-10 text-white" />
           </div>
           <h1 className="text-5xl font-bold bg-gradient-to-r from-red-400 to-purple-400 bg-clip-text text-transparent mb-4">
-            FALE CONOSCO
+            CONTACT US
           </h1>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            For the bold and untamed - Estamos aqui para ajudar você com qualquer dúvida
+            For the bold and untamed — We're here to help with any questions
           </p>
         </div>
 
@@ -114,18 +109,18 @@ const Contact = () => {
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-black/50 backdrop-blur-sm border border-red-800/30 rounded-lg p-6 shadow-2xl">
               <h3 className="text-xl font-bold text-red-400 mb-6 uppercase tracking-wide">
-                Informações de Contato
+                Contact Information
               </h3>
-              
+
               <div className="space-y-4">
                 <div className="flex items-start space-x-4">
                   <div className="bg-red-800/20 p-3 rounded-lg">
                     <Mail className="h-5 w-5 text-red-400" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-white">E-mail</h4>
+                    <h4 className="font-medium text-white">Email</h4>
                     <p className="text-gray-300 text-sm">vanadusco@gmail.com</p>
-                    <p className="text-gray-500 text-xs">Resposta em até 24h</p>
+                    <p className="text-gray-500 text-xs">Response within 24h</p>
                   </div>
                 </div>
 
@@ -136,7 +131,7 @@ const Contact = () => {
                   <div>
                     <h4 className="font-medium text-white">WhatsApp</h4>
                     <p className="text-gray-300 text-sm">(19) 99999-9999</p>
-                    <p className="text-gray-500 text-xs">Seg-Sex: 9h às 18h</p>
+                    <p className="text-gray-500 text-xs">Mon–Fri: 9am to 6pm</p>
                   </div>
                 </div>
 
@@ -147,7 +142,7 @@ const Contact = () => {
                   <div>
                     <h4 className="font-medium text-white">Instagram</h4>
                     <p className="text-gray-300 text-sm">@vanadus.oficial</p>
-                    <p className="text-gray-500 text-xs">DM sempre aberto</p>
+                    <p className="text-gray-500 text-xs">DMs always open</p>
                   </div>
                 </div>
 
@@ -156,9 +151,9 @@ const Contact = () => {
                     <Clock className="h-5 w-5 text-purple-400" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-white">Horário</h4>
-                    <p className="text-gray-300 text-sm">Segunda a Sexta</p>
-                    <p className="text-gray-500 text-xs">9h às 18h (Brasília)</p>
+                    <h4 className="font-medium text-white">Hours</h4>
+                    <p className="text-gray-300 text-sm">Monday to Friday</p>
+                    <p className="text-gray-500 text-xs">9am to 6pm (Brasília time)</p>
                   </div>
                 </div>
               </div>
@@ -166,10 +161,10 @@ const Contact = () => {
 
             <div className="bg-black/50 backdrop-blur-sm border border-red-800/30 rounded-lg p-6 shadow-2xl">
               <h3 className="text-xl font-bold text-purple-400 mb-4 uppercase tracking-wide">
-                Dica Rápida
+                Quick Tip
               </h3>
               <p className="text-gray-300 text-sm leading-relaxed">
-                Para agilizar o atendimento, tenha em mãos o número do seu pedido ou as informações relevantes sobre sua dúvida. Isso nos ajuda a resolver sua questão mais rapidamente.
+                To speed up support, have your order number or relevant info ready. This helps us resolve your issue faster.
               </p>
             </div>
           </div>
@@ -179,10 +174,10 @@ const Contact = () => {
             <div className="bg-black/50 backdrop-blur-sm border border-red-800/30 rounded-lg shadow-2xl">
               <div className="p-6 border-b border-red-800/30">
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  Envie sua mensagem
+                  Send Us a Message
                 </h2>
                 <p className="text-gray-400">
-                  Preencha o formulário abaixo e responderemos o mais breve possível
+                  Fill out the form below and we'll get back to you as soon as possible
                 </p>
               </div>
 
@@ -190,7 +185,7 @@ const Contact = () => {
                 {/* Full Name */}
                 <div>
                   <label className="block text-red-400 text-sm font-bold mb-2 uppercase tracking-wide">
-                    Nome Completo *
+                    Full Name *
                   </label>
                   <input
                     type="text"
@@ -199,14 +194,14 @@ const Contact = () => {
                     value={formData.fullName}
                     onChange={handleInputChange}
                     className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
-                    placeholder="Seu nome completo"
+                    placeholder="Your full name"
                   />
                 </div>
 
                 {/* Email */}
                 <div>
                   <label className="block text-red-400 text-sm font-bold mb-2 uppercase tracking-wide">
-                    E-mail *
+                    Email *
                   </label>
                   <input
                     type="email"
@@ -215,14 +210,14 @@ const Contact = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
-                    placeholder="seu@email.com"
+                    placeholder="your@email.com"
                   />
                 </div>
 
                 {/* Subject */}
                 <div>
                   <label className="block text-red-400 text-sm font-bold mb-2 uppercase tracking-wide">
-                    Assunto *
+                    Subject *
                   </label>
                   <select
                     name="subject"
@@ -242,7 +237,7 @@ const Contact = () => {
                 {/* Message */}
                 <div>
                   <label className="block text-red-400 text-sm font-bold mb-2 uppercase tracking-wide">
-                    Mensagem *
+                    Message *
                   </label>
                   <textarea
                     name="message"
@@ -251,14 +246,14 @@ const Contact = () => {
                     onChange={handleInputChange}
                     rows="6"
                     className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300 resize-none"
-                    placeholder="Descreva sua dúvida ou mensagem detalhadamente..."
+                    placeholder="Describe your issue or message in detail..."
                   />
                 </div>
 
                 {/* File Upload */}
                 <div>
                   <label className="block text-red-400 text-sm font-bold mb-2 uppercase tracking-wide">
-                    Anexar Arquivos
+                    Attach Files
                   </label>
                   <div className="relative">
                     <input
@@ -274,16 +269,16 @@ const Contact = () => {
                       className="flex items-center justify-center w-full bg-gray-800/50 border-2 border-dashed border-gray-600 rounded-lg px-4 py-6 text-gray-400 hover:border-red-500 hover:text-red-400 transition-all duration-300 cursor-pointer"
                     >
                       <Paperclip className="h-5 w-5 mr-2" />
-                      <span>Clique para anexar arquivos (máx. 10MB)</span>
+                      <span>Click to attach files (max. 10MB)</span>
                     </label>
                   </div>
                   {formData.files.length > 0 && (
                     <div className="mt-2 text-sm text-gray-400">
-                      {formData.files.length} arquivo(s) selecionado(s)
+                      {formData.files.length} file(s) selected
                     </div>
                   )}
                   <p className="text-xs text-gray-500 mt-1">
-                    Formatos aceitos: JPG, PNG, PDF, DOC, DOCX. Tamanho máximo: 10MB
+                    Accepted formats: JPG, PNG, PDF, DOC, DOCX. Max size: 10MB
                   </p>
                 </div>
 
@@ -291,14 +286,14 @@ const Contact = () => {
                 {submitStatus === 'success' && (
                   <div className="flex items-center space-x-2 text-green-400 bg-green-400/10 border border-green-400/30 rounded-lg p-3">
                     <CheckCircle className="h-5 w-5" />
-                    <span>Mensagem enviada com sucesso! Responderemos em breve.</span>
+                    <span>Message sent successfully! We’ll reply soon.</span>
                   </div>
                 )}
 
                 {submitStatus === 'error' && (
                   <div className="flex items-center space-x-2 text-red-400 bg-red-400/10 border border-red-400/30 rounded-lg p-3">
                     <AlertCircle className="h-5 w-5" />
-                    <span>Erro ao enviar mensagem. Tente novamente ou use outro meio de contato.</span>
+                    <span>Error sending message. Please try again or use another contact method.</span>
                   </div>
                 )}
 
@@ -312,25 +307,24 @@ const Contact = () => {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      <span>Enviando...</span>
+                      <span>Sending...</span>
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      <span>Enviar Mensagem</span>
+                      <span>Send Message</span>
                     </>
                   )}
                 </button>
 
                 {/* Privacy Notice */}
                 <p className="text-xs text-gray-500 text-center">
-                  Este site é protegido por reCAPTCHA e as{' '}
-                  <span className="text-red-400 hover:text-red-300 cursor-pointer">Políticas de Privacidade</span>
-                  {' '}e{' '}
-                  <span className="text-red-400 hover:text-red-300 cursor-pointer">Termos de Serviço</span>
-                  {' '}se aplicam.
+                  This site is protected by reCAPTCHA and the{' '}
+                  <span className="text-red-400 hover:text-red-300 cursor-pointer">Privacy Policy</span>
+                  {' '}and{' '}
+                  <span className="text-red-400 hover:text-red-300 cursor-pointer">Terms of Service</span>
+                  {' '}apply.
                 </p>
-                </div>
               </div>
             </div>
           </div>
@@ -340,19 +334,20 @@ const Contact = () => {
         <div className="mt-12 text-center">
           <div className="bg-black/50 backdrop-blur-sm border border-red-800/30 rounded-lg p-8 shadow-2xl">
             <h3 className="text-xl font-bold text-white mb-4">
-              Não encontrou o que procurava?
+              Didn't find what you were looking for?
             </h3>
             <p className="text-gray-400 mb-6">
-              Confira nossa seção de perguntas frequentes para respostas rápidas
+              Check our FAQ section for quick answers
             </p>
             <button 
               onClick={() => handleNavigation("faq")}
               className="bg-gradient-to-r from-purple-800 to-red-800 hover:from-purple-700 hover:to-red-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-800/50 border border-purple-600 uppercase tracking-wide">
-                Ver FAQ
+              View FAQ
             </button>
           </div>
         </div>
       </div>
+    </div>
   );
 };
 
