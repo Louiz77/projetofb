@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import emailjs from 'emailjs-com';
 import { Send, Mail, Phone, MapPin, Clock, Instagram, Skull, Paperclip, CheckCircle, AlertCircle } from 'lucide-react';
 
 const Contact = () => {
@@ -47,51 +48,50 @@ const Contact = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitStatus(null);
+      e.preventDefault();
+      setIsSubmitting(true);
+      setSubmitStatus(null);
 
-    try {
-      // Simular envio de email - em produção, você implementaria a integração com um serviço de email
-      // como EmailJS, Formspree, ou sua própria API
-      
-      // Exemplo com EmailJS (você precisaria configurar):
-      /*
-      const templateParams = {
-        from_name: formData.fullName,
-        from_email: formData.email,
-        subject: formData.subject,
-        message: formData.message,
-        to_email: 'vanadusco@gmail.com'
-      };
-      
-      await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams, 'YOUR_PUBLIC_KEY');
-      */
-      
-      // Simulação de delay de envio
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simular sucesso (em produção, isso viria da resposta da API)
-      setSubmitStatus('success');
-      setFormData({
-        fullName: '',
-        email: '',
-        subject: '',
-        message: '',
-        files: []
-      });
-      
-      // Reset file input
-      const fileInput = document.getElementById('file-input');
-      if (fileInput) fileInput.value = '';
-      
-    } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-      setSubmitStatus('error');
-    } finally {
-      setIsSubmitting(false);
-    }
+      try {
+        // Configurações do EmailJS
+        const templateParams = {
+          from_name: formData.fullName,
+          from_email: formData.email,
+          subject: formData.subject,
+          message: [formData.message, "", formData.fullName, "", formData.email],
+          to_email: 'vanadusco@gmail.com',
+        };
+
+        await emailjs.send(
+          'service_6tklno8', //  Service ID
+          'template_2vz1vnm', //  Template ID
+          templateParams,
+          'e2mKhZm5a6Rsr-_03' // Public Key
+        );
+
+        // Resetar formulário
+        setFormData({
+          fullName: '',
+          email: '',
+          subject: '',
+          message: '',
+          files: [],
+        });
+
+        // Resetar input de arquivo
+        const fileInput = document.getElementById('file-input');
+        if (fileInput) fileInput.value = '';
+
+        // Exibir sucesso
+        setSubmitStatus('success');
+      } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
+        setSubmitStatus('error');
+      } finally {
+        setIsSubmitting(false);
+      }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-purple-900 py-8 px-4">
@@ -305,6 +305,7 @@ const Contact = () => {
                 {/* Submit Button */}
                 <button
                   type="submit"
+                  onClick={handleSubmit}
                   disabled={isSubmitting}
                   className="w-full bg-gradient-to-r from-red-800 to-purple-800 hover:from-red-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-800/50 border border-red-600 uppercase tracking-wide flex items-center justify-center space-x-2"
                 >
