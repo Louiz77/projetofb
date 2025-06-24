@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import emailjs from 'emailjs-com';
-import { Send, Mail, Phone, MapPin, Clock, Instagram, Skull, Paperclip, CheckCircle, AlertCircle } from 'lucide-react';
+import { Send, Mail, Phone, Clock, Instagram, Skull, Paperclip, CheckCircle, AlertCircle } from 'lucide-react';
 
 const Contact = () => {
   const navigate = useNavigate();
@@ -259,6 +259,7 @@ const Contact = () => {
                     <input
                       type="file"
                       id="file-input"
+                      name='template_2vz1vnm'
                       multiple
                       onChange={handleFileChange}
                       className="hidden"

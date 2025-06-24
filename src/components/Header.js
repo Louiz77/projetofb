@@ -8,6 +8,8 @@ const Header = ({ searchQuery, setSearchQuery }) => {
   const navigate = useNavigate();
   const { openCart } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenOpen, setMobileMenOpen] = useState(false);
+  const [mobileWomenOpen, setMobileWomenOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [megaMenuOpen, setMegaMenuOpen] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -197,34 +199,141 @@ const Header = ({ searchQuery, setSearchQuery }) => {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-8">
-              <div 
+              {/* HOMEM */}
+              <div
                 className="relative group"
-                onMouseEnter={() => setMegaMenuOpen('men')}
+                onMouseEnter={() => setMegaMenuOpen("men")}
                 onMouseLeave={() => setMegaMenuOpen(null)}
               >
                 <button className="text-sm font-medium tracking-wider hover:text-red-500 transition-colors duration-300 py-2">
                   HOMEM
                 </button>
+
+                {megaMenuOpen === "men" && (
+                  <div className="fixed left-0 w-full bg-black border-t border-gray-800 shadow-xl z-50">
+                    <div className="container mx-auto px-4 py-8">
+                      <div className="grid grid-cols-6 gap-8">
+                        {/* Imagem */}
+                        <div className="col-span-2">
+                          <div className="bg-gray-900 h-64 flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="text-6xl mb-4">🖤</div>
+                              <div className="text-lg font-bold tracking-wider">
+                                {menuCategories["men"]?.title}
+                              </div>
+                              <div className="text-sm text-gray-400 mt-2">Nova Coleção</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Itens */}
+                        <div className="col-span-4 grid grid-cols-3 gap-6">
+                          {menuCategories["men"]?.items.map((category, index) => (
+                            <div key={index} className="space-y-3">
+                              <h3 className="font-bold text-sm tracking-wider text-red-400 border-b border-gray-700 pb-2">
+                                {category.name}
+                              </h3>
+                              <ul className="space-y-2">
+                                {category.subcategories.map((item, subIndex) => (
+                                  <li key={subIndex}>
+                                    <button 
+                                    className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block"
+                                    onClick={() => {
+                                    handleNavigation(`men/${item.toLowerCase()}`);
+                                    }}
+                                    >
+                                      {item}
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-8 pt-6 border-t border-gray-800 text-center">
+                        <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300">
+                          VER TODAS AS PEÇAS {menuCategories["men"]?.title}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div 
+              {/* MULHER */}
+              <div
                 className="relative group"
-                onMouseEnter={() => setMegaMenuOpen('women')}
+                onMouseEnter={() => setMegaMenuOpen("women")}
                 onMouseLeave={() => setMegaMenuOpen(null)}
               >
                 <button className="text-sm font-medium tracking-wider hover:text-red-500 transition-colors duration-300 py-2">
                   MULHER
                 </button>
+
+                {megaMenuOpen === "women" && (
+                  <div className="fixed left-0 w-full bg-black border-t border-gray-800 shadow-xl z-50">
+                    <div className="container mx-auto px-4 py-8">
+                      <div className="grid grid-cols-6 gap-8">
+                        {/* Imagem */}
+                        <div className="col-span-2">
+                          <div className="bg-gray-900 h-64 flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="text-6xl mb-4">🖤</div>
+                              <div className="text-lg font-bold tracking-wider">
+                                {menuCategories["women"]?.title}
+                              </div>
+                              <div className="text-sm text-gray-400 mt-2">Nova Coleção</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Itens */}
+                        <div className="col-span-4 grid grid-cols-3 gap-6">
+                          {menuCategories["women"]?.items.map((category, index) => (
+                            <div key={index} className="space-y-3">
+                              <h3 className="font-bold text-sm tracking-wider text-red-400 border-b border-gray-700 pb-2">
+                                {category.name}
+                              </h3>
+                              <ul className="space-y-2">
+                                {category.subcategories.map((item, subIndex) => (
+                                  <li key={subIndex}>
+                                    <button 
+                                    className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block"
+                                    onClick={() => {
+                                    handleNavigation(`women/${item.toLowerCase()}`);
+                                    }}
+                                    >
+                                      {item}
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-8 pt-6 border-t border-gray-800 text-center">
+                        <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300">
+                          VER TODAS AS PEÇAS {menuCategories["women"]?.title}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <button 
+              {/* Links fixos */}
+              <button
                 onClick={() => handleNavigation("collections")}
                 className="text-sm font-medium tracking-wider hover:text-red-500 transition-colors duration-300"
               >
                 COLEÇÕES
               </button>
 
-              <button 
+              <button
                 onClick={() => handleNavigation("sale")}
                 className="text-sm font-medium tracking-wider hover:text-purple-500 transition-colors duration-300 text-red-500"
               >
@@ -266,79 +375,14 @@ const Header = ({ searchQuery, setSearchQuery }) => {
           </div>
         </div>
 
-        {/* Mega Menu */}
-        {megaMenuOpen && (
-          <div 
-            className="absolute left-0 w-full bg-black border-t border-gray-800 shadow-xl"
-            onMouseEnter={() => setMegaMenuOpen(megaMenuOpen)}
-            onMouseLeave={() => setMegaMenuOpen(null)}
-          >
-            <div className="container mx-auto px-4 py-8">
-              <div className="grid grid-cols-6 gap-8">
-                {/* Category Image */}
-                <div className="col-span-2">
-                  <div className="bg-gray-900 h-64 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-6xl mb-4">🖤</div>
-                      <div className="text-lg font-bold tracking-wider">
-                        {menuCategories[megaMenuOpen]?.title}
-                      </div>
-                      <div className="text-sm text-gray-400 mt-2">
-                        Nova Coleção
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Menu Items */}
-                <div className="col-span-4 grid grid-cols-3 gap-6">
-                  {menuCategories[megaMenuOpen]?.items.map((category, index) => (
-                    <div key={index} className="space-y-3">
-                      <h3 className="font-bold text-sm tracking-wider text-red-400 border-b border-gray-700 pb-2">
-                        {category.name}
-                      </h3>
-                      <ul className="space-y-2">
-                        {category.subcategories.map((item, subIndex) => (
-                          <li key={subIndex}>
-                            <button className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block">
-                              {item}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Bottom CTA */}
-              <div className="mt-8 pt-6 border-t border-gray-800 text-center">
-                <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300">
-                  VER TODAS AS PEÇAS {menuCategories[megaMenuOpen]?.title}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden bg-black border-t border-gray-800">
             <div className="px-4 py-6 space-y-6">
-              {/* Mobile Search */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Buscar produtos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-none px-4 py-3 text-sm focus:outline-none focus:border-red-500"
-                />
-                <Search className="absolute right-3 top-3.5 text-gray-400" size={16} />
-              </div>
-
               {/* Mobile Menu Items */}
               <div className="space-y-4">
+
+                {/* HOME */}
                 <button
                   onClick={() => {
                     handleNavigation("");
@@ -348,24 +392,82 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 >
                   HOME
                 </button>
-                <button
-                  onClick={() => {
-                    handleNavigation("men");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left text-white hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
-                >
-                  HOMEM
-                </button>
-                <button
-                  onClick={() => {
-                    handleNavigation("women");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left text-white hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
-                >
-                  MULHER
-                </button>
+
+                {/* HOMEM - Accordion */}
+                <div>
+                  <button
+                    onClick={() => setMobileMenOpen(!mobileMenOpen)}
+                    className="flex justify-between items-center w-full text-left text-white hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
+                  >
+                    HOMEM
+                    <span>{mobileMenOpen ? "−" : "+"}</span>
+                  </button>
+                  {mobileMenOpen && (
+                    <div className="ml-4 mt-2 space-y-4">
+                      {menuCategories["men"]?.items.map((category, index) => (
+                        <div key={index}>
+                          <div className="text-sm font-semibold text-red-400">
+                            {category.name}
+                          </div>
+                          <ul className="mt-1 space-y-1">
+                            {category.subcategories.map((sub, subIndex) => (
+                              <li key={subIndex}>
+                                <button
+                                  onClick={() => {
+                                    handleNavigation(`men/${sub.toLowerCase()}`);
+                                    setMobileMenuOpen(false);
+                                  }}
+                                  className="text-sm text-gray-300 hover:text-white block"
+                                >
+                                  {sub}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* MULHER - Accordion */}
+                <div>
+                  <button
+                    onClick={() => setMobileWomenOpen(!mobileWomenOpen)}
+                    className="flex justify-between items-center w-full text-left text-white hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
+                  >
+                    MULHER
+                    <span>{mobileWomenOpen ? "−" : "+"}</span>
+                  </button>
+                  {mobileWomenOpen && (
+                    <div className="ml-4 mt-2 space-y-4">
+                      {menuCategories["women"]?.items.map((category, index) => (
+                        <div key={index}>
+                          <div className="text-sm font-semibold text-red-400">
+                            {category.name}
+                          </div>
+                          <ul className="mt-1 space-y-1">
+                            {category.subcategories.map((sub, subIndex) => (
+                              <li key={subIndex}>
+                                <button
+                                  onClick={() => {
+                                    handleNavigation(`women/${sub.toLowerCase()}`);
+                                    setMobileMenuOpen(false);
+                                  }}
+                                  className="text-sm text-gray-300 hover:text-white block"
+                                >
+                                  {sub}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* COLEÇÕES */}
                 <button
                   onClick={() => {
                     handleNavigation("collections");
@@ -375,6 +477,8 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 >
                   COLEÇÕES
                 </button>
+
+                {/* SALE */}
                 <button
                   onClick={() => {
                     handleNavigation("sale");
@@ -383,15 +487,6 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                   className="block w-full text-left text-red-400 hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
                 >
                   SALE
-                </button>
-                <button
-                  onClick={() => {
-                    handleNavigation("account");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left text-white hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
-                >
-                  MINHA CONTA
                 </button>
               </div>
             </div>

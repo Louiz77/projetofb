@@ -170,7 +170,7 @@ const FAQ = () => {
   ) || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-purple-900 py-8 px-4">
+    <div className="min-h-screen bg-[#1C1C1C] py-8 px-4">
       <div className="container mx-auto max-w-7xl">
         {/* Header */}
         <div className="text-center mb-12">

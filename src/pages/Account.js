@@ -89,7 +89,7 @@ const Account = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-purple-900 py-8 px-4">
+    <div className="min-h-screen bg-[#1C1C1C] py-8 px-4">
       <div className="container mx-auto">
         <div className="max-w-4xl mx-auto">
           {loading ? (
@@ -112,7 +112,7 @@ const Account = () => {
                       <h1 className="text-3xl font-bold bg-gradient-to-r from-red-400 to-purple-400 bg-clip-text text-transparent">
                         VANADUS ACCOUNT
                       </h1>
-                      <p className="text-gray-400 text-sm">For the bold and untamed</p>
+                      <p className="text-gray-400 text-sm">Forged in Shadow</p>
                     </div>
                   </div>
                   <button
