@@ -1,7 +1,7 @@
 const GenderSplitBanner = () => {
   return (
     <section className="bg-gradient-to-br from-gray-900 via-purple-900 to-red-900">
-        <div className="grid md:grid-cols-2 gap-0 h-screen">
+        <div className="grid md:grid-cols-2 gap-0 h-50">
             {/* Gótico */}
             <div className="group relative overflow-hidden cursor-pointer transform hover:scale-100 transition-all duration-500">
                 <img

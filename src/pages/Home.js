@@ -23,6 +23,7 @@ const Home = () => {
   return (
     <div>
       <HeroBanner />
+      
       <GenderSplitBanner />
 
       {/* Faixa Promocional */}
