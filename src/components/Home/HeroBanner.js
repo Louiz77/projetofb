@@ -10,7 +10,7 @@ const HeroBanner = () => {
       title: "NEW COLLECTION",
       subtitle: "DARKNESS AWAITS",
       cta: "SEE ALL COLLECTIONS",
-      theme: "purple"
+      theme: "[#8A0101]"
     },
     {
       id: 2,
@@ -51,10 +51,10 @@ const HeroBanner = () => {
                     {slide.subtitle}
                     </p>
                     <button
-                    className={`px-12 py-4 text-lg font-bold rounded-full transition-all duration-300 hover:scale-105 ${
+                    className={`px-12 py-4 text-lg font-bold transition-all duration-300 hover:scale-105 ${
                         slide.theme === 'red'
-                        ? 'bg-red-600 hover:bg-red-700 text-white'
-                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                        ? 'bg-[#8A0101] hover:bg-[#4B014E] text-white'
+                        : 'bg-[#4B014E] hover:bg-[#8A0101] text-white'
                     }`}
                     >
                     {slide.cta}
