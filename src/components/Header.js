@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { auth, db, doc, onSnapshot, getDoc } from '../client/firebaseConfig';
-import { Search, Menu, X, ShoppingBag, User, Heart } from 'lucide-react';
+import { Menu, X, ShoppingBag, User, Heart } from 'lucide-react';
 
-const Header = ({ searchQuery, setSearchQuery }) => {
+const Header = ({ }) => {
   const navigate = useNavigate();
   const { openCart } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

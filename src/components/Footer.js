@@ -1,76 +1,87 @@
-import { Facebook, Instagram, Twitter } from "lucide-react";
+import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+
 const Footer = () => {
+  const navigate = useNavigate();
+
+
+  const handleNavigation = (page) => {
+    navigate(`/${page}`);
+  };
   return (
-    <footer className="bg-gray-800 text-white py-8">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="text-lg font-bold mb-4">VANADUS</h3>
-            <p className="text-gray-400 mb-4">
-              Fundada em 2025, a VANADUS oferece produtos de qualidade com a melhor experiência de compra online.
-            </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white">
-                <Facebook size={20} />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                <Instagram size={20} />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                <Twitter size={20} />
-              </a>
-            </div>
-          </div>
-          <div>
-            <h3 className="text-lg font-bold mb-4">Links Úteis</h3>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white">
-                  Sobre Nós
-                </a>
-              </li>
-              <li>
-                <a href="contact" className="text-gray-400 hover:text-white">
-                  Contato
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white">
-                  Políticas de Privacidade
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white">
-                  Termos de Uso
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-lg font-bold mb-4">Contato</h3>
-            <p className="text-gray-400 mb-2">suporte@VANADUS.com.br</p>
-            <p className="text-gray-400">(11) 98765-4321</p>
-            <p className="text-gray-400">Av. Paulista, 1234 - São Paulo, SP</p>
-          </div>
-          <div>
-            <h3 className="text-lg font-bold mb-4">Newsletter</h3>
-            <p className="text-gray-400 mb-4">
-              Inscreva-se para receber ofertas exclusivas e novidades.
-            </p>
-            <div className="flex">
-              <input
-                type="email"
-                placeholder="Seu email"
-                className="w-full px-4 py-2 rounded-l-lg border border-gray-700 bg-gray-900 text-white focus:outline-none"
-              />
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 transition-colors">
-                Inscrever
-              </button>
-            </div>
+    <footer className="bg-black text-white">
+      <div className="container mx-auto px-6">
+        
+        {/* Top section with payment methods */}
+        <div className="flex justify-center py-4 border-b border-gray-800">
+          <div className="flex items-center space-x-4">
+            {/* Payment methods */}
+            <div className="w-12 h-8 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">VISA</div>
+            <div className="w-12 h-8 bg-red-600 rounded flex items-center justify-center text-white text-xs font-bold">MC</div>
+            <div className="w-12 h-8 bg-blue-500 rounded flex items-center justify-center text-white text-xs font-bold">AMEX</div>
+            <div className="w-12 h-8 bg-orange-500 rounded flex items-center justify-center text-white text-xs font-bold">DISC</div>
+            <div className="w-12 h-8 bg-gray-700 rounded flex items-center justify-center text-white text-xs font-bold">PIX</div>
+            <div className="w-12 h-8 bg-red-500 rounded flex items-center justify-center text-white text-xs font-bold">BNDS</div>
+            <div className="w-12 h-8 bg-blue-800 rounded flex items-center justify-center text-white text-xs font-bold">PYPL</div>
+            <div className="w-12 h-8 bg-purple-600 rounded flex items-center justify-center text-white text-xs font-bold">NUBN</div>
+            <div className="w-12 h-8 bg-green-600 rounded flex items-center justify-center text-white text-xs font-bold">GPHY</div>
+            <div className="w-12 h-8 bg-indigo-600 rounded flex items-center justify-center text-white text-xs font-bold">KLRN</div>
           </div>
         </div>
-        <div className="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
-          <p>&copy; 2025 VANADUS. Todos os direitos reservados.</p>
+
+        {/* Bottom section with links and social */}
+        <div className="flex flex-col md:flex-row items-center justify-between py-4 space-y-4 md:space-y-0">
+          
+          {/* Left side - Copyright and links */}
+          <div className="flex flex-wrap items-center space-x-6 text-sm text-gray-400">
+            <span>&copy; VANADUS 2025</span>
+            <a href="#" className="hover:text-white transition-colors">Contact</a>
+            <a href="#" className="hover:text-white transition-colors">Helpdesk</a>
+            <a href="#" className="hover:text-white transition-colors">Terms and conditions</a>
+            <a href="#" className="hover:text-white transition-colors">Privacy policy</a>
+            <a href="#" className="hover:text-white transition-colors">Shipping policy</a>
+            <a href="#" className="hover:text-white transition-colors">Discounts</a>
+            <a href="#" className="hover:text-white transition-colors">Work for Us</a>
+          </div>
+
+          {/* Right side - Social media */}
+          <div className="flex items-center space-x-3">
+            <a 
+              href="#" 
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black hover:bg-gray-200 transition-colors"
+              aria-label="Spotify"
+            >
+              <span className="text-xs font-bold">♪</span>
+            </a>
+            <a 
+              href="#" 
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black hover:bg-gray-200 transition-colors"
+              aria-label="Facebook"
+            >
+              <Facebook size={14} />
+            </a>
+            <a 
+              href="#" 
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black hover:bg-gray-200 transition-colors"
+              aria-label="Twitter"
+            >
+              <Twitter size={14} />
+            </a>
+            <a 
+              href="#" 
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black hover:bg-gray-200 transition-colors"
+              aria-label="Instagram"
+            >
+              <Instagram size={14} />
+            </a>
+            <a 
+              href="#" 
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black hover:bg-gray-200 transition-colors"
+              aria-label="YouTube"
+            >
+              <Youtube size={14} />
+            </a>
+          </div>
         </div>
       </div>
     </footer>
