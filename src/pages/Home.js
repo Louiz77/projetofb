@@ -17,7 +17,12 @@ const Home = () => {
     { id: 3, name: "Shadow Jacket", price: 449, image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&h=500&fit=crop", sale: false, limited: false },
     { id: 4, name: "Midnight Skirt", price: 199, originalPrice: 269, image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=500&fit=crop", sale: true, limited: false },
     { id: 5, name: "Rebel Boots", price: 349, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop", sale: false, limited: true },
-    { id: 6, name: "Darkness Hoodie", price: 229, image: "https://images.unsplash.com/photo-1556821840-3a9fbc82ea14?w=400&h=500&fit=crop", sale: false, limited: false }
+    { id: 6, name: "Darkness Hoodie", price: 229, image: "https://images.unsplash.com/photo-1556821840-3a9fbc82ea14?w=400&h=500&fit=crop", sale: false, limited: false },
+    { id: 7, name: "Rebel Boots", price: 349, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop", sale: false, limited: true },
+    { id: 8, name: "Rebel Boots", price: 349, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop", sale: false, limited: true },
+    { id: 9, name: "Gothic Dress", price: 299, originalPrice: 399, image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop", sale: true, limited: false },
+
+
   ];
 
   return (
@@ -27,17 +32,19 @@ const Home = () => {
       <GenderSplitBanner />
 
       {/* Faixa Promocional */}
-      <section className="py-4 bg-[#1C1C1C] relative overflow-hidden">
-          <div className="absolute inset-0 opacity-20">
-              <div className="w-full h-full bg-repeat" style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-              }} />
-              </div>
+      <section className="snap-section banner-section bg-[#1C1C1C] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="w-full h-full bg-[#1C1C1C]" />
+        </div>
+        <div className="py-4">
           <div className="container mx-auto px-4 text-center relative z-10">
-              <p className="text-white text-lg font-semibold animate-pulse">
-                  🔥 FREE SHIPPING ($450) • INTEREST-FREE INSTALLMENTS IN UP TO 3X • SILENCE IS JUST THE PRELUDE TO CHAOS 🔥
-              </p>
+            <p className="text-white text-sm sm:text-base lg:text-lg font-semibold animate-pulse">
+              🔥 <span className="hidden sm:inline">FREE SHIPPING ($450) • INTEREST-FREE INSTALLMENTS IN UP TO 3X • </span>
+              <span className="sm:hidden">FREE SHIPPING • INSTALLMENTS • </span>
+              SILENCE IS JUST THE PRELUDE TO CHAOS 🔥
+            </p>
           </div>
+        </div>
       </section>
 
       {/* Hot Topics */}

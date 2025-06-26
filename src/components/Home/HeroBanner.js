@@ -23,7 +23,7 @@ const HeroBanner = () => {
   ];
 
   return (
-    <section className="relative h-[calc(100vh-80px)] overflow-hidden">
+    <section className="relative h-[calc(100vh-115px)] overflow-hidden">
         <div className="min-h-screen bg-white">
         {/* Hero Carousel */}
         <section className="relative h-screen overflow-hidden">
