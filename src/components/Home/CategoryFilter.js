@@ -14,17 +14,13 @@ const CategoryFilter = ({  }) => {
     { id: 12, name: "Feminino", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop", gender: "male" }
   ];
   return(
-        <section className="py-20 bg-black text-white">
-            <div className="container mx-auto px-4">
-                <h2 className="text-4xl font-bold text-center mb-12">FILTER BY STYLE</h2>
+        <section className="py-4 bg-black text-white">
+            <div className="container mx-auto px-4 mt-4">
 
                 {/* Linha de divisão visual entre os gêneros */}
                 <div className="flex items-center justify-center mb-12 relative">
                     <div className="flex-1 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded-full" />
-                        <div className="absolute text-5xl font-bold text-white animate-pulse">
-                            ◢◤◢◤◢◤
-                        </div>
-                    </div>
+                </div>
 
                     <div className="flex flex-wrap justify-center gap-8">
                         {categoryFilters.slice(0, 6).map((cat) => (

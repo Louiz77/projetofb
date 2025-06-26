@@ -10,9 +10,9 @@ const NewsletterSection = () => {
   };
 
   return (
-    <section className="py-20 bg-black text-white">
-      <div className="container mx-auto px-4 text-center">
-        <h2 className="text-4xl font-bold mb-6">JOIN OUR COMMUNITY</h2>
+    <section className="py-2 bg-black text-white">
+      <div className="container mx-auto px-2 text-center">
+        <h2 className="text-2xl font-bold mb-2">JOIN OUR COMMUNITY</h2>
         <p className="text-xl mb-8">Get exclusive releases and dark promotions</p>
         <form onSubmit={handleSubmit} className="max-w-md mx-auto">
           <div className="relative">
@@ -21,12 +21,12 @@ const NewsletterSection = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Your email"
-              className="w-full bg-black/50 border border-white/30 rounded-full px-6 py-4 mb-4 focus:border-white"
+              className="w-full bg-black/50 border border-white/30 px-6 py-4 mb-4 focus:border-white"
               required
             />
             <button
               type="submit"
-              className="absolute right-0 top-0 bg-red-600 text-white px-6 py-4 rounded-full hover:bg-red-700 transition-colors"
+              className="absolute right-0 top-0 bg-red-600 text-white px-6 py-4 hover:bg-red-700 transition-colors"
             >
               SUBSCRIBE
             </button>

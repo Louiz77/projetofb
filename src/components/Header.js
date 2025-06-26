@@ -168,10 +168,10 @@ const Header = ({ searchQuery, setSearchQuery }) => {
 
   return (
     <>
-      <header className="bg-black text-white sticky top-0 z-50 border-b border-gray-800">
+      <header className="bg-black text-white sticky top-0 z-50 border-b border-gray-800" style={{ fontFamily: 'Helvetica Neue, sans-serif', fontWeight: 'bold' }}>
         <div className="container mx-auto px-4">
           {/* Top announcement bar */}
-          <div className="text-center py-2 text-xs tracking-wider text-gray-300 border-b border-gray-800">
+          <div className="text-center py-2 text-sm tracking-wider text-gray-300 border-b border-gray-800">
             FRETE GRÁTIS ACIMA DE $150 • NOVA COLEÇÃO DISPONÍVEL
           </div>
 
@@ -182,7 +182,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
               className="lg:hidden text-white hover:text-red-500 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
 
             {/* Logo */}
@@ -191,21 +191,21 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 <div className="text-2xl font-bold tracking-wider text-white group-hover:text-red-500 transition-colors duration-300">
                   VANADUS
                 </div>
-                <div className="text-xs tracking-widest text-gray-400 group-hover:text-red-400 transition-colors duration-300">
+                <div className="text-sm tracking-widest text-gray-400 group-hover:text-red-400 transition-colors duration-300">
                   FOR THE UNTAMED
                 </div>
               </button>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-8">
+            <nav className="hidden lg:flex items-center space-x-6">
               {/* HOMEM */}
               <div
                 className="relative group"
                 onMouseEnter={() => setMegaMenuOpen("men")}
                 onMouseLeave={() => setMegaMenuOpen(null)}
               >
-                <button className="text-sm font-medium tracking-wider hover:text-red-500 transition-colors duration-300 py-2">
+                <button className="text-base font-bold tracking-wider hover:text-red-500 transition-colors duration-300 py-2">
                   HOMEM
                 </button>
 
@@ -218,10 +218,10 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                           <div className="bg-gray-900 h-64 flex items-center justify-center">
                             <div className="text-center">
                               <div className="text-6xl mb-4">🖤</div>
-                              <div className="text-lg font-bold tracking-wider">
+                              <div className="text-xl font-bold tracking-wider">
                                 {menuCategories["men"]?.title}
                               </div>
-                              <div className="text-sm text-gray-400 mt-2">Nova Coleção</div>
+                              <div className="text-base text-gray-400 mt-2">Nova Coleção</div>
                             </div>
                           </div>
                         </div>
@@ -230,14 +230,14 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                         <div className="col-span-4 grid grid-cols-3 gap-6">
                           {menuCategories["men"]?.items.map((category, index) => (
                             <div key={index} className="space-y-3">
-                              <h3 className="font-bold text-sm tracking-wider text-red-400 border-b border-gray-700 pb-2">
+                              <h3 className="font-bold text-base tracking-wider text-red-400 border-b border-gray-700 pb-2">
                                 {category.name}
                               </h3>
                               <ul className="space-y-2">
                                 {category.subcategories.map((item, subIndex) => (
                                   <li key={subIndex}>
                                     <button 
-                                    className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block"
+                                    className="text-base text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block"
                                     onClick={() => {
                                     handleNavigation(`men/${item.toLowerCase()}`);
                                     }}
@@ -253,7 +253,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                       </div>
 
                       <div className="mt-8 pt-6 border-t border-gray-800 text-center">
-                        <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300">
+                        <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base">
                           VER TODAS AS PEÇAS {menuCategories["men"]?.title}
                         </button>
                       </div>
@@ -268,7 +268,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 onMouseEnter={() => setMegaMenuOpen("women")}
                 onMouseLeave={() => setMegaMenuOpen(null)}
               >
-                <button className="text-sm font-medium tracking-wider hover:text-red-500 transition-colors duration-300 py-2">
+                <button className="text-base font-bold tracking-wider hover:text-red-500 transition-colors duration-300 py-2">
                   MULHER
                 </button>
 
@@ -281,10 +281,10 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                           <div className="bg-gray-900 h-64 flex items-center justify-center">
                             <div className="text-center">
                               <div className="text-6xl mb-4">🖤</div>
-                              <div className="text-lg font-bold tracking-wider">
+                              <div className="text-xl font-bold tracking-wider">
                                 {menuCategories["women"]?.title}
                               </div>
-                              <div className="text-sm text-gray-400 mt-2">Nova Coleção</div>
+                              <div className="text-base text-gray-400 mt-2">Nova Coleção</div>
                             </div>
                           </div>
                         </div>
@@ -293,14 +293,14 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                         <div className="col-span-4 grid grid-cols-3 gap-6">
                           {menuCategories["women"]?.items.map((category, index) => (
                             <div key={index} className="space-y-3">
-                              <h3 className="font-bold text-sm tracking-wider text-red-400 border-b border-gray-700 pb-2">
+                              <h3 className="font-bold text-base tracking-wider text-red-400 border-b border-gray-700 pb-2">
                                 {category.name}
                               </h3>
                               <ul className="space-y-2">
                                 {category.subcategories.map((item, subIndex) => (
                                   <li key={subIndex}>
                                     <button 
-                                    className="text-sm text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block"
+                                    className="text-base text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block"
                                     onClick={() => {
                                     handleNavigation(`women/${item.toLowerCase()}`);
                                     }}
@@ -316,7 +316,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                       </div>
 
                       <div className="mt-8 pt-6 border-t border-gray-800 text-center">
-                        <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300">
+                        <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base">
                           VER TODAS AS PEÇAS {menuCategories["women"]?.title}
                         </button>
                       </div>
@@ -328,27 +328,27 @@ const Header = ({ searchQuery, setSearchQuery }) => {
               {/* Links fixos */}
               <button
                 onClick={() => handleNavigation("collections")}
-                className="text-sm font-medium tracking-wider hover:text-red-500 transition-colors duration-300"
+                className="text-base font-bold tracking-wider hover:text-red-500 transition-colors duration-300"
               >
                 COLEÇÕES
               </button>
 
               <button
                 onClick={() => handleNavigation("sale")}
-                className="text-sm font-medium tracking-wider hover:text-purple-500 transition-colors duration-300 text-red-500"
+                className="text-base font-bold tracking-wider hover:text-purple-500 transition-colors duration-300 text-red-500"
               >
                 SALE
               </button>
             </nav>
 
             {/* Right side icons */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
 
               {/* Wishlist */}
               <button 
                 className="p-2 hover:text-red-500 transition-colors duration-300"
                 onClick={() => handleNavigation("wishlist")}>
-                <Heart size={20} />
+                <Heart size={24} />
               </button>
 
               {/* Account */}
@@ -356,7 +356,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 onClick={() => handleNavigation("account")}
                 className="hidden md:block p-2 hover:text-red-500 transition-colors duration-300"
               >
-                <User size={20} />
+                <User size={24} />
               </button>
 
               {/* Cart */}
@@ -364,9 +364,9 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 onClick={openCart}
                 className="relative p-2 text-[#F3ECE7] hover:text-[#8A0101] transition-colors"
               >
-                <ShoppingBag size={20} />
+                <ShoppingBag size={24} />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full min-w-5 h-5 flex items-center justify-center font-medium">
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full min-w-6 h-6 flex items-center justify-center font-bold">
                     {cartCount}
                   </span>
                 )}
@@ -388,7 +388,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                     handleNavigation("");
                     setMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left text-white hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
+                  className="block w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
                 >
                   HOME
                 </button>
@@ -397,16 +397,16 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 <div>
                   <button
                     onClick={() => setMobileMenOpen(!mobileMenOpen)}
-                    className="flex justify-between items-center w-full text-left text-white hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
+                    className="flex justify-between items-center w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
                   >
                     HOMEM
-                    <span>{mobileMenOpen ? "−" : "+"}</span>
+                    <span className="text-lg">{mobileMenOpen ? "−" : "+"}</span>
                   </button>
                   {mobileMenOpen && (
                     <div className="ml-4 mt-2 space-y-4">
                       {menuCategories["men"]?.items.map((category, index) => (
                         <div key={index}>
-                          <div className="text-sm font-semibold text-red-400">
+                          <div className="text-base font-bold text-red-400">
                             {category.name}
                           </div>
                           <ul className="mt-1 space-y-1">
@@ -417,7 +417,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                                     handleNavigation(`men/${sub.toLowerCase()}`);
                                     setMobileMenuOpen(false);
                                   }}
-                                  className="text-sm text-gray-300 hover:text-white block"
+                                  className="text-base text-gray-300 hover:text-white block"
                                 >
                                   {sub}
                                 </button>
@@ -434,16 +434,16 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 <div>
                   <button
                     onClick={() => setMobileWomenOpen(!mobileWomenOpen)}
-                    className="flex justify-between items-center w-full text-left text-white hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
+                    className="flex justify-between items-center w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
                   >
                     MULHER
-                    <span>{mobileWomenOpen ? "−" : "+"}</span>
+                    <span className="text-lg">{mobileWomenOpen ? "−" : "+"}</span>
                   </button>
                   {mobileWomenOpen && (
                     <div className="ml-4 mt-2 space-y-4">
                       {menuCategories["women"]?.items.map((category, index) => (
                         <div key={index}>
-                          <div className="text-sm font-semibold text-red-400">
+                          <div className="text-base font-bold text-red-400">
                             {category.name}
                           </div>
                           <ul className="mt-1 space-y-1">
@@ -454,7 +454,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                                     handleNavigation(`women/${sub.toLowerCase()}`);
                                     setMobileMenuOpen(false);
                                   }}
-                                  className="text-sm text-gray-300 hover:text-white block"
+                                  className="text-base text-gray-300 hover:text-white block"
                                 >
                                   {sub}
                                 </button>
@@ -473,7 +473,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                     handleNavigation("collections");
                     setMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left text-white hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
+                  className="block w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
                 >
                   COLEÇÕES
                 </button>
@@ -484,7 +484,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                     handleNavigation("sale");
                     setMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left text-red-400 hover:text-red-500 transition-colors py-2 font-medium tracking-wider"
+                  className="block w-full text-left text-red-400 hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
                 >
                   SALE
                 </button>
