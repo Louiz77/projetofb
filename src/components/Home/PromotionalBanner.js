@@ -1,7 +1,7 @@
 const PromotionalBanner = ({  }) => {
 
   return(
-      <section className="py-16 bg-[#F3ECE7] text-black">
+      <section className="py-24 bg-[#F3ECE7] text-black">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold mb-4">VANADUS</h2>
           <p className="text-xl mb-8">Unlock exclusive discounts by creating your account</p>

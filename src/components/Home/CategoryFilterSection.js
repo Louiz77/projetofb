@@ -12,7 +12,7 @@ const CategoryFilterSection = () => {
   ];
 
   return (
-      <section className="py-5 bg-black text-white">
+      <section className="py-8 bg-black text-white">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-16">EXPLORE BY CATEGORY</h2>
           

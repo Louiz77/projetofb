@@ -10,7 +10,7 @@ const NewsletterSection = () => {
   };
 
   return (
-    <section className="py-2 bg-black text-white">
+    <section className="py-5 bg-black text-white">
       <div className="container mx-auto px-2 text-center">
         <h2 className="text-2xl font-bold mb-2">JOIN OUR COMMUNITY</h2>
         <p className="text-xl mb-8">Get exclusive releases and dark promotions</p>

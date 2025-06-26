@@ -66,21 +66,23 @@ const Home = () => {
       {/* Faixa Promocional para Cadastro */}
       <PromotionalBanner />
 
-      {/* Filtros por Categorias */}
-      <CategoryFilterSection />
-
       <section className="py-6 bg-gradient-to-r from-red-600 to-purple-600 text-white text-center">
         <p className="text-lg font-bold tracking-wider uppercase">
           💥 DISCOUNTS UP TO 70% • NEW COLLECTION AVAILABLE • FREE SHIPPING OVER R$450 💥
         </p>
       </section>
-      
-      {/* Seção de Propagandas com IMG ao fundo */}
-      <AccountBanner />
 
-      {/*Filtro com Layout de Bolinhas Estilizadas (Categoria) */}
+      {/* Filtros por Categorias */}
+      <CategoryFilterSection />
+
+
+      
+      {/* Seção de Propagandas com IMG ao fundo 
+      <AccountBanner />*/}
+
+      {/*Filtro com Layout de Bolinhas Estilizadas (Categoria) 
       <CategoryFilter />
-      <FeaturedProducts />
+      <FeaturedProducts />*/}
       <NewsletterSection />
     </div>
   );
