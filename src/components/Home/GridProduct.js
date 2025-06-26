@@ -6,7 +6,7 @@ const GridProduct = ({ mockProducts }) => {
           <div className="grid lg:grid-cols-3 gap-8 items-center">
             {/* Banner de destaque */}
             <div className="lg:col-span-1">
-              <div className="relative overflow-hidden rounded-3xl group cursor-pointer">
+              <div className="relative overflow-hidden group cursor-pointer">
                 <img
                   src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=800&fit=crop"
                   alt="Acessórios exclusivos"
@@ -27,15 +27,15 @@ const GridProduct = ({ mockProducts }) => {
                 <h3 className="text-2xl font-bold mb-6">ACCESSORIES</h3>
                 <div className="flex gap-4 overflow-x-auto pb-2">
                   {mockProducts.slice(0, 4).map((product) => (
-                    <div key={product.id} className="min-w-48 bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow group">
+                    <div key={product.id} className="min-w-48 bg-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow group">
                       <img
                         src={product.image}
                         alt={product.name}
                         className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-500"
                       />
-                      <div className="p-4">
+                      <div className="p-1">
                         <h4 className="font-semibold text-sm mb-2">{product.name}</h4>
-                        <span className="text-lg font-bold text-purple-600">$ {product.price}</span>
+                        <span className="text-l font-bold text-purple-600">$ {product.price}</span>
                       </div>
                     </div>
                   ))}
@@ -47,15 +47,15 @@ const GridProduct = ({ mockProducts }) => {
                 <h3 className="text-2xl font-bold mb-6">BAGS</h3>
                 <div className="flex gap-4 overflow-x-auto pb-2">
                   {mockProducts.slice(2, 6).map((product) => (
-                    <div key={product.id} className="min-w-48 bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow group">
+                    <div key={product.id} className="min-w-48 bg-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow group">
                       <img
                         src={product.image}
                         alt={product.name}
                         className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-500"
                       />
-                      <div className="p-4">
+                      <div className="p-1">
                         <h4 className="font-semibold text-sm mb-2">{product.name}</h4>
-                        <span className="text-lg font-bold text-purple-600">$ {product.price}</span>
+                        <span className="text-l font-bold text-purple-600">$ {product.price}</span>
                       </div>
                     </div>
                   ))}

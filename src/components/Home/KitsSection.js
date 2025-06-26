@@ -131,7 +131,7 @@ const KitsSection = ({ }) => {
           
           {/* Hero Banner - Lado Esquerdo */}
           <div className="lg:col-span-5">
-            <div className="relative overflow-hidden  h-[600px] group cursor-pointer">
+            <div className="relative overflow-hidden h-[600px] group cursor-pointer">
               <img
                 src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=600&fit=crop"
                 alt="Kits promocionais"
@@ -252,7 +252,7 @@ const KitCard = ({ kit }) => {
 
   return (
     <div
-      className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
+      className="bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

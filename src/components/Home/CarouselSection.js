@@ -201,7 +201,7 @@ const EnhancedProductCard = ({ product, isVisible }) => {
 
   return (
     <div
-      className={`relative bg-gray-800 rounded-xl overflow-hidden transform transition-all duration-300 ${
+      className={`relative bg-gray-800 overflow-hidden transform transition-all duration-300 ${
         isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-60'
       } ${isHovered ? 'scale-105 shadow-2xl' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
@@ -242,7 +242,7 @@ const EnhancedProductCard = ({ product, isVisible }) => {
       </div>
 
       {/* Informações do Produto */}
-      <div className="p-4 relative">
+      <div className="p-1 relative">
         <h3 className="text-white font-semibold text-lg mb-2 line-clamp-2">
           {product.name}
         </h3>
@@ -252,15 +252,15 @@ const EnhancedProductCard = ({ product, isVisible }) => {
           {product.isPromotion ? (
             <>
               <span className="text-gray-400 line-through text-sm">
-                R$ {product.originalPrice?.toFixed(2)}
+                $ {product.originalPrice?.toFixed(2)}
               </span>
-              <span className="text-red-400 font-bold text-xl">
-                R$ {product.price?.toFixed(2)}
+              <span className="text-red-400 font-bold text-x">
+                $ {product.price?.toFixed(2)}
               </span>
             </>
           ) : (
-            <span className="text-white font-bold text-xl">
-              R$ {product.price?.toFixed(2)}
+            <span className="text-white font-bold text-l">
+              $ {product.price?.toFixed(2)}
             </span>
           )}
         </div>
@@ -274,10 +274,11 @@ const EnhancedProductCard = ({ product, isVisible }) => {
               <span className="font-medium">Restam apenas {product.stockCount || 3} unidades!</span>
             </div>
           )}
-          
+
+          {/* Informações Extras no Hover 
           <button className="w-full bg-gradient-to-r from-purple-600 to-red-600 text-white py-2 rounded-lg font-medium hover:shadow-lg transition-shadow duration-300">
             Adicionar ao Carrinho
-          </button>
+          </button>*/}
         </div>
       </div>
     </div>
