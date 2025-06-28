@@ -21,8 +21,6 @@ const Home = () => {
     { id: 7, name: "Rebel Boots", price: 349, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop", sale: false, limited: true },
     { id: 8, name: "Rebel Boots", price: 349, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop", sale: false, limited: true },
     { id: 9, name: "Gothic Dress", price: 299, originalPrice: 399, image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop", sale: true, limited: false },
-
-
   ];
 
   return (
@@ -66,8 +64,8 @@ const Home = () => {
       {/* Faixa Promocional para Cadastro */}
       <PromotionalBanner />
 
-      <section className="py-6 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white text-center">
-        <p className="text-lg font-bold tracking-wider uppercase">
+      <section className="py-4 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white text-center">
+        <p className="text-sm font-bold tracking-wider uppercase">
           DISCOUNTS UP TO 70% • NEW COLLECTION AVAILABLE • FREE SHIPPING OVER $450
         </p>
       </section>
