@@ -13,6 +13,12 @@ const Header = ({ }) => {
   const [cartCount, setCartCount] = useState(0);
   const [megaMenuOpen, setMegaMenuOpen] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  
+  // Estados para controle do scroll
+  const [scrollY, setScrollY] = useState(0);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const [headerOpacity, setHeaderOpacity] = useState(1);
 
   const handleNavigation = (page) => {
     navigate(`/${page}`);
@@ -57,6 +63,56 @@ const Header = ({ }) => {
       return [];
     }
   };
+
+  // Effect para controlar o comportamento do scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollDifference = Math.abs(currentScrollY - lastScrollY);
+      
+      // Atualiza o scroll atual
+      setScrollY(currentScrollY);
+      
+      // Define se o header deve ser visível baseado na direção do scroll
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling para baixo e passou de 100px
+        setHeaderVisible(false);
+      } else if (currentScrollY < lastScrollY || currentScrollY <= 100) {
+        // Scrolling para cima ou no topo
+        setHeaderVisible(true);
+      }
+      
+      // Calcula a opacidade baseada no scroll
+      let opacity = 1;
+      if (currentScrollY > 50) {
+        // Quando scrolling para baixo, diminui a opacidade
+        if (currentScrollY > lastScrollY) {
+          opacity = Math.max(0.3, 1 - (currentScrollY - 50) / 200);
+        } else {
+          // Quando scrolling para cima, aumenta a opacidade gradualmente
+          opacity = Math.min(1, 0.5 + (scrollDifference / 100));
+        }
+      }
+      
+      setHeaderOpacity(opacity);
+      setLastScrollY(currentScrollY);
+    };
+
+    // Throttle para melhor performance
+    let ticking = false;
+    const throttledHandleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', throttledHandleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', throttledHandleScroll);
+  }, [lastScrollY]);
 
   // Effect para monitorar mudanças de autenticação
   useEffect(() => {
@@ -166,12 +222,35 @@ const Header = ({ }) => {
     }
   };
 
+  // Calcula classes CSS dinâmicas baseadas no scroll
+  const getHeaderClasses = () => {
+    const baseClasses = "bg-black text-white fixed top-0 left-0 right-0 z-50 border-b border-gray-800 transition-all duration-300 ease-in-out";
+    
+    // Aplica transform baseado na visibilidade
+    const transformClass = headerVisible ? "translate-y-0" : "-translate-y-full";
+    
+    return `${baseClasses} ${transformClass}`;
+  };
+
+  // Calcula o estilo inline para opacidade e backdrop
+  const getHeaderStyle = () => {
+    return {
+      fontFamily: 'Helvetica Neue, sans-serif',
+      backgroundColor: `rgba(0, 0, 0, ${Math.max(0.3, headerOpacity)})`,
+      backdropFilter: headerOpacity < 0.9 ? 'blur(8px)' : 'none',
+      WebkitBackdropFilter: headerOpacity < 0.9 ? 'blur(8px)' : 'none',
+    };
+  };
+
   return (
     <>
-      <header className="bg-black text-white sticky top-0 z-50 border-b border-gray-800" style={{ fontFamily: 'Helvetica Neue, sans-serif' }}>
+      <header className={getHeaderClasses()} style={getHeaderStyle()}>
         <div className="container mx-auto px-4">
           {/* Top announcement bar */}
-          <div className="text-center py-1 text-sm tracking-wider text-gray-300 border-b border-gray-800">
+          <div 
+            className="text-center py-1 text-sm tracking-wider text-gray-300 border-b border-gray-800 transition-opacity duration-300"
+            style={{ opacity: Math.max(0.5, headerOpacity) }}
+          >
             FREE SHIPPING OVER $150 • NEW COLLECTION AVAILABLE
           </div>
 
@@ -210,7 +289,7 @@ const Header = ({ }) => {
                 </button>
 
                 {megaMenuOpen === "men" && (
-                  <div className="fixed left-0 w-full bg-black border-t border-gray-800 shadow-xl z-50">
+                  <div className="fixed left-0 w-full bg-black border-t border-gray-800 shadow-xl z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.95)', backdropFilter: 'blur(10px)' }}>
                     <div className="container mx-auto px-4 py-8">
                       <div className="grid grid-cols-6 gap-8">
                         {/* Imagem */}
@@ -273,7 +352,7 @@ const Header = ({ }) => {
                 </button>
 
                 {megaMenuOpen === "women" && (
-                  <div className="fixed left-0 w-full bg-black border-t border-gray-800 shadow-xl z-50">
+                  <div className="fixed left-0 w-full bg-black border-t border-gray-800 shadow-xl z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.95)', backdropFilter: 'blur(10px)' }}>
                     <div className="container mx-auto px-4 py-8">
                       <div className="grid grid-cols-6 gap-8">
                         {/* Imagem */}
@@ -377,7 +456,7 @@ const Header = ({ }) => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-black border-t border-gray-800">
+          <div className="lg:hidden bg-black border-t border-gray-800" style={{ backgroundColor: 'rgba(0, 0, 0, 0.95)', backdropFilter: 'blur(10px)' }}>
             <div className="px-4 py-6 space-y-6">
               {/* Mobile Menu Items */}
               <div className="space-y-4">
@@ -501,6 +580,9 @@ const Header = ({ }) => {
           onClick={() => setMegaMenuOpen(null)}
         />
       )}
+
+      {/* Spacer para compensar o header fixed */}
+      <div className="h-[100px]" />
     </>
   );
 };
