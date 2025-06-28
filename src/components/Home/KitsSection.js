@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Star, Heart, Eye } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, Heart, Eye, X } from "lucide-react";
 import { useState } from "react";
 
 const KitsSection = ({ }) => {
@@ -141,11 +141,11 @@ const KitsSection = ({ }) => {
       <div className="container mx-auto px-4">
         
         {/* Main Layout: Hero + Kits */}
-        <div className="grid lg:grid-cols-12 gap-8 items-start">
+        <div className="grid lg:grid-cols-12 gap-8 items-stretch">
           
           {/* Hero Banner - Lado Esquerdo */}
-          <div className="lg:col-span-5">
-            <div className="relative overflow-hidden h-[700px] group cursor-pointer">
+          <div className="lg:col-span-5 flex mt-2">
+            <div className="relative overflow-hidden w-full group cursor-pointer">
               <img
                 src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=600&fit=crop"
                 alt="Kits promocionais"
@@ -181,10 +181,10 @@ const KitsSection = ({ }) => {
           </div>
 
           {/* Kits Grid - Lado Direito */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7 flex flex-col">
             
             {/* Kits Masculinos */}
-            <div className="mb-8">
+            <div className="mb-8 flex-1">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-2xl font-bold" style={{ color: '#F3ECE7' }}>KITS MASCULINOS</h3>
                 <div className="flex gap-1">
@@ -229,7 +229,7 @@ const KitsSection = ({ }) => {
             </div>
 
             {/* Kits Femininos */}
-            <div>
+            <div className="flex-1">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-2xl font-bold" style={{ color: '#F3ECE7' }}>KITS FEMININOS</h3>
                 <div className="flex gap-1">
@@ -388,44 +388,98 @@ const KitCard = ({ kit }) => {
         </div>
       </div>
 
-      {/* Items Overlay */}
+      {/* Items Overlay - Versão Melhorada */}
       {showItems && (
         <div 
-          className="absolute inset-0 z-20 p-3 rounded-lg flex flex-col"
-          style={{ backgroundColor: 'rgba(28, 28, 28, 0.95)' }}
+          className="absolute inset-0 z-20 flex flex-col overflow-hidden"
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(28, 28, 28, 0.98) 0%, rgba(40, 40, 40, 0.98) 100%)',
+            backdropFilter: 'blur(10px)'
+          }}
         >
-          <div className="flex justify-between items-center mb-3">
-            <h5 className="text-sm font-bold" style={{ color: '#F3ECE7' }}>Itens do Kit</h5>
+          {/* Header */}
+          <div className="flex justify-between items-center p-4 border-b border-white/10">
+            <h5 className="text-sm font-bold tracking-wide" style={{ color: '#F3ECE7' }}>
+              ITENS DO KIT
+            </h5>
             <button
               onClick={() => setShowItems(false)}
-              className="w-6 h-6 rounded-full flex items-center justify-center text-white"
-              style={{ backgroundColor: '#A80101' }}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-200"
+              style={{ backgroundColor: kit.gender === 'male' ? '#A80101' : '#4B014E' }}
             >
-              ×
+              <X size={14} />
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto">
-            <div className="grid grid-cols-1 gap-2">
+          {/* Items Grid */}
+          <div className="flex-1 p-4 overflow-y-auto">
+            <div className="space-y-3">
               {kit.items.map((item, index) => (
-                <div key={index} className="flex items-center gap-2 p-2 rounded" style={{ backgroundColor: 'rgba(243, 236, 231, 0.1)' }}>
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-8 h-8 object-cover rounded"
-                  />
-                  <span className="text-xs" style={{ color: '#F3ECE7' }}>{item.name}</span>
+                <div 
+                  key={index} 
+                  className="group relative overflow-hidden"
+                  style={{ 
+                    background: 'linear-gradient(135deg, rgba(243, 236, 231, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
+                    border: '1px solid rgba(243, 236, 231, 0.1)'
+                  }}
+                >
+                  {/* Background Pattern */}
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="w-full h-full bg-gradient-to-br from-white/10 to-transparent"></div>
+                  </div>
+                  
+                  <div className="relative flex items-center gap-3 p-3">
+                    <div className="relative">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-12 h-12 object-cover transition-transform duration-300 group-hover:scale-110"
+                        style={{ 
+                          border: `2px solid ${kit.gender === 'male' ? '#A80101' : '#4B014E'}`,
+                          filter: 'brightness(1.1) contrast(1.1)'
+                        }}
+                      />
+                      <div 
+                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: kit.gender === 'male' ? '#A80101' : '#4B014E' }}
+                      >
+                        <span className="text-white text-xs font-bold">{index + 1}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <span 
+                        className="text-sm font-medium tracking-wide" 
+                        style={{ color: '#F3ECE7' }}
+                      >
+                        {item.name}
+                      </span>
+                    </div>
+                    
+                    <div 
+                      className="w-2 h-2 rounded-full opacity-50"
+                      style={{ backgroundColor: kit.gender === 'male' ? '#A80101' : '#4B014E' }}
+                    ></div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
           
-          <button
-            className="mt-3 w-full py-2 rounded font-medium text-sm transition-all duration-200 hover:scale-105"
-            style={{ backgroundColor: kit.gender === 'male' ? '#A80101' : '#4B014E', color: '#F3ECE7' }}
-          >
-            Adicionar ao Carrinho
-          </button>
+          {/* Footer Button */}
+          <div className="p-4 border-t border-white/10">
+            <button
+              className="w-full py-3 font-medium text-sm transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden"
+              style={{ 
+                background: `linear-gradient(135deg, ${kit.gender === 'male' ? '#A80101' : '#4B014E'} 0%, ${kit.gender === 'male' ? '#8B0000' : '#3A0133'} 100%)`,
+                color: '#F3ECE7',
+                boxShadow: `0 4px 15px rgba(${kit.gender === 'male' ? '168, 1, 1' : '75, 1, 78'}, 0.3)`
+              }}
+            >
+              <span className="relative z-10 tracking-wide">ADICIONAR AO CARRINHO</span>
+              <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+            </button>
+          </div>
         </div>
       )}
     </div>

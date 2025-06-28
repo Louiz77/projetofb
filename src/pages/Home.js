@@ -118,9 +118,9 @@ const Home = () => {
       {/* Faixa Promocional para Cadastro */}
       <PromotionalBanner />
 
-      <section className="py-4 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white text-center">
+      <section className="py-4 bg-[#8A0101] text-white text-center">
         <p className="text-sm font-bold tracking-wider uppercase">
-          DISCOUNTS UP TO 70% • NEW COLLECTION AVAILABLE • FREE SHIPPING OVER $450
+          🔥 FREE SHIPPING ($450) • INTEREST-FREE INSTALLMENTS IN UP TO 3X • SILENCE IS JUST THE PRELUDE TO CHAOS 🔥
         </p>
       </section>
 
