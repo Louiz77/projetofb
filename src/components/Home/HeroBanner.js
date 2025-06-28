@@ -26,7 +26,7 @@ const HeroBanner = () => {
     },
     {
       id: 2,
-      image: "/adolescente-gotico-de-tiro-medio-posando-no-estudio.jpg",
+      image: "/medium-shot-man-talking-phone.jpg",
       title: "EXCLUSIVE ACCESSORIES",
       subtitle: "FOR REBEL SOULS",
       cta: "EXPLORE ACCESSORIES",
@@ -250,7 +250,7 @@ const HeroBanner = () => {
   return (
     <section 
       id="hero-banner"
-      className="relative h-[calc(100vh-110px)] min-h-[500px] overflow-hidden"
+      className="relative h-[calc(100vh-113px)] min-h-[500px] overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
