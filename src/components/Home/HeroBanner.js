@@ -250,7 +250,7 @@ const HeroBanner = () => {
   return (
     <section 
       id="hero-banner"
-      className="relative h-[calc(100vh-115px)] min-h-[500px] overflow-hidden"
+      className="relative h-[calc(100vh-110px)] min-h-[500px] overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

@@ -1,15 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 const GenderSplitBanner = () => {
   const [isIntersecting, setIsIntersecting] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
+  const [imagesLoaded, setImagesLoaded] = useState({});
 
+  // Memoizar os estilos para evitar recriações desnecessárias
+  const styles = useMemo(() => [
+    {
+      id: 'gothic',
+      title: 'GOTHIC',
+      subtitle: 'Darkness & Elegance',
+      buttonText: 'SHOP ACCESSORIES',
+      image: '/front-view-goth-friends-posing-studio.jpg',
+      gradient: 'from-[#4B014E]/80 via-black/60 to-transparent',
+      accent: 'from-[#4B014E] to-transparent/40'
+    },
+    {
+      id: 'streetwear',
+      title: 'STREETWEAR',
+      subtitle: 'Urban & Rebellious',
+      buttonText: 'SHOP GRAPHIC PRINTS',
+      image: '/medium-shot-man-talking-phone.jpg',
+      gradient: 'from-[#8A0101]/80 via-gray/60 to-transparent',
+      accent: 'from-[#8A0101] to-transparent/80'
+    }
+  ], []);
+
+  // Otimizar Intersection Observer
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsIntersecting(entry.isIntersecting);
       },
-      { threshold: 0.2 }
+      { 
+        threshold: 0.2,
+        rootMargin: '50px' // Trigger um pouco antes para suavizar a animação
+      }
     );
 
     const element = document.getElementById('gender-split-banner');
@@ -18,188 +45,212 @@ const GenderSplitBanner = () => {
     return () => observer.disconnect();
   }, []);
 
-  const styles = [
-    {
-      id: 'gothic',
-      title: 'GOTHIC',
-      subtitle: 'Darkness & Elegance',
-      buttonText: 'SHOP ACCESSORIES',
-      image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=800&h=600&fit=crop',
-      gradient: 'from-[#4B014E]/80 via-black/60 to-transparent',
-      accent: 'from-[#4B014E] to-transparent'
-    },
-    {
-      id: 'streetwear',
-      title: 'STREETWEAR',
-      subtitle: 'Urban & Rebellious',
-      buttonText: 'SHOP GRAPHIC PRINTS',
-      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop',
-      gradient: 'from-[#8A0101]/80 via-black/60 to-transparent',
-      accent: 'from-[#8A0101] to-transparent'
-    }
-  ];
+  // Preload de imagens otimizado
+  useEffect(() => {
+    styles.forEach(style => {
+      const img = new Image();
+      img.onload = () => {
+        setImagesLoaded(prev => ({ ...prev, [style.id]: true }));
+      };
+      img.src = style.image;
+    });
+  }, [styles]);
+
+  // Callbacks otimizados
+  const handleMouseEnter = useCallback((styleId) => {
+    setActiveCard(styleId);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setActiveCard(null);
+  }, []);
+
+  const handleMobileClick = useCallback((styleId) => {
+    setActiveCard(prev => prev === styleId ? null : styleId);
+  }, []);
+
+  // Componente de partículas otimizado
+  const BackgroundParticles = useMemo(() => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {[...Array(6)].map((_, i) => (
+        <div
+          key={i}
+          className={`absolute w-2 h-2 bg-white/10 rounded-full ${isIntersecting ? 'animate-pulse' : ''}`}
+          style={{
+            left: `${20 + i * 15}%`,
+            top: `${10 + i * 10}%`,
+            animationDelay: `${i * 0.5}s`,
+            animationDuration: `${3 + i}s`,
+            willChange: isIntersecting ? 'transform' : 'auto'
+          }}
+        />
+      ))}
+    </div>
+  ), [isIntersecting]);
+
+  // Componente de card otimizado
+  const StyleCard = ({ style, index, isMobile = false }) => {
+    const isActive = activeCard === style.id;
+    const isLoaded = imagesLoaded[style.id];
+
+    const cardProps = isMobile ? {
+      onClick: () => handleMobileClick(style.id)
+    } : {
+      onMouseEnter: () => handleMouseEnter(style.id),
+      onMouseLeave: handleMouseLeave
+    };
+
+    return (
+      <div
+        key={style.id}
+        className={`group relative overflow-hidden cursor-pointer ${
+          isMobile ? `transform transition-all duration-700 ${
+            isIntersecting ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'
+          }` : ''
+        }`}
+        style={isMobile ? { 
+          transitionDelay: `${index * 200}ms`,
+          willChange: isIntersecting ? 'transform, opacity' : 'auto'
+        } : {}}
+        {...cardProps}
+      >
+        {/* Background Image com lazy loading e otimização */}
+        <div className={`absolute inset-0 transform transition-transform duration-1000 ease-out ${
+          isMobile ? (isActive ? 'scale-110' : 'scale-100') : 'group-hover:scale-110'
+        }`}
+        style={{ willChange: 'transform' }}>
+          {isLoaded ? (
+            <img
+              src={style.image}
+              alt={`Estilo ${style.title}`}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-800 animate-pulse" />
+          )}
+        </div>
+
+        {/* Gradient Overlay otimizado */}
+        <div 
+          className={`absolute inset-0 bg-gradient-to-t ${style.gradient} transition-opacity duration-500 ${
+            isMobile ? (isActive ? 'opacity-90' : 'opacity-70') : 'group-hover:opacity-90'
+          }`}
+        />
+
+        {/* Border animado (apenas desktop) */}
+        {!isMobile && (
+          <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${style.accent} p-[2px]`}>
+            <div className="w-full h-full bg-black/20 backdrop-blur-sm" />
+          </div>
+        )}
+
+        {/* Glowing Border (apenas mobile) */}
+        {isMobile && (
+          <div className={`absolute inset-0 transition-all duration-500 ${
+            isActive ? `shadow-[inset_0_0_50px_rgba(168,85,247,0.4)] border-2 border-purple-400/50` : ''
+          }`} />
+        )}
+
+        {/* Content */}
+        <div className="absolute inset-0 flex flex-col justify-center items-center text-white z-10 p-6 md:p-8">
+          <div className={`transform transition-all duration-700 flex flex-col items-center text-center ${
+            isMobile ? (isActive ? 'scale-105' : 'scale-100') : 
+            (isIntersecting ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0')
+          }`}>
+            {/* Title */}
+            <h3 className={`font-black mb-3 md:mb-4 tracking-[0.2em] md:tracking-[0.3em] drop-shadow-2xl ${
+              isMobile ? 'text-4xl sm:text-5xl' : 'text-5xl lg:text-5xl'
+            }`}>
+              <span className={`bg-gradient-to-r ${style.accent} bg-clip-text text-transparent ${
+                !isMobile ? 'group-hover:text-white transition-all duration-500' : 'filter drop-shadow-lg'
+              }`}>
+                {style.title}
+              </span>
+            </h3>
+
+            {/* Subtitle */}
+            <p className={`opacity-90 drop-shadow-lg tracking-wide mb-6 ${
+              isMobile ? 'text-base sm:text-lg font-medium' : 'text-lg lg:text-xl'
+            }`}>
+              {style.subtitle}
+            </p>
+
+            {/* Button */}
+            <div className="relative overflow-hidden flex justify-center group/btn">
+              <button className={`relative bg-white/15 backdrop-blur-md border border-white/30 text-white font-semibold tracking-wider transition-all duration-300 hover:bg-white/25 hover:border-white/50 hover:scale-105 transform ${
+                isMobile ? `px-6 py-3 sm:px-8 sm:py-4 ${isActive ? 'animate-pulse' : ''}` : 
+                'px-8 py-4 group-hover:scale-105'
+              }`}>
+                <span className={`relative z-10 ${isMobile ? 'text-sm sm:text-base' : ''}`}>
+                  {style.buttonText}
+                </span>
+                <div className={`absolute inset-0 bg-gradient-to-r ${style.accent} opacity-0 group-hover/btn:opacity-20 transition-opacity duration-300 ${isMobile ? 'rounded' : ''}`} />
+              </button>
+              
+              {/* Button Glow (apenas mobile) */}
+              {isMobile && (
+                <div className={`absolute inset-0 bg-gradient-to-r ${style.accent} opacity-0 group-hover/btn:opacity-20 blur-lg transition-opacity duration-300 -z-10`} />
+              )}
+            </div>
+          </div>
+
+          {/* Tap Indicator (apenas mobile) */}
+          {isMobile && (
+            <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 transition-all duration-500 ${
+              isActive ? 'opacity-0 scale-0' : 'opacity-60 scale-100'
+            }`}>
+              <div className="flex items-center space-x-2 text-white/70 text-sm">
+                <div className="w-2 h-2 bg-white/50 rounded-full animate-pulse" />
+                <span>Toque para explorar</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Floating Elements otimizados */}
+        <div className={`absolute transition-all duration-500 ${
+          isMobile ? 
+            `top-6 right-6 duration-700 ${isActive ? 'opacity-100 rotate-180' : 'opacity-60 rotate-0'}` :
+            'top-4 right-4 opacity-0 group-hover:opacity-100 transform group-hover:translate-x-0 translate-x-4'
+        }`}>
+          <div className={`bg-gradient-to-r ${style.accent} rounded-full animate-pulse ${
+            isMobile ? 'w-4 h-4' : 'w-3 h-3'
+          }`} />
+        </div>
+
+        {/* Second floating element (apenas mobile) */}
+        {isMobile && (
+          <div className={`absolute bottom-6 left-6 transition-all duration-700 ${
+            isActive ? 'opacity-100 scale-110' : 'opacity-40 scale-100'
+          }`}>
+            <div className={`w-3 h-3 bg-gradient-to-r ${style.accent} rounded-full`} />
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <section 
       id="gender-split-banner"
       className="relative bg-gradient-to-br from-gray-900 via-purple-900 to-red-900 overflow-hidden"
     >
-      {/* Animated background particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className={`absolute w-2 h-2 bg-white/10 rounded-full animate-pulse ${isIntersecting ? 'animate-bounce' : ''}`}
-            style={{
-              left: `${20 + i * 15}%`,
-              top: `${10 + i * 10}%`,
-              animationDelay: `${i * 0.5}s`,
-              animationDuration: `${3 + i}s`
-            }}
-          />
-        ))}
-      </div>
+      {BackgroundParticles}
 
       {/* Desktop Layout */}
       <div className="hidden md:grid md:grid-cols-2 h-[60vh] min-h-[500px]">
         {styles.map((style, index) => (
-          <div
-            key={style.id}
-            className="group relative overflow-hidden cursor-pointer"
-            onMouseEnter={() => setActiveCard(style.id)}
-            onMouseLeave={() => setActiveCard(null)}
-          >
-            {/* Background Image with Parallax Effect */}
-            <div className="absolute inset-0 transform group-hover:scale-110 transition-all duration-1000 ease-out">
-              <img
-                src={style.image}
-                alt={`Estilo ${style.title}`}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Gradient Overlay */}
-            <div className={`absolute inset-0 bg-gradient-to-t ${style.gradient} group-hover:opacity-90 transition-opacity duration-500`} />
-
-            {/* Animated Border */}
-            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${style.accent} p-[2px]`}>
-              <div className="w-full h-full bg-black/20 backdrop-blur-sm" />
-            </div>
-
-            {/* Content */}
-            <div className="absolute inset-0 flex flex-col justify-center items-center text-white z-10 p-8">
-              <div className={`transform transition-all duration-700 flex flex-col items-center text-center ${isIntersecting ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-                <h3 className="text-5xl lg:text-5xl font-black mb-4 tracking-[0.3em] drop-shadow-2xl">
-                  <span className={`bg-gradient-to-r ${style.accent} bg-clip-text text-transparent group-hover:text-white transition-all duration-500`}>
-                    {style.title}
-                  </span>
-                </h3>
-                <p className="text-lg lg:text-xl opacity-90 drop-shadow-lg tracking-wide mb-6">
-                  {style.subtitle}
-                </p>
-                <div className="relative overflow-hidden flex justify-center">
-                  <button className="relative px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold tracking-wider hover:bg-white/20 hover:border-white/40 transition-all duration-300 group-hover:scale-105 transform">
-                    <span className="relative z-10">{style.buttonText}</span>
-                    <div className={`absolute inset-0 bg-gradient-to-r ${style.accent} opacity-0 group-hover:opacity-20 transition-opacity duration-300`} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating Elements */}
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:translate-x-0 translate-x-4">
-              <div className={`w-3 h-3 bg-gradient-to-r ${style.accent} rounded-full animate-pulse`} />
-            </div>
-          </div>
+          <StyleCard key={style.id} style={style} index={index} />
         ))}
       </div>
 
       {/* Mobile Layout */}
       <div className="md:hidden">
         {styles.map((style, index) => (
-          <div
-            key={style.id}
-            className={`relative h-[50vh] min-h-[400px] overflow-hidden cursor-pointer transform transition-all duration-700 ${
-              isIntersecting ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'
-            }`}
-            style={{ transitionDelay: `${index * 200}ms` }}
-            onClick={() => setActiveCard(activeCard === style.id ? null : style.id)}
-          >
-            {/* Background Image */}
-            <div className={`absolute inset-0 transform transition-all duration-1000 ${
-              activeCard === style.id ? 'scale-110' : 'scale-100'
-            }`}>
-              <img
-                src={style.image}
-                alt={`Estilo ${style.title}`}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Dynamic Gradient Overlay */}
-            <div className={`absolute inset-0 bg-gradient-to-t ${style.gradient} transition-opacity duration-500 ${
-              activeCard === style.id ? 'opacity-90' : 'opacity-70'
-            }`} />
-
-            {/* Glowing Border Effect */}
-            <div className={`absolute inset-0 transition-all duration-500 ${
-              activeCard === style.id ? `shadow-[inset_0_0_50px_rgba(168,85,247,0.4)] border-2 border-purple-400/50` : ''
-            }`} />
-
-            {/* Content Container */}
-            <div className="absolute inset-0 flex flex-col justify-center items-center text-white z-10 p-6">
-              <div className={`text-center transform transition-all duration-500 ${
-                activeCard === style.id ? 'scale-105' : 'scale-100'
-              }`}>
-                {/* Title with Enhanced Typography */}
-                <h3 className="text-4xl sm:text-5xl font-black mb-3 tracking-[0.2em] drop-shadow-2xl">
-                  <span className={`bg-gradient-to-r ${style.accent} bg-clip-text text-transparent filter drop-shadow-lg`}>
-                    {style.title}
-                  </span>
-                </h3>
-
-                {/* Subtitle */}
-                <p className="text-base sm:text-lg opacity-90 drop-shadow-lg tracking-wide mb-6 font-medium">
-                  {style.subtitle}
-                </p>
-
-                {/* Interactive Button */}
-                <div className="relative group/btn">
-                  <button className={`relative px-6 py-3 sm:px-8 sm:py-4 bg-white/15 backdrop-blur-md border border-white/30 text-white font-semibold tracking-wider transition-all duration-300 hover:bg-white/25 hover:border-white/50 hover:scale-105 transform ${
-                    activeCard === style.id ? 'animate-pulse' : ''
-                  }`}>
-                    <span className="relative z-10 text-sm sm:text-base">{style.buttonText}</span>
-                    <div className={`absolute inset-0 bg-gradient-to-r ${style.accent} opacity-0 group-hover/btn:opacity-30 transition-opacity duration-300 rounded`} />
-                  </button>
-                  
-                  {/* Button Glow Effect */}
-                  <div className={`absolute inset-0 bg-gradient-to-r ${style.accent} opacity-0 group-hover/btn:opacity-20 blur-lg transition-opacity duration-300 -z-10`} />
-                </div>
-              </div>
-
-              {/* Tap Indicator for Mobile */}
-              <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 transition-all duration-500 ${
-                activeCard === style.id ? 'opacity-0 scale-0' : 'opacity-60 scale-100'
-              }`}>
-                <div className="flex items-center space-x-2 text-white/70 text-sm">
-                  <div className="w-2 h-2 bg-white/50 rounded-full animate-pulse" />
-                  <span>Toque para explorar</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating Decorative Elements */}
-            <div className={`absolute top-6 right-6 transition-all duration-700 ${
-              activeCard === style.id ? 'opacity-100 rotate-180' : 'opacity-60 rotate-0'
-            }`}>
-              <div className={`w-4 h-4 bg-gradient-to-r ${style.accent} rounded-full animate-pulse`} />
-            </div>
-
-            <div className={`absolute bottom-6 left-6 transition-all duration-700 ${
-              activeCard === style.id ? 'opacity-100 scale-110' : 'opacity-40 scale-100'
-            }`}>
-              <div className={`w-3 h-3 bg-gradient-to-r ${style.accent} rounded-full`} />
-            </div>
+          <div key={style.id} className="h-[50vh] min-h-[400px]">
+            <StyleCard style={style} index={index} isMobile={true} />
           </div>
         ))}
       </div>
