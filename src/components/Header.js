@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { auth, db, doc, onSnapshot, getDoc } from '../client/firebaseConfig';
-import { Menu, X, ShoppingBag, User, Heart } from 'lucide-react';
+import { Menu, X, ShoppingBag, User, Heart, ShoppingCart } from 'lucide-react';
 
 const Header = ({ }) => {
   const navigate = useNavigate();
@@ -364,7 +364,7 @@ const Header = ({ }) => {
                 onClick={openCart}
                 className="relative p-2 text-[#F3ECE7] hover:text-[#8A0101] transition-colors"
               >
-                <ShoppingBag size={24} />
+                <ShoppingCart size={24} />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full min-w-6 h-6 flex items-center justify-center font-bold">
                     {cartCount}
