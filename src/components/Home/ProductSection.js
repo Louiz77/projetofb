@@ -1,124 +1,29 @@
 import { ChevronLeft, ChevronRight, Star, Heart, Eye, X } from "lucide-react";
 import { useState } from "react";
 
-const KitsSection = ({ }) => {
-  const [maleKitIndex, setMaleKitIndex] = useState(0);
-  const [femaleKitIndex, setFemaleKitIndex] = useState(0);
+const ProductSection = ({ 
+  products, 
+  sectionType = 'kits',
+  heroImage,
+  heroTitle,
+  heroSubtitle,
+  heroButton = 'SHOP NOW',
+  maleLabel = 'MASCULINOS',
+  femaleLabel = 'FEMININOS'
+}) => {
+  const [maleProductIndex, setMaleProductIndex] = useState(0);
+  const [femaleProductIndex, setFemaleProductIndex] = useState(0);
 
-  const kits = [
-    { 
-      id: 1, 
-      name: "Dark Prince Kit", 
-      price: 449, 
-      originalPrice: 529,
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop", 
-      gender: "male",
-      items: [
-        { name: "Camiseta", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop" },
-        { name: "Jaqueta", image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300&h=300&fit=crop" },
-        { name: "Calça", image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.8,
-      isPromotion: true
-    },
-    { 
-      id: 2, 
-      name: "Shadow Warrior Kit", 
-      price: 389, 
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop", 
-      gender: "male",
-      items: [
-        { name: "Tank Top", image: "https://images.unsplash.com/photo-1583743814966-8936f37f4678?w=300&h=300&fit=crop" },
-        { name: "Shorts", image: "https://images.unsplash.com/photo-1506629905607-e9e501629f83?w=300&h=300&fit=crop" },
-        { name: "Boné", image: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.7,
-      isLimitedStock: true,
-      stockCount: 8
-    },
-    { 
-      id: 3, 
-      name: "Urban Rebel Kit", 
-      price: 459, 
-      originalPrice: 529,
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop", 
-      gender: "male",
-      items: [
-        { name: "Hoodie", image: "https://images.unsplash.com/photo-1556821840-3a9c6c1b0520?w=300&h=300&fit=crop" },
-        { name: "Calça Cargo", image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300&h=300&fit=crop" },
-        { name: "Tênis", image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.6,
-      isPromotion: true
-    },
-    { 
-      id: 4, 
-      name: "Mystical Kit", 
-      price: 399, 
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop", 
-      gender: "male",
-      items: [
-        { name: "Regata", image: "https://images.unsplash.com/photo-1583743814966-8936f37f4678?w=300&h=300&fit=crop" },
-        { name: "Bermuda", image: "https://images.unsplash.com/photo-1506629905607-e9e501629f83?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.5
-    },
-    { 
-      id: 5, 
-      name: "Shadow Queen Kit", 
-      price: 519, 
-      originalPrice: 649,
-      image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop", 
-      gender: "female",
-      items: [
-        { name: "Top Cropped", image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=300&fit=crop" },
-        { name: "Saia", image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=300&h=300&fit=crop" },
-        { name: "Meias", image: "https://images.unsplash.com/photo-1586281002406-c954bb5c23dd?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.9,
-      isPromotion: true
-    },
-    { 
-      id: 6, 
-      name: "Rebel Princess Kit", 
-      price: 479, 
-      image: "https://images.unsplash.com/photo-1494790108755-2616c056ca96?w=400&h=500&fit=crop", 
-      gender: "female",
-      items: [
-        { name: "Vestido", image: "https://images.unsplash.com/photo-1566479179817-c0b2bbadccca?w=300&h=300&fit=crop" },
-        { name: "Jaqueta", image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300&h=300&fit=crop" },
-        { name: "Botas", image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.8,
-      isNew: true
-    },
-    { 
-      id: 7, 
-      name: "Dark Angel Kit", 
-      price: 399, 
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop", 
-      gender: "female",
-      items: [
-        { name: "Blusa Mesh", image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=300&fit=crop" },
-        { name: "Shorts", image: "https://images.unsplash.com/photo-1506629905607-e9e501629f83?w=300&h=300&fit=crop" },
-        { name: "Acessórios", image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.7,
-      isLimitedStock: true,
-      stockCount: 5
-    }
-  ];
-
-  const maleKits = kits.filter(kit => kit.gender === 'male');
-  const femaleKits = kits.filter(kit => kit.gender === 'female');
+  const maleProducts = products.filter(product => product.gender === 'male');
+  const femaleProducts = products.filter(product => product.gender === 'female');
 
   const itemsPerView = window.innerWidth < 768 ? 2 : 4;
-  const maxMaleIndex = Math.max(0, maleKits.length - itemsPerView);
-  const maxFemaleIndex = Math.max(0, femaleKits.length - itemsPerView);
+  const maxMaleIndex = Math.max(0, maleProducts.length - itemsPerView);
+  const maxFemaleIndex = Math.max(0, femaleProducts.length - itemsPerView);
 
   const navigateCarousel = (type, direction) => {
     if (type === 'male') {
-      setMaleKitIndex(prev => {
+      setMaleProductIndex(prev => {
         if (direction === 'left') {
           return Math.max(0, prev - 1);
         } else {
@@ -126,7 +31,7 @@ const KitsSection = ({ }) => {
         }
       });
     } else {
-      setFemaleKitIndex(prev => {
+      setFemaleProductIndex(prev => {
         if (direction === 'left') {
           return Math.max(0, prev - 1);
         } else {
@@ -140,15 +45,15 @@ const KitsSection = ({ }) => {
     <section className="py-12" style={{ backgroundColor: '#1C1C1C' }}>
       <div className="container mx-auto px-4">
         
-        {/* Main Layout: Hero + Kits */}
+        {/* Main Layout: Hero + Products */}
         <div className="grid lg:grid-cols-12 gap-8 items-stretch">
           
           {/* Hero Banner - Lado Esquerdo */}
           <div className="lg:col-span-5 flex mt-2">
             <div className="relative overflow-hidden w-full group cursor-pointer">
               <img
-                src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=600&fit=crop"
-                alt="Kits promocionais"
+                src={heroImage || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=600&fit=crop"}
+                alt={`${sectionType} promocionais`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(168, 1, 1, 0.3), rgba(75, 1, 78, 0.4))' }} />
@@ -165,55 +70,57 @@ const KitsSection = ({ }) => {
 
               <div className="absolute inset-0 flex flex-col justify-end p-8">
                 <h2 className="text-4xl font-bold mb-2" style={{ color: '#F3ECE7' }}>
-                  ARCANE ELEGANCE
+                  {heroTitle || 'ARCANE ELEGANCE'}
                 </h2>
                 <p className="text-lg mb-6" style={{ color: '#F3ECE7' }}>
-                  SHOP OCCASION
+                  {heroSubtitle || 'SHOP OCCASION'}
                 </p>
                 <button 
                   className="self-start px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
                   style={{ backgroundColor: '#F3ECE7', color: '#1C1C1C' }}
                 >
-                  SHOP NOW
+                  {heroButton}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Kits Grid - Lado Direito */}
+          {/* Products Grid - Lado Direito */}
           <div className="lg:col-span-7 flex flex-col">
             
-            {/* Kits Masculinos */}
+            {/* Produtos Masculinos */}
             <div className="mb-8 flex-1">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold" style={{ color: '#F3ECE7' }}>KITS MASCULINOS</h3>
+                <h3 className="text-2xl font-bold" style={{ color: '#F3ECE7' }}>
+                  {sectionType.toUpperCase()} {maleLabel}
+                </h3>
                 <div className="flex gap-1">
                   <button
                     onClick={() => navigateCarousel('male', 'left')}
-                    disabled={maleKitIndex === 0}
+                    disabled={maleProductIndex === 0}
                     className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
-                      maleKitIndex === 0 
+                      maleProductIndex === 0 
                         ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
                         : 'text-white hover:scale-110'
                     }`}
                     style={{ 
-                      borderColor: maleKitIndex === 0 ? '#666' : '#A80101',
-                      backgroundColor: maleKitIndex === 0 ? 'transparent' : '#A80101'
+                      borderColor: maleProductIndex === 0 ? '#666' : '#A80101',
+                      backgroundColor: maleProductIndex === 0 ? 'transparent' : '#A80101'
                     }}
                   >
                     <ChevronLeft size={14} />
                   </button>
                   <button
                     onClick={() => navigateCarousel('male', 'right')}
-                    disabled={maleKitIndex >= maxMaleIndex}
+                    disabled={maleProductIndex >= maxMaleIndex}
                     className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
-                      maleKitIndex >= maxMaleIndex 
+                      maleProductIndex >= maxMaleIndex 
                         ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
                         : 'text-white hover:scale-110'
                     }`}
                     style={{ 
-                      borderColor: maleKitIndex >= maxMaleIndex ? '#666' : '#A80101',
-                      backgroundColor: maleKitIndex >= maxMaleIndex ? 'transparent' : '#A80101'
+                      borderColor: maleProductIndex >= maxMaleIndex ? '#666' : '#A80101',
+                      backgroundColor: maleProductIndex >= maxMaleIndex ? 'transparent' : '#A80101'
                     }}
                   >
                     <ChevronRight size={14} />
@@ -222,43 +129,45 @@ const KitsSection = ({ }) => {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {maleKits.slice(maleKitIndex, maleKitIndex + itemsPerView).map((kit) => (
-                  <KitCard key={kit.id} kit={kit} />
+                {maleProducts.slice(maleProductIndex, maleProductIndex + itemsPerView).map((product) => (
+                  <ProductCard key={product.id} product={product} sectionType={sectionType} />
                 ))}
               </div>
             </div>
 
-            {/* Kits Femininos */}
+            {/* Produtos Femininos */}
             <div className="flex-1">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold" style={{ color: '#F3ECE7' }}>KITS FEMININOS</h3>
+                <h3 className="text-2xl font-bold" style={{ color: '#F3ECE7' }}>
+                  {sectionType.toUpperCase()} {femaleLabel}
+                </h3>
                 <div className="flex gap-1">
                   <button
                     onClick={() => navigateCarousel('female', 'left')}
-                    disabled={femaleKitIndex === 0}
+                    disabled={femaleProductIndex === 0}
                     className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
-                      femaleKitIndex === 0 
+                      femaleProductIndex === 0 
                         ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
                         : 'text-white hover:scale-110'
                     }`}
                     style={{ 
-                      borderColor: femaleKitIndex === 0 ? '#666' : '#4B014E',
-                      backgroundColor: femaleKitIndex === 0 ? 'transparent' : '#4B014E'
+                      borderColor: femaleProductIndex === 0 ? '#666' : '#4B014E',
+                      backgroundColor: femaleProductIndex === 0 ? 'transparent' : '#4B014E'
                     }}
                   >
                     <ChevronLeft size={14} />
                   </button>
                   <button
                     onClick={() => navigateCarousel('female', 'right')}
-                    disabled={femaleKitIndex >= maxFemaleIndex}
+                    disabled={femaleProductIndex >= maxFemaleIndex}
                     className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
-                      femaleKitIndex >= maxFemaleIndex 
+                      femaleProductIndex >= maxFemaleIndex 
                         ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
                         : 'text-white hover:scale-110'
                     }`}
                     style={{ 
-                      borderColor: femaleKitIndex >= maxFemaleIndex ? '#666' : '#4B014E',
-                      backgroundColor: femaleKitIndex >= maxFemaleIndex ? 'transparent' : '#4B014E'
+                      borderColor: femaleProductIndex >= maxFemaleIndex ? '#666' : '#4B014E',
+                      backgroundColor: femaleProductIndex >= maxFemaleIndex ? 'transparent' : '#4B014E'
                     }}
                   >
                     <ChevronRight size={14} />
@@ -267,8 +176,8 @@ const KitsSection = ({ }) => {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {femaleKits.slice(femaleKitIndex, femaleKitIndex + itemsPerView).map((kit) => (
-                  <KitCard key={kit.id} kit={kit} />
+                {femaleProducts.slice(femaleProductIndex, femaleProductIndex + itemsPerView).map((product) => (
+                  <ProductCard key={product.id} product={product} sectionType={sectionType} />
                 ))}
               </div>
             </div>
@@ -279,8 +188,8 @@ const KitsSection = ({ }) => {
   );
 };
 
-// Componente de Card do Kit
-const KitCard = ({ kit }) => {
+// Componente de Card do Produto
+const ProductCard = ({ product, sectionType }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showItems, setShowItems] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -294,6 +203,9 @@ const KitCard = ({ kit }) => {
   const handleItemView = () => {
     setShowItems(!showItems);
   };
+
+  // Só mostra o botão de visualizar itens se for um kit e tiver items
+  const hasItems = sectionType === 'kits' && product.items && product.items.length > 0;
 
   return (
     <div className="relative">
@@ -316,35 +228,37 @@ const KitCard = ({ kit }) => {
             </button>
           </div>
 
-          {/* View Items Button */}
-          <div className="absolute top-2 left-2 z-10">
-            <button 
-              onClick={handleItemView}
-              className="w-6 h-6 bg-white/80 rounded-full flex items-center justify-center hover:text-white transition-colors duration-200"
-              style={{ '&:hover': { backgroundColor: '#4B014E' } }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#4B014E'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.8)'}
-            >
-              <Eye size={12} />
-            </button>
-          </div>
+          {/* View Items Button - Só aparece para kits */}
+          {hasItems && (
+            <div className="absolute top-2 left-2 z-10">
+              <button 
+                onClick={handleItemView}
+                className="w-6 h-6 bg-white/80 rounded-full flex items-center justify-center hover:text-white transition-colors duration-200"
+                style={{ '&:hover': { backgroundColor: '#4B014E' } }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#4B014E'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.8)'}
+              >
+                <Eye size={12} />
+              </button>
+            </div>
+          )}
 
           {/* Badges */}
-          {(kit.isPromotion || kit.isNew || kit.isLimitedStock) && (
+          {(product.isPromotion || product.isNew || product.isLimitedStock) && (
             <div className="absolute bottom-2 left-2 z-10">
-              {kit.isPromotion && (
+              {product.isPromotion && (
                 <span className="text-white px-2 py-1 rounded text-xs font-medium" style={{ backgroundColor: '#A80101' }}>
                   SALE
                 </span>
               )}
-              {kit.isNew && (
+              {product.isNew && (
                 <span className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
                   NEW
                 </span>
               )}
-              {kit.isLimitedStock && (
+              {product.isLimitedStock && (
                 <span className="bg-orange-500 text-white px-2 py-1 rounded text-xs font-medium">
-                  {kit.stockCount} LEFT
+                  {product.stockCount} LEFT
                 </span>
               )}
             </div>
@@ -353,8 +267,8 @@ const KitCard = ({ kit }) => {
           {/* Image */}
           <div className="aspect-[3/4] overflow-hidden">
             <img
-              src={kit.image}
-              alt={kit.name}
+              src={product.image}
+              alt={product.name}
               className={`w-full h-full object-cover transition-transform duration-300 ${
                 isHovered ? 'scale-105' : 'scale-100'
               }`}
@@ -365,31 +279,31 @@ const KitCard = ({ kit }) => {
         {/* Content */}
         <div className="p-3">
           <h4 className="font-medium text-sm mb-1 line-clamp-1" style={{ color: '#1C1C1C' }}>
-            {kit.name}
+            {product.name}
           </h4>
 
           {/* Rating */}
           <div className="flex items-center gap-1 mb-2">
             <Star size={12} className="fill-yellow-400 text-yellow-400" />
-            <span className="text-xs" style={{ color: '#1C1C1C' }}>{kit.rating}</span>
+            <span className="text-xs" style={{ color: '#1C1C1C' }}>{product.rating}</span>
           </div>
 
           {/* Price */}
           <div className="flex items-center gap-2">
-            {kit.originalPrice && (
+            {product.originalPrice && (
               <span className="text-gray-500 line-through text-xs">
-                ${kit.originalPrice}
+                ${product.originalPrice}
               </span>
             )}
             <span className="font-bold text-sm" style={{ color: '#1C1C1C' }}>
-              ${kit.price}
+              ${product.price}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Items Overlay - Versão Melhorada */}
-      {showItems && (
+      {/* Items Overlay - Só para kits */}
+      {hasItems && showItems && (
         <div 
           className="absolute inset-0 z-20 flex flex-col overflow-hidden"
           style={{ 
@@ -405,7 +319,7 @@ const KitCard = ({ kit }) => {
             <button
               onClick={() => setShowItems(false)}
               className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-200"
-              style={{ backgroundColor: kit.gender === 'male' ? '#A80101' : '#4B014E' }}
+              style={{ backgroundColor: product.gender === 'male' ? '#A80101' : '#4B014E' }}
             >
               <X size={14} />
             </button>
@@ -414,7 +328,7 @@ const KitCard = ({ kit }) => {
           {/* Items Grid */}
           <div className="flex-1 p-4 overflow-y-auto">
             <div className="space-y-3">
-              {kit.items.map((item, index) => (
+              {product.items.map((item, index) => (
                 <div 
                   key={index} 
                   className="group relative overflow-hidden"
@@ -435,13 +349,13 @@ const KitCard = ({ kit }) => {
                         alt={item.name}
                         className="w-12 h-12 object-cover transition-transform duration-300 group-hover:scale-110"
                         style={{ 
-                          border: `2px solid ${kit.gender === 'male' ? '#A80101' : '#4B014E'}`,
+                          border: `2px solid ${product.gender === 'male' ? '#A80101' : '#4B014E'}`,
                           filter: 'brightness(1.1) contrast(1.1)'
                         }}
                       />
                       <div 
                         className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: kit.gender === 'male' ? '#A80101' : '#4B014E' }}
+                        style={{ backgroundColor: product.gender === 'male' ? '#A80101' : '#4B014E' }}
                       >
                         <span className="text-white text-xs font-bold">{index + 1}</span>
                       </div>
@@ -458,7 +372,7 @@ const KitCard = ({ kit }) => {
                     
                     <div 
                       className="w-2 h-2 rounded-full opacity-50"
-                      style={{ backgroundColor: kit.gender === 'male' ? '#A80101' : '#4B014E' }}
+                      style={{ backgroundColor: product.gender === 'male' ? '#A80101' : '#4B014E' }}
                     ></div>
                   </div>
                 </div>
@@ -471,9 +385,9 @@ const KitCard = ({ kit }) => {
             <button
               className="w-full py-3 font-medium text-sm transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden"
               style={{ 
-                background: `linear-gradient(135deg, ${kit.gender === 'male' ? '#A80101' : '#4B014E'} 0%, ${kit.gender === 'male' ? '#8B0000' : '#3A0133'} 100%)`,
+                background: `linear-gradient(135deg, ${product.gender === 'male' ? '#A80101' : '#4B014E'} 0%, ${product.gender === 'male' ? '#8B0000' : '#3A0133'} 100%)`,
                 color: '#F3ECE7',
-                boxShadow: `0 4px 15px rgba(${kit.gender === 'male' ? '168, 1, 1' : '75, 1, 78'}, 0.3)`
+                boxShadow: `0 4px 15px rgba(${product.gender === 'male' ? '168, 1, 1' : '75, 1, 78'}, 0.3)`
               }}
             >
               <span className="relative z-10 tracking-wide">ADICIONAR AO CARRINHO</span>
@@ -486,4 +400,4 @@ const KitCard = ({ kit }) => {
   );
 };
 
-export default KitsSection;
+export default ProductSection;
