@@ -82,7 +82,6 @@ const CarouselSection = ({ title, products, id }) => {
     if (hasMultipleSlides) setTimeout(() => startAutoSlide(), 3000);
   };
 
-
   // Auto-slide com cleanup e verificação dinâmica
   useEffect(() => {
     // Reset currentIndex se estiver fora do range válido
@@ -162,7 +161,6 @@ const CarouselSection = ({ title, products, id }) => {
     }
   };
 
-
   const handleFilterChange = (filter) => {
     setSelectedFilter(filter);
     setCurrentIndex(0); // Sempre reseta para o início
@@ -182,8 +180,44 @@ const CarouselSection = ({ title, products, id }) => {
     }, 1000);
   };
 
+  // Função para obter as cores do tema baseado no filtro selecionado
+  const getThemeColors = () => {
+    switch (selectedFilter) {
+      case 'TODOS':
+        return {
+          primary: '#F3ECE7', // Branco
+          secondary: '#1C1C1C', // Preto
+          border: '#F3ECE7',
+          gradient: 'from-[#F3ECE7] to-[#F3ECE7]'
+        };
+      case 'MULHER':
+        return {
+          primary: '#8A0101', // Vermelho
+          secondary: '#8A0101',
+          border: '#8A0101',
+          gradient: 'from-[#8A0101] to-[#8A0101]'
+        };
+      case 'HOMEM':
+        return {
+          primary: '#4B014E', // Roxo
+          secondary: '#4B014E',
+          border: '#4B014E',
+          gradient: 'from-[#4B014E] to-[#4B014E]'
+        };
+      default:
+        return {
+          primary: '#F3ECE7',
+          secondary: '#1C1C1C',
+          border: '#F3ECE7',
+          gradient: 'from-[#F3ECE7] to-[#F3ECE7]'
+        };
+    }
+  };
+
+  const themeColors = getThemeColors();
+
   return (
-    <section className="py-12 md:py-20 bg-[#1C1C1C] relative overflow-hidden">
+    <section className="py-12 md:py-10 bg-[#1C1C1C] relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
@@ -196,11 +230,30 @@ const CarouselSection = ({ title, products, id }) => {
       <div className="container mx-auto px-4 md:px-6 relative z-10">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-8 md:mb-12 gap-6">
-          <div className="space-y-6">
-            <h2 className="text-3xl md:text-5xl font-bold text-[#F3ECE7] relative">
-              {title}
-              <div className="absolute -bottom-2 left-0 w-16 h-1 bg-gradient-to-r from-[#8A0101] to-[#4B014E]" />
-            </h2>
+          <div className="space-y-6 flex-1">
+            {/* Título alinhado à esquerda */}
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <h2 className="text-3xl md:text-5xl font-bold text-[#F3ECE7] relative">
+                {title}
+                <div className="absolute -bottom-2 left-0 w-16 h-1 bg-gradient-to-r from-[#8A0101] to-[#4B014E]" />
+              </h2>
+              
+              {/* Botão "Ver Todos" no canto direito */}
+              <button 
+                className={`flex items-center gap-2 mt-3 px-4 py-2 transition-all duration-300 group self-start md:self-center border-2 ${
+                  selectedFilter === 'TODOS' 
+                    ? 'bg-[#F3ECE7] text-[#1C1C1C] border-[#F3ECE7]'
+                    : selectedFilter === 'MULHER'
+                    ? 'bg-[#8A0101] text-[#F3ECE7] border-[#8A0101] hover:bg-[#8A0101]/80'
+                    : selectedFilter === 'HOMEM'
+                    ? 'bg-[#4B014E] text-[#F3ECE7] border-[#4B014E] hover:bg-[#4B014E]/80'
+                    : 'bg-transparent text-[#F3ECE7] border-[#4B014E] hover:bg-[#4B014E]'
+                }`}
+              >
+                <Eye size={18} className="group-hover:scale-110 transition-transform duration-300" />
+                <span className="font-medium">Ver Todos</span>
+              </button>
+            </div>
             
             {/* Filters */}
             <div className="flex flex-wrap gap-3">
@@ -208,10 +261,14 @@ const CarouselSection = ({ title, products, id }) => {
                 <button
                   key={filter}
                   onClick={() => handleFilterChange(filter)}
-                  className={`px-6 py-3 text-sm font-medium transition-all duration-300 relative overflow-hidden group ${
+                  className={`px-6 py-3 text-sm font-medium transition-all duration-300 relative overflow-hidden group border-2 ${
                     selectedFilter === filter
-                      ? 'bg-[#8A0101] text-[#F3ECE7] shadow-lg shadow-[#8A0101]/25'
-                      : 'bg-transparent text-[#F3ECE7] border border-[#4B014E] hover:bg-[#4B014E]/20'
+                      ? filter === 'TODOS'
+                        ? 'bg-[#F3ECE7] text-[#1C1C1C] border-[#F3ECE7] shadow-lg shadow-[#F3ECE7]/25'
+                        : filter === 'MULHER'
+                        ? 'bg-[#8A0101] text-[#F3ECE7] border-[#8A0101] shadow-lg shadow-[#8A0101]/25'
+                        : 'bg-[#4B014E] text-[#F3ECE7] border-[#4B014E] shadow-lg shadow-[#4B014E]/25'
+                      : 'bg-transparent text-[#F3ECE7] border-[#4B014E] hover:bg-[#4B014E]/20'
                   }`}
                 >
                   <span className="relative z-10">{filter}</span>
@@ -222,12 +279,6 @@ const CarouselSection = ({ title, products, id }) => {
               ))}
             </div>
           </div>
-
-          {/* View All Button */}
-          <button className="flex items-center gap-3 bg-transparent border-2 border-[#4B014E] text-[#F3ECE7] px-6 py-3 hover:bg-[#4B014E] transition-all duration-300 group self-start">
-            <Eye size={18} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Ver Todos</span>
-          </button>
         </div>
 
         {/* Carousel Container */}
@@ -353,7 +404,6 @@ const CarouselSection = ({ title, products, id }) => {
   );
 };
 
-// Enhanced Product Card Component
 const EnhancedProductCard = ({ product, isVisible, isMobile }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);

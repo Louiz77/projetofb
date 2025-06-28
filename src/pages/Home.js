@@ -22,7 +22,59 @@ const Home = () => {
     { id: 8, name: "Rebel Boots", price: 349, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop", sale: false, limited: true },
     { id: 9, name: "Gothic Dress", price: 299, originalPrice: 399, image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop", sale: true, limited: false },
     { id: 10, name: "Gothic Jacket", price: 429, originalPrice: 648, image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop", sale: true, limited: true },
-
+    {
+      id: 1,
+      name: "Camiseta Premium Masculina",
+      price: 89.90,
+      originalPrice: 129.90,
+      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop",
+      category: "HOMEM",
+      isPromotion: true,
+      isNew: false,
+      isLimitedStock: false
+    },
+    {
+      id: 2,
+      name: "Vestido Elegante Feminino",
+      price: 199.90,
+      image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop",
+      category: "MULHER",
+      isPromotion: false,
+      isNew: true,
+      isLimitedStock: false
+    },
+    {
+      id: 3,
+      name: "Jaqueta de Couro Masculina",
+      price: 399.90,
+      originalPrice: 499.90,
+      image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=500&fit=crop",
+      category: "HOMEM",
+      isPromotion: true,
+      isNew: false,
+      isLimitedStock: true,
+      stockCount: 2
+    },
+    {
+      id: 4,
+      name: "Blusa Casual Feminina",
+      price: 79.90,
+      image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=500&fit=crop",
+      category: "MULHER",
+      isPromotion: false,
+      isNew: false,
+      isLimitedStock: false
+    },
+    {
+      id: 5,
+      name: "Calça Jeans Masculina",
+      price: 149.90,
+      image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=500&fit=crop",
+      category: "HOMEM",
+      isPromotion: false,
+      isNew: true,
+      isLimitedStock: false
+    }
   ];
 
   return (
