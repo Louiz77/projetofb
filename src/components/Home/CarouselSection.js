@@ -7,6 +7,11 @@ const CarouselSection = ({ title, products, id }) => {
   const [isMobile, setIsMobile] = useState(false);
   const carouselRef = useRef(null);
   const autoSlideRef = useRef(null);
+  
+  // Touch handling states
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Responsive items per view - mais eficiente para diferentes telas
   const getItemsPerView = () => {
@@ -20,7 +25,7 @@ const CarouselSection = ({ title, products, id }) => {
 
   const [itemsPerView, setItemsPerView] = useState(getItemsPerView);
 
-    // Filter products based on selection
+  // Filter products based on selection
   const filteredProducts = products.filter(product => {
     if (selectedFilter === 'TODOS') return true;
     return product.category?.toUpperCase() === selectedFilter;
@@ -42,6 +47,45 @@ const CarouselSection = ({ title, products, id }) => {
   // Cálculo dinâmico do maxIndex baseado no número real de produtos
   const maxIndex = Math.max(0, organizedProducts.length - itemsPerView);
   
+  // Touch handlers
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsDragging(true);
+    stopAutoSlide();
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) {
+      setIsDragging(false);
+      if (hasMultipleSlides) {
+        setTimeout(() => startAutoSlide(), 3000);
+      }
+      return;
+    }
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      navigateCarousel('right');
+    } else if (isRightSwipe) {
+      navigateCarousel('left');
+    }
+    
+    setIsDragging(false);
+    if (hasMultipleSlides) {
+      setTimeout(() => startAutoSlide(), 3000);
+    }
+  };
+
   // Auto-slide com cleanup e verificação dinâmica
   useEffect(() => {
     // Reset currentIndex se estiver fora do range válido
@@ -82,12 +126,12 @@ const CarouselSection = ({ title, products, id }) => {
     );
   }
 
-  // Auto-slide functionality com verificação dinâmica
+  // Auto-slide functionality com verificação dinâmica e loop infinito
   const startAutoSlide = () => {
     if (autoSlideRef.current || !hasMultipleSlides) return;
     autoSlideRef.current = setInterval(() => {
       setCurrentIndex(prev => {
-        // Se chegou no final, volta pro início
+        // Se chegou no final, volta pro início (loop infinito)
         if (prev >= maxIndex) {
           return 0;
         }
@@ -109,10 +153,11 @@ const CarouselSection = ({ title, products, id }) => {
     setCurrentIndex(prev => {
       let newIndex;
       if (direction === 'left') {
-        newIndex = Math.max(0, prev - 1);
+        // Se está no início, vai para o final (loop infinito)
+        newIndex = prev === 0 ? maxIndex : prev - 1;
       } else {
-        // Garante que não ultrapasse o maxIndex
-        newIndex = Math.min(maxIndex, prev + 1);
+        // Se chegou no final, volta pro início (loop infinito)
+        newIndex = prev >= maxIndex ? 0 : prev + 1;
       }
       return newIndex;
     });
@@ -192,37 +237,29 @@ const CarouselSection = ({ title, products, id }) => {
 
         {/* Carousel Container */}
         <div className="relative group">
-          {/* Navigation Arrows - só mostra se necessário */}
-          {!isMobile && hasMultipleSlides && currentIndex > 0 && (
-            <button
-              onClick={() => navigateCarousel('left')}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-[#1C1C1C]/90 backdrop-blur-sm text-[#F3ECE7] p-4 hover:bg-[#8A0101] transition-all duration-300 opacity-0 group-hover:opacity-100 -translate-x-6 group-hover:-translate-x-2 border border-[#4B014E]/30"
-            >
-              <ChevronLeft size={24} />
-            </button>
-          )}
-
-          {!isMobile && hasMultipleSlides && currentIndex < maxIndex && (
-            <button
-              onClick={() => navigateCarousel('right')}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-[#1C1C1C]/90 backdrop-blur-sm text-[#F3ECE7] p-4 hover:bg-[#8A0101] transition-all duration-300 opacity-0 group-hover:opacity-100 translate-x-6 group-hover:translate-x-2 border border-[#4B014E]/30"
-            >
-              <ChevronRight size={24} />
-            </button>
-          )}
-
-          {/* Mobile Navigation - melhorado para touch */}
-          {isMobile && hasMultipleSlides && (
-            <div className="flex justify-between items-center mb-6 px-2">
+          {/* Desktop Navigation Arrows */}
+          {!isMobile && hasMultipleSlides && (
+            <>
               <button
                 onClick={() => navigateCarousel('left')}
-                disabled={currentIndex === 0}
-                className="bg-[#1C1C1C] text-[#F3ECE7] p-4 border border-[#4B014E] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#8A0101] transition-colors duration-300 active:scale-95"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-[#1C1C1C]/90 backdrop-blur-sm text-[#F3ECE7] p-4 hover:bg-[#8A0101] transition-all duration-300 opacity-0 group-hover:opacity-100 -translate-x-6 group-hover:-translate-x-2 border border-[#4B014E]/30"
               >
-                <ChevronLeft size={22} />
+                <ChevronLeft size={24} />
               </button>
-              
-              <div className="flex flex-col items-center gap-1">
+
+              <button
+                onClick={() => navigateCarousel('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-[#1C1C1C]/90 backdrop-blur-sm text-[#F3ECE7] p-4 hover:bg-[#8A0101] transition-all duration-300 opacity-0 group-hover:opacity-100 translate-x-6 group-hover:translate-x-2 border border-[#4B014E]/30"
+              >
+                <ChevronRight size={24} />
+              </button>
+            </>
+          )}
+
+          {/* Mobile Navigation */}
+          {isMobile && hasMultipleSlides && (
+            <div className="flex justify-center items-center mb-6 px-2">
+              <div className="flex items-center gap-4">
                 <span className="text-[#F3ECE7] text-sm font-medium">
                   {currentIndex + 1} de {maxIndex + 1}
                 </span>
@@ -230,21 +267,13 @@ const CarouselSection = ({ title, products, id }) => {
                   {Array.from({ length: Math.min(5, maxIndex + 1) }).map((_, index) => (
                     <div
                       key={index}
-                      className={`w-2 h-2 ${
-                        currentIndex === index ? 'bg-[#8A0101]' : 'bg-[#4B014E]/40'
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        currentIndex === index ? 'bg-[#8A0101] scale-125' : 'bg-[#4B014E]/40'
                       }`}
                     />
                   ))}
                 </div>
               </div>
-              
-              <button
-                onClick={() => navigateCarousel('right')}
-                disabled={currentIndex === maxIndex}
-                className="bg-[#1C1C1C] text-[#F3ECE7] p-4 border border-[#4B014E] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#8A0101] transition-colors duration-300 active:scale-95"
-              >
-                <ChevronRight size={22} />
-              </button>
             </div>
           )}
 
@@ -254,9 +283,14 @@ const CarouselSection = ({ title, products, id }) => {
             className="overflow-hidden"
             onMouseEnter={!isMobile && hasMultipleSlides ? stopAutoSlide : undefined}
             onMouseLeave={!isMobile && hasMultipleSlides ? startAutoSlide : undefined}
+            onTouchStart={isMobile ? onTouchStart : undefined}
+            onTouchMove={isMobile ? onTouchMove : undefined}
+            onTouchEnd={isMobile ? onTouchEnd : undefined}
           >
             <div
-              className="flex transition-transform duration-700 ease-in-out gap-4 md:gap-6"
+              className={`flex transition-transform duration-700 ease-in-out gap-4 md:gap-6 ${
+                isDragging ? 'transition-none' : ''
+              }`}
               style={{
                 transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
                 width: hasMultipleSlides ? `${(organizedProducts.length / itemsPerView) * 100}%` : '100%'
@@ -297,10 +331,18 @@ const CarouselSection = ({ title, products, id }) => {
               <div className="absolute top-0 right-0 w-20 h-full bg-gradient-to-l from-[#1C1C1C] via-[#1C1C1C]/80 to-transparent z-10 pointer-events-none" />
             </>
           )}
+
+          {/* Mobile Swipe Hint */}
+          {isMobile && hasMultipleSlides && (
+            <div className="absolute bottom-4 right-4 text-[#F3ECE7]/60 text-xs flex items-center gap-1">
+              <span>Deslize</span>
+              <ChevronRight size={12} />
+            </div>
+          )}
         </div>
 
         {/* Progress Indicators - só mostra se há múltiplos slides */}
-        {hasMultipleSlides && maxIndex > 0 && (
+        {hasMultipleSlides && maxIndex > 0 && !isMobile && (
           <div className="flex justify-center mt-8 gap-2">
             {Array.from({ length: maxIndex + 1 }).map((_, index) => (
               <button
