@@ -64,27 +64,24 @@ const CarouselSection = ({ title, products, id }) => {
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) {
       setIsDragging(false);
-      if (hasMultipleSlides) {
-        setTimeout(() => startAutoSlide(), 3000);
-      }
+      if (hasMultipleSlides) setTimeout(() => startAutoSlide(), 3000);
       return;
     }
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
     if (isLeftSwipe) {
-      navigateCarousel('right');
+      setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
     } else if (isRightSwipe) {
-      navigateCarousel('left');
+      setCurrentIndex((prev) => (prev === 0 ? maxIndex : prev - 1));
     }
-    
+
     setIsDragging(false);
-    if (hasMultipleSlides) {
-      setTimeout(() => startAutoSlide(), 3000);
-    }
+    if (hasMultipleSlides) setTimeout(() => startAutoSlide(), 3000);
   };
+
 
   // Auto-slide com cleanup e verificação dinâmica
   useEffect(() => {
@@ -149,24 +146,22 @@ const CarouselSection = ({ title, products, id }) => {
 
   const navigateCarousel = (direction) => {
     stopAutoSlide();
-    
+
     setCurrentIndex(prev => {
       let newIndex;
       if (direction === 'left') {
-        // Se está no início, vai para o final (loop infinito)
         newIndex = prev === 0 ? maxIndex : prev - 1;
       } else {
-        // Se chegou no final, volta pro início (loop infinito)
         newIndex = prev >= maxIndex ? 0 : prev + 1;
       }
       return newIndex;
     });
 
-    // Reinicia auto-slide apenas se há múltiplos slides
     if (hasMultipleSlides) {
       setTimeout(() => startAutoSlide(), 8000);
     }
   };
+
 
   const handleFilterChange = (filter) => {
     setSelectedFilter(filter);
@@ -280,7 +275,7 @@ const CarouselSection = ({ title, products, id }) => {
           {/* Carousel */}
           <div 
             ref={carouselRef}
-            className="overflow-hidden"
+            className="overflow-hidden touch-pan-x"
             onMouseEnter={!isMobile && hasMultipleSlides ? stopAutoSlide : undefined}
             onMouseLeave={!isMobile && hasMultipleSlides ? startAutoSlide : undefined}
             onTouchStart={isMobile ? onTouchStart : undefined}
@@ -292,35 +287,27 @@ const CarouselSection = ({ title, products, id }) => {
                 isDragging ? 'transition-none' : ''
               }`}
               style={{
-                transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
-                width: hasMultipleSlides ? `${(organizedProducts.length / itemsPerView) * 100}%` : '100%'
+                transform: `translateX(-${(currentIndex * 100) / organizedProducts.length}%)`,
+                width: `${organizedProducts.length * (100 / itemsPerView)}%`
               }}
             >
-              {organizedProducts.map((product, index) => {
-                // Só renderiza produtos que estão visíveis ou próximos
-                const isInCurrentView = index >= currentIndex && index < currentIndex + itemsPerView;
-                const isInNextView = index >= currentIndex - itemsPerView && index < currentIndex + (itemsPerView * 2);
-                
-                if (!isInNextView) return null;
-                
-                return (
-                  <div
-                    key={`${product.id}-${index}`}
-                    className="flex-shrink-0"
-                    style={{ 
-                      width: hasMultipleSlides 
-                        ? `${100 / organizedProducts.length}%` 
-                        : `${100 / itemsPerView}%` 
-                    }}
-                  >
-                    <EnhancedProductCard 
-                      product={product} 
-                      isVisible={isInCurrentView}
-                      isMobile={isMobile}
-                    />
-                  </div>
-                );
-              })}
+              {organizedProducts.map((product, index) => (
+                <div
+                  key={`${product.id}-${index}`}
+                  className="flex-shrink-0"
+                  style={{
+                    width: `${100 / itemsPerView}%`,
+                    maxWidth: '300px',
+                  }}
+                >
+                  <EnhancedProductCard 
+                    product={product} 
+                    isVisible={index >= currentIndex && index < currentIndex + itemsPerView}
+                    isMobile={isMobile}
+                  />
+                </div>
+              ))}
+
             </div>
           </div>
 
