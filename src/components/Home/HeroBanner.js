@@ -192,7 +192,7 @@ const HeroBanner = () => {
             <div className="w-1 h-1 bg-white/50 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
             <div className="w-1 h-1 bg-white/50 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
           </div>
-          <span>Deslize para navegar</span>
+          <span>Swipe to navigate</span>
         </div>
       </div>
 

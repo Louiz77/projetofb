@@ -32,9 +32,9 @@ const Home = () => {
       <GenderSplitBanner />
 
       {/* Faixa Promocional */}
-      <section className="snap-section banner-section bg-[#1C1C1C] relative overflow-hidden">
+      <section className="snap-section banner-section bg-[#8A0101] relative overflow-hidden">
         <div className="absolute inset-0 opacity-20">
-          <div className="w-full h-full bg-[#1C1C1C]" />
+          <div className="w-full h-full bg-[#8A0101]" />
         </div>
         <div className="py-4">
           <div className="container mx-auto px-4 text-center relative z-10">

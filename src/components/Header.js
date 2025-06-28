@@ -143,7 +143,7 @@ const Header = ({ }) => {
 
   const menuCategories = {
     men: {
-      title: 'HOMEM',
+      title: 'MEN',
       items: [
         { name: 'CAMISETAS', subcategories: ['Oversized', 'Vintage', 'Band Tees', 'Gothic'] },
         { name: 'CALÇAS', subcategories: ['Cargo', 'Skinny', 'Destroyed', 'Leather'] },
@@ -154,7 +154,7 @@ const Header = ({ }) => {
       ]
     },
     women: {
-      title: 'MULHER',
+      title: 'WOMEN',
       items: [
         { name: 'TOPS', subcategories: ['Crop Tops', 'Tank Tops', 'Gothic', 'Mesh'] },
         { name: 'VESTIDOS', subcategories: ['Gothic', 'Mini', 'Maxi', 'Bodycon'] },
@@ -168,11 +168,11 @@ const Header = ({ }) => {
 
   return (
     <>
-      <header className="bg-black text-white sticky top-0 z-50 border-b border-gray-800" style={{ fontFamily: 'Helvetica Neue, sans-serif', fontWeight: 'bold' }}>
+      <header className="bg-black text-white sticky top-0 z-50 border-b border-gray-800" style={{ fontFamily: 'Helvetica Neue, sans-serif' }}>
         <div className="container mx-auto px-4">
           {/* Top announcement bar */}
-          <div className="text-center py-2 text-sm tracking-wider text-gray-300 border-b border-gray-800">
-            FRETE GRÁTIS ACIMA DE $150 • NOVA COLEÇÃO DISPONÍVEL
+          <div className="text-center py-1 text-sm tracking-wider text-gray-300 border-b border-gray-800">
+            FREE SHIPPING OVER $150 • NEW COLLECTION AVAILABLE
           </div>
 
           {/* Main header */}
@@ -206,7 +206,7 @@ const Header = ({ }) => {
                 onMouseLeave={() => setMegaMenuOpen(null)}
               >
                 <button className="text-base font-bold tracking-wider hover:text-red-500 transition-colors duration-300 py-2">
-                  HOMEM
+                  MEN
                 </button>
 
                 {megaMenuOpen === "men" && (
@@ -269,7 +269,7 @@ const Header = ({ }) => {
                 onMouseLeave={() => setMegaMenuOpen(null)}
               >
                 <button className="text-base font-bold tracking-wider hover:text-red-500 transition-colors duration-300 py-2">
-                  MULHER
+                  WOMEN
                 </button>
 
                 {megaMenuOpen === "women" && (
@@ -330,7 +330,7 @@ const Header = ({ }) => {
                 onClick={() => handleNavigation("collections")}
                 className="text-base font-bold tracking-wider hover:text-red-500 transition-colors duration-300"
               >
-                COLEÇÕES
+                COLLECTIONS
               </button>
 
               <button
@@ -399,7 +399,7 @@ const Header = ({ }) => {
                     onClick={() => setMobileMenOpen(!mobileMenOpen)}
                     className="flex justify-between items-center w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
                   >
-                    HOMEM
+                    MEN
                     <span className="text-lg">{mobileMenOpen ? "−" : "+"}</span>
                   </button>
                   {mobileMenOpen && (
@@ -436,7 +436,7 @@ const Header = ({ }) => {
                     onClick={() => setMobileWomenOpen(!mobileWomenOpen)}
                     className="flex justify-between items-center w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
                   >
-                    MULHER
+                    WOMEN
                     <span className="text-lg">{mobileWomenOpen ? "−" : "+"}</span>
                   </button>
                   {mobileWomenOpen && (
@@ -475,7 +475,7 @@ const Header = ({ }) => {
                   }}
                   className="block w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
                 >
-                  COLEÇÕES
+                  COLLECTIONS
                 </button>
 
                 {/* SALE */}
