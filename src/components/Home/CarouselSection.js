@@ -8,18 +8,19 @@ const CarouselSection = ({ title, products, id }) => {
   const carouselRef = useRef(null);
   const autoSlideRef = useRef(null);
 
-  // Detect mobile screen
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Responsive items per view - mais eficiente para diferentes telas
+  const getItemsPerView = () => {
+    if (typeof window === 'undefined') return 4;
+    const width = window.innerWidth;
+    if (width < 640) return 1;      // Mobile
+    if (width < 768) return 2;      // Small tablets
+    if (width < 1024) return 3;     // Medium tablets
+    return 4;                       // Desktop
+  };
 
-  // Filter products based on selection
+  const [itemsPerView, setItemsPerView] = useState(getItemsPerView);
+
+    // Filter products based on selection
   const filteredProducts = products.filter(product => {
     if (selectedFilter === 'TODOS') return true;
     return product.category?.toUpperCase() === selectedFilter;
@@ -36,16 +37,61 @@ const CarouselSection = ({ title, products, id }) => {
     return 0;
   });
 
-  const itemsPerView = isMobile ? 1 : 4;
-  const maxIndex = Math.max(0, organizedProducts.length - itemsPerView);
+  const hasMultipleSlides = organizedProducts.length > itemsPerView;
 
-  // Auto-slide functionality
+  // Cálculo dinâmico do maxIndex baseado no número real de produtos
+  const maxIndex = Math.max(0, organizedProducts.length - itemsPerView);
+  
+  // Auto-slide com cleanup e verificação dinâmica
+  useEffect(() => {
+    // Reset currentIndex se estiver fora do range válido
+    if (currentIndex > maxIndex) {
+      setCurrentIndex(Math.max(0, maxIndex));
+    }
+    
+    // Só inicia auto-slide se há múltiplos slides
+    if (hasMultipleSlides) {
+      startAutoSlide();
+    }
+    
+    return () => stopAutoSlide();
+  }, [maxIndex, organizedProducts.length, hasMultipleSlides, currentIndex]);
+
+  // Detect screen size changes
+  useEffect(() => {
+    const updateItemsPerView = () => {
+      const newItemsPerView = getItemsPerView();
+      setItemsPerView(newItemsPerView);
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    updateItemsPerView();
+    window.addEventListener('resize', updateItemsPerView);
+    return () => window.removeEventListener('resize', updateItemsPerView);
+  }, []);
+
+  // Early return se não há produtos
+  if (!products || products.length === 0) {
+    return (
+      <section className="py-12 md:py-20 bg-[#1C1C1C]">
+        <div className="container mx-auto px-4 md:px-6 text-center">
+          <h2 className="text-3xl md:text-5xl font-bold text-[#F3ECE7] mb-4">{title}</h2>
+          <p className="text-[#F3ECE7]/60">Nenhum produto disponível no momento.</p>
+        </div>
+      </section>
+    );
+  }
+
+  // Auto-slide functionality com verificação dinâmica
   const startAutoSlide = () => {
-    if (autoSlideRef.current) return;
+    if (autoSlideRef.current || !hasMultipleSlides) return;
     autoSlideRef.current = setInterval(() => {
       setCurrentIndex(prev => {
-        const nextIndex = prev + 1;
-        return nextIndex > maxIndex ? 0 : nextIndex;
+        // Se chegou no final, volta pro início
+        if (prev >= maxIndex) {
+          return 0;
+        }
+        return prev + 1;
       });
     }, 5000);
   };
@@ -57,30 +103,43 @@ const CarouselSection = ({ title, products, id }) => {
     }
   };
 
-  useEffect(() => {
-    startAutoSlide();
-    return () => stopAutoSlide();
-  }, [maxIndex, organizedProducts.length]);
-
   const navigateCarousel = (direction) => {
     stopAutoSlide();
     
     setCurrentIndex(prev => {
+      let newIndex;
       if (direction === 'left') {
-        return Math.max(0, prev - 1);
+        newIndex = Math.max(0, prev - 1);
       } else {
-        return Math.min(maxIndex, prev + 1);
+        // Garante que não ultrapasse o maxIndex
+        newIndex = Math.min(maxIndex, prev + 1);
       }
+      return newIndex;
     });
 
-    setTimeout(() => startAutoSlide(), 8000);
+    // Reinicia auto-slide apenas se há múltiplos slides
+    if (hasMultipleSlides) {
+      setTimeout(() => startAutoSlide(), 8000);
+    }
   };
 
   const handleFilterChange = (filter) => {
     setSelectedFilter(filter);
-    setCurrentIndex(0);
+    setCurrentIndex(0); // Sempre reseta para o início
     stopAutoSlide();
-    setTimeout(() => startAutoSlide(), 1000);
+    
+    // Aguarda a atualização dos produtos filtrados antes de reiniciar auto-slide
+    setTimeout(() => {
+      const newFilteredProducts = products.filter(product => {
+        if (filter === 'TODOS') return true;
+        return product.category?.toUpperCase() === filter;
+      });
+      
+      // Só reinicia auto-slide se há produtos suficientes
+      if (newFilteredProducts.length > itemsPerView) {
+        startAutoSlide();
+      }
+    }, 1000);
   };
 
   return (
@@ -133,8 +192,8 @@ const CarouselSection = ({ title, products, id }) => {
 
         {/* Carousel Container */}
         <div className="relative group">
-          {/* Navigation Arrows */}
-          {!isMobile && currentIndex > 0 && (
+          {/* Navigation Arrows - só mostra se necessário */}
+          {!isMobile && hasMultipleSlides && currentIndex > 0 && (
             <button
               onClick={() => navigateCarousel('left')}
               className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-[#1C1C1C]/90 backdrop-blur-sm text-[#F3ECE7] p-4 hover:bg-[#8A0101] transition-all duration-300 opacity-0 group-hover:opacity-100 -translate-x-6 group-hover:-translate-x-2 border border-[#4B014E]/30"
@@ -143,7 +202,7 @@ const CarouselSection = ({ title, products, id }) => {
             </button>
           )}
 
-          {!isMobile && currentIndex < maxIndex && (
+          {!isMobile && hasMultipleSlides && currentIndex < maxIndex && (
             <button
               onClick={() => navigateCarousel('right')}
               className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-[#1C1C1C]/90 backdrop-blur-sm text-[#F3ECE7] p-4 hover:bg-[#8A0101] transition-all duration-300 opacity-0 group-hover:opacity-100 translate-x-6 group-hover:translate-x-2 border border-[#4B014E]/30"
@@ -152,27 +211,39 @@ const CarouselSection = ({ title, products, id }) => {
             </button>
           )}
 
-          {/* Mobile Navigation */}
-          {isMobile && (
-            <div className="flex justify-between items-center mb-4">
+          {/* Mobile Navigation - melhorado para touch */}
+          {isMobile && hasMultipleSlides && (
+            <div className="flex justify-between items-center mb-6 px-2">
               <button
                 onClick={() => navigateCarousel('left')}
                 disabled={currentIndex === 0}
-                className="bg-[#1C1C1C] text-[#F3ECE7] p-3 border border-[#4B014E] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#8A0101] transition-colors duration-300"
+                className="bg-[#1C1C1C] text-[#F3ECE7] p-4 border border-[#4B014E] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#8A0101] transition-colors duration-300 active:scale-95"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={22} />
               </button>
               
-              <span className="text-[#F3ECE7] text-sm font-medium">
-                {currentIndex + 1} / {maxIndex + 1}
-              </span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[#F3ECE7] text-sm font-medium">
+                  {currentIndex + 1} de {maxIndex + 1}
+                </span>
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(5, maxIndex + 1) }).map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-2 h-2 ${
+                        currentIndex === index ? 'bg-[#8A0101]' : 'bg-[#4B014E]/40'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
               
               <button
                 onClick={() => navigateCarousel('right')}
                 disabled={currentIndex === maxIndex}
-                className="bg-[#1C1C1C] text-[#F3ECE7] p-3 border border-[#4B014E] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#8A0101] transition-colors duration-300"
+                className="bg-[#1C1C1C] text-[#F3ECE7] p-4 border border-[#4B014E] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#8A0101] transition-colors duration-300 active:scale-95"
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={22} />
               </button>
             </div>
           )}
@@ -181,29 +252,41 @@ const CarouselSection = ({ title, products, id }) => {
           <div 
             ref={carouselRef}
             className="overflow-hidden"
-            onMouseEnter={!isMobile ? stopAutoSlide : undefined}
-            onMouseLeave={!isMobile ? startAutoSlide : undefined}
+            onMouseEnter={!isMobile && hasMultipleSlides ? stopAutoSlide : undefined}
+            onMouseLeave={!isMobile && hasMultipleSlides ? startAutoSlide : undefined}
           >
             <div
               className="flex transition-transform duration-700 ease-in-out gap-4 md:gap-6"
               style={{
                 transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
-                width: `${(organizedProducts.length / itemsPerView) * 100}%`
+                width: hasMultipleSlides ? `${(organizedProducts.length / itemsPerView) * 100}%` : '100%'
               }}
             >
-              {organizedProducts.map((product, index) => (
-                <div
-                  key={`${product.id}-${index}`}
-                  className="flex-shrink-0"
-                  style={{ width: `${100 / organizedProducts.length}%` }}
-                >
-                  <EnhancedProductCard 
-                    product={product} 
-                    isVisible={index >= currentIndex && index < currentIndex + itemsPerView}
-                    isMobile={isMobile}
-                  />
-                </div>
-              ))}
+              {organizedProducts.map((product, index) => {
+                // Só renderiza produtos que estão visíveis ou próximos
+                const isInCurrentView = index >= currentIndex && index < currentIndex + itemsPerView;
+                const isInNextView = index >= currentIndex - itemsPerView && index < currentIndex + (itemsPerView * 2);
+                
+                if (!isInNextView) return null;
+                
+                return (
+                  <div
+                    key={`${product.id}-${index}`}
+                    className="flex-shrink-0"
+                    style={{ 
+                      width: hasMultipleSlides 
+                        ? `${100 / organizedProducts.length}%` 
+                        : `${100 / itemsPerView}%` 
+                    }}
+                  >
+                    <EnhancedProductCard 
+                      product={product} 
+                      isVisible={isInCurrentView}
+                      isMobile={isMobile}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -216,24 +299,26 @@ const CarouselSection = ({ title, products, id }) => {
           )}
         </div>
 
-        {/* Progress Indicators */}
-        <div className="flex justify-center mt-8 gap-2">
-          {Array.from({ length: maxIndex + 1 }).map((_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setCurrentIndex(index);
-                stopAutoSlide();
-                setTimeout(() => startAutoSlide(), 3000);
-              }}
-              className={`h-1 transition-all duration-300 ${
-                currentIndex === index
-                  ? 'bg-[#8A0101] w-12'
-                  : 'bg-[#4B014E]/40 w-4 hover:bg-[#4B014E]/60'
-              }`}
-            />
-          ))}
-        </div>
+        {/* Progress Indicators - só mostra se há múltiplos slides */}
+        {hasMultipleSlides && maxIndex > 0 && (
+          <div className="flex justify-center mt-8 gap-2">
+            {Array.from({ length: maxIndex + 1 }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setCurrentIndex(index);
+                  stopAutoSlide();
+                  setTimeout(() => startAutoSlide(), 3000);
+                }}
+                className={`h-1 transition-all duration-300 ${
+                  currentIndex === index
+                    ? 'bg-[#8A0101] w-12'
+                    : 'bg-[#4B014E]/40 w-4 hover:bg-[#4B014E]/60'
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -344,63 +429,5 @@ const EnhancedProductCard = ({ product, isVisible, isMobile }) => {
     </div>
   );
 };
-
-// Mock data for demonstration
-const mockProducts = [
-  {
-    id: 1,
-    name: "Camiseta Premium Masculina",
-    price: 89.90,
-    originalPrice: 129.90,
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop",
-    category: "HOMEM",
-    isPromotion: true,
-    isLimitedStock: false,
-    isNew: false,
-    stockCount: 5
-  },
-  {
-    id: 2,
-    name: "Vestido Elegante Feminino",
-    price: 199.90,
-    image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop",
-    category: "MULHER",
-    isPromotion: false,
-    isLimitedStock: true,
-    isNew: false,
-    stockCount: 2
-  },
-  {
-    id: 3,
-    name: "Jaqueta de Couro Premium",
-    price: 299.90,
-    image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=500&fit=crop",
-    category: "HOMEM",
-    isPromotion: false,
-    isLimitedStock: false,
-    isNew: true
-  },
-  {
-    id: 4,
-    name: "Blusa Casual Feminina",
-    price: 79.90,
-    image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400&h=500&fit=crop",
-    category: "MULHER",
-    isPromotion: false,
-    isLimitedStock: false,
-    isNew: false
-  },
-  {
-    id: 5,
-    name: "Calça Jeans Masculina",
-    price: 149.90,
-    originalPrice: 199.90,
-    image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=500&fit=crop",
-    category: "HOMEM",
-    isPromotion: true,
-    isLimitedStock: false,
-    isNew: false
-  }
-];
 
 export default CarouselSection;
