@@ -61,22 +61,20 @@ const Home = () => {
       <GridProduct mockProducts={mockProducts}/>
 
       <CarousselSection title="DRESSES" products={mockProducts} id="vestidos" />
-      <CarousselSection title="FOOTWEAR" products={mockProducts} id="calcados" />
+      <CarousselSection title="FOOTWEAR" products={mockProducts} id="featured-collection" />
       
       {/* Faixa Promocional para Cadastro */}
       <PromotionalBanner />
 
-      <section className="py-6 bg-gradient-to-r from-red-600 to-purple-600 text-white text-center">
+      <section className="py-6 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white text-center">
         <p className="text-lg font-bold tracking-wider uppercase">
-          💥 DISCOUNTS UP TO 70% • NEW COLLECTION AVAILABLE • FREE SHIPPING OVER R$450 💥
+          DISCOUNTS UP TO 70% • NEW COLLECTION AVAILABLE • FREE SHIPPING OVER $450
         </p>
       </section>
 
       {/* Filtros por Categorias */}
       <CategoryFilterSection />
 
-
-      
       {/* Seção de Propagandas com IMG ao fundo 
       <AccountBanner />*/}
 

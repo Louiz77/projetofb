@@ -1,51 +1,53 @@
 import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
-import ProductCard from "./ProductCard";
 
 const CarouselSection = ({ title, products, id }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState('TODOS');
+  const [isMobile, setIsMobile] = useState(false);
   const carouselRef = useRef(null);
   const autoSlideRef = useRef(null);
 
-  // Filtrar produtos baseado na seleção
+  // Detect mobile screen
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Filter products based on selection
   const filteredProducts = products.filter(product => {
     if (selectedFilter === 'TODOS') return true;
     return product.category?.toUpperCase() === selectedFilter;
   });
 
-  // Organizar produtos por prioridade
+  // Organize products by priority
   const organizedProducts = [...filteredProducts].sort((a, b) => {
-    // 1. Itens promocionais primeiro
     if (a.isPromotion && !b.isPromotion) return -1;
     if (!a.isPromotion && b.isPromotion) return 1;
-    
-    // 2. Produtos com estoque limitado
     if (a.isLimitedStock && !b.isLimitedStock) return -1;
     if (!a.isLimitedStock && b.isLimitedStock) return 1;
-    
-    // 3. Novidades
     if (a.isNew && !b.isNew) return -1;
     if (!a.isNew && b.isNew) return 1;
-    
     return 0;
   });
 
-  const itemsPerView = 6;
+  const itemsPerView = isMobile ? 1 : 4;
   const maxIndex = Math.max(0, organizedProducts.length - itemsPerView);
 
   // Auto-slide functionality
   const startAutoSlide = () => {
+    if (autoSlideRef.current) return;
     autoSlideRef.current = setInterval(() => {
       setCurrentIndex(prev => {
         const nextIndex = prev + 1;
-        if (nextIndex > maxIndex) {
-          // Animar "puxar para direita e voltar"
-          return 0;
-        }
-        return nextIndex;
+        return nextIndex > maxIndex ? 0 : nextIndex;
       });
-    }, 7000);
+    }, 5000);
   };
 
   const stopAutoSlide = () => {
@@ -58,23 +60,20 @@ const CarouselSection = ({ title, products, id }) => {
   useEffect(() => {
     startAutoSlide();
     return () => stopAutoSlide();
-  }, [maxIndex]);
+  }, [maxIndex, organizedProducts.length]);
 
   const navigateCarousel = (direction) => {
     stopAutoSlide();
     
     setCurrentIndex(prev => {
-      let newIndex;
       if (direction === 'left') {
-        newIndex = Math.max(0, prev - 1);
+        return Math.max(0, prev - 1);
       } else {
-        newIndex = Math.min(maxIndex, prev + 1);
+        return Math.min(maxIndex, prev + 1);
       }
-      return newIndex;
     });
 
-    // Reiniciar auto-slide após navegação manual
-    setTimeout(() => startAutoSlide(), 10000);
+    setTimeout(() => startAutoSlide(), 8000);
   };
 
   const handleFilterChange = (filter) => {
@@ -85,72 +84,108 @@ const CarouselSection = ({ title, products, id }) => {
   };
 
   return (
-    <section className="py-16 bg-gray-900 relative overflow-hidden">
-      <div className="container mx-auto px-4">
+    <section className="py-12 md:py-20 bg-[#1C1C1C] relative overflow-hidden">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 25% 25%, #8A0101 0%, transparent 50%), 
+                           radial-gradient(circle at 75% 75%, #4B014E 0%, transparent 50%)`,
+          backgroundSize: '200px 200px'
+        }} />
+      </div>
+
+      <div className="container mx-auto px-4 md:px-6 relative z-10">
         {/* Header */}
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-red-500 bg-clip-text text-transparent mb-4">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-8 md:mb-12 gap-6">
+          <div className="space-y-6">
+            <h2 className="text-3xl md:text-5xl font-bold text-[#F3ECE7] relative">
               {title}
+              <div className="absolute -bottom-2 left-0 w-16 h-1 bg-gradient-to-r from-[#8A0101] to-[#4B014E]" />
             </h2>
             
-            {/* Filtros */}
-            <div className="flex gap-3">
+            {/* Filters */}
+            <div className="flex flex-wrap gap-3">
               {['TODOS', 'HOMEM', 'MULHER'].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => handleFilterChange(filter)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  className={`px-6 py-3 text-sm font-medium transition-all duration-300 relative overflow-hidden group ${
                     selectedFilter === filter
-                      ? 'bg-gradient-to-r from-purple-600 to-red-600 text-white shadow-lg'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
+                      ? 'bg-[#8A0101] text-[#F3ECE7] shadow-lg shadow-[#8A0101]/25'
+                      : 'bg-transparent text-[#F3ECE7] border border-[#4B014E] hover:bg-[#4B014E]/20'
                   }`}
                 >
-                  {filter}
+                  <span className="relative z-10">{filter}</span>
+                  {selectedFilter !== filter && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#8A0101] to-[#4B014E] opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Botão Ver Todos */}
-          <button className="flex items-center gap-2 bg-transparent border-2 border-purple-500 text-purple-400 px-6 py-3 rounded-full hover:bg-purple-500 hover:text-white transition-all duration-300 group">
-            <Eye size={18} />
+          {/* View All Button */}
+          <button className="flex items-center gap-3 bg-transparent border-2 border-[#4B014E] text-[#F3ECE7] px-6 py-3 hover:bg-[#4B014E] transition-all duration-300 group self-start">
+            <Eye size={18} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Ver Todos</span>
           </button>
         </div>
 
         {/* Carousel Container */}
         <div className="relative group">
-          {/* Setas de Navegação */}
-          {currentIndex > 0 && (
+          {/* Navigation Arrows */}
+          {!isMobile && currentIndex > 0 && (
             <button
               onClick={() => navigateCarousel('left')}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/80 text-white p-3 rounded-full hover:bg-black/90 transition-all duration-300 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-2"
-              style={{ marginLeft: '-20px' }}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-[#1C1C1C]/90 backdrop-blur-sm text-[#F3ECE7] p-4 hover:bg-[#8A0101] transition-all duration-300 opacity-0 group-hover:opacity-100 -translate-x-6 group-hover:-translate-x-2 border border-[#4B014E]/30"
             >
               <ChevronLeft size={24} />
             </button>
           )}
 
-          {currentIndex < maxIndex && (
+          {!isMobile && currentIndex < maxIndex && (
             <button
               onClick={() => navigateCarousel('right')}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/80 text-white p-3 rounded-full hover:bg-black/90 transition-all duration-300 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:-translate-x-2"
-              style={{ marginRight: '-20px' }}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-[#1C1C1C]/90 backdrop-blur-sm text-[#F3ECE7] p-4 hover:bg-[#8A0101] transition-all duration-300 opacity-0 group-hover:opacity-100 translate-x-6 group-hover:translate-x-2 border border-[#4B014E]/30"
             >
               <ChevronRight size={24} />
             </button>
+          )}
+
+          {/* Mobile Navigation */}
+          {isMobile && (
+            <div className="flex justify-between items-center mb-4">
+              <button
+                onClick={() => navigateCarousel('left')}
+                disabled={currentIndex === 0}
+                className="bg-[#1C1C1C] text-[#F3ECE7] p-3 border border-[#4B014E] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#8A0101] transition-colors duration-300"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              
+              <span className="text-[#F3ECE7] text-sm font-medium">
+                {currentIndex + 1} / {maxIndex + 1}
+              </span>
+              
+              <button
+                onClick={() => navigateCarousel('right')}
+                disabled={currentIndex === maxIndex}
+                className="bg-[#1C1C1C] text-[#F3ECE7] p-3 border border-[#4B014E] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#8A0101] transition-colors duration-300"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
           )}
 
           {/* Carousel */}
           <div 
             ref={carouselRef}
             className="overflow-hidden"
-            onMouseEnter={stopAutoSlide}
-            onMouseLeave={startAutoSlide}
+            onMouseEnter={!isMobile ? stopAutoSlide : undefined}
+            onMouseLeave={!isMobile ? startAutoSlide : undefined}
           >
             <div
-              className="flex transition-transform duration-500 ease-out gap-4"
+              className="flex transition-transform duration-700 ease-in-out gap-4 md:gap-6"
               style={{
                 transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
                 width: `${(organizedProducts.length / itemsPerView) * 100}%`
@@ -159,33 +194,42 @@ const CarouselSection = ({ title, products, id }) => {
               {organizedProducts.map((product, index) => (
                 <div
                   key={`${product.id}-${index}`}
-                  className="flex-shrink-0 relative group/card"
+                  className="flex-shrink-0"
                   style={{ width: `${100 / organizedProducts.length}%` }}
                 >
                   <EnhancedProductCard 
                     product={product} 
                     isVisible={index >= currentIndex && index < currentIndex + itemsPerView}
+                    isMobile={isMobile}
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Gradient Fade Effects */}
-          <div className="absolute top-0 left-0 w-16 h-full bg-gradient-to-r from-gray-900 to-transparent z-5 pointer-events-none" />
-          <div className="absolute top-0 right-0 w-16 h-full bg-gradient-to-l from-gray-900 to-transparent z-5 pointer-events-none" />
+          {/* Gradient Overlays */}
+          {!isMobile && (
+            <>
+              <div className="absolute top-0 left-0 w-20 h-full bg-gradient-to-r from-[#1C1C1C] via-[#1C1C1C]/80 to-transparent z-10 pointer-events-none" />
+              <div className="absolute top-0 right-0 w-20 h-full bg-gradient-to-l from-[#1C1C1C] via-[#1C1C1C]/80 to-transparent z-10 pointer-events-none" />
+            </>
+          )}
         </div>
 
-        {/* Indicators */}
-        <div className="flex justify-center mt-6 gap-2">
+        {/* Progress Indicators */}
+        <div className="flex justify-center mt-8 gap-2">
           {Array.from({ length: maxIndex + 1 }).map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+              onClick={() => {
+                setCurrentIndex(index);
+                stopAutoSlide();
+                setTimeout(() => startAutoSlide(), 3000);
+              }}
+              className={`h-1 transition-all duration-300 ${
                 currentIndex === index
-                  ? 'bg-purple-500 w-8'
-                  : 'bg-gray-600 hover:bg-gray-500'
+                  ? 'bg-[#8A0101] w-12'
+                  : 'bg-[#4B014E]/40 w-4 hover:bg-[#4B014E]/60'
               }`}
             />
           ))}
@@ -195,94 +239,168 @@ const CarouselSection = ({ title, products, id }) => {
   );
 };
 
-// Componente ProductCard Aprimorado
-const EnhancedProductCard = ({ product, isVisible }) => {
+// Enhanced Product Card Component
+const EnhancedProductCard = ({ product, isVisible, isMobile }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
     <div
-      className={`relative bg-gray-800 overflow-hidden transform transition-all duration-300 ${
+      className={`relative bg-[#1C1C1C] border border-[#4B014E]/20 overflow-hidden transform transition-all duration-300 ${
         isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-60'
-      } ${isHovered ? 'scale-105 shadow-2xl' : ''}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      } ${isHovered && !isMobile ? 'scale-105 shadow-2xl shadow-[#8A0101]/20' : ''} group`}
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
     >
-      {/* Etiquetas */}
+      {/* Priority Labels */}
       <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
         {product.isPromotion && (
-          <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+          <span className="bg-[#8A0101] text-[#F3ECE7] px-3 py-1 text-xs font-bold shadow-lg relative overflow-hidden">
             PROMOÇÃO
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
           </span>
         )}
         {product.isLimitedStock && (
-          <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+          <span className="bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] px-3 py-1 text-xs font-bold shadow-lg">
             ÚLTIMAS UNIDADES
           </span>
         )}
         {product.isNew && !product.isPromotion && !product.isLimitedStock && (
-          <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+          <span className="bg-[#4B014E] text-[#F3ECE7] px-3 py-1 text-xs font-bold shadow-lg">
             NOVO
           </span>
         )}
       </div>
 
-      {/* Imagem */}
-      <div className="relative overflow-hidden aspect-[4/5]">
+      {/* Image Container */}
+      <div className="relative overflow-hidden aspect-[3/4] bg-[#1C1C1C]">
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#4B014E]/20 to-[#8A0101]/20 animate-pulse" />
+        )}
+        
         <img
           src={product.image}
           alt={product.name}
-          className={`w-full h-full object-cover transition-transform duration-500 ${
+          className={`w-full h-full object-cover transition-all duration-700 ${
             isHovered ? 'scale-110' : 'scale-100'
-          }`}
+          } ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setImageLoaded(true)}
         />
-        {/* Overlay no Hover */}
-        <div className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${
+        
+        {/* Overlay Effects */}
+        <div className={`absolute inset-0 bg-gradient-to-t from-[#1C1C1C]/80 via-transparent to-transparent transition-opacity duration-300 ${
+          isHovered ? 'opacity-100' : 'opacity-0'
+        }`} />
+        
+        {/* Hover Glow Effect */}
+        <div className={`absolute inset-0 bg-gradient-to-t from-[#8A0101]/20 to-[#4B014E]/20 transition-opacity duration-300 ${
           isHovered ? 'opacity-100' : 'opacity-0'
         }`} />
       </div>
 
-      {/* Informações do Produto */}
-      <div className="p-1 relative">
-        <h3 className="text-white font-semibold text-lg mb-2 line-clamp-2">
+      {/* Product Information */}
+      <div className="p-4 relative bg-gradient-to-b from-transparent to-[#1C1C1C]/50">
+        <h3 className="text-[#F3ECE7] font-semibold text-base md:text-lg mb-3 line-clamp-2 leading-tight">
           {product.name}
         </h3>
         
-        {/* Preços */}
-        <div className="flex items-center gap-3 mb-3">
+        {/* Pricing */}
+        <div className="flex items-center gap-3 mb-4">
           {product.isPromotion ? (
             <>
-              <span className="text-gray-400 line-through text-sm">
+              <span className="text-[#F3ECE7]/60 line-through text-sm">
                 $ {product.originalPrice?.toFixed(2)}
               </span>
-              <span className="text-red-400 font-bold text-x">
+              <span className="text-[#8A0101] font-bold text-lg">
                 $ {product.price?.toFixed(2)}
               </span>
             </>
           ) : (
-            <span className="text-white font-bold text-l">
+            <span className="text-[#F3ECE7] font-bold text-lg">
               $ {product.price?.toFixed(2)}
             </span>
           )}
         </div>
 
-        {/* Informações Extras no Hover */}
-        <div className={`transition-all duration-300 overflow-hidden ${
-          isHovered ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
-        }`}>
-          {product.isLimitedStock && (
-            <div className="text-orange-400 text-sm mb-2">
-              <span className="font-medium">Restam apenas {product.stockCount || 3} unidades!</span>
-            </div>
-          )}
+        {/* Stock Alert */}
+        {product.isLimitedStock && (
+          <div className="text-[#8A0101] text-sm mb-3">
+            <span className="font-medium">Restam apenas {product.stockCount || 3} unidades!</span>
+          </div>
+        )}
 
-          {/* Informações Extras no Hover 
-          <button className="w-full bg-gradient-to-r from-purple-600 to-red-600 text-white py-2 rounded-lg font-medium hover:shadow-lg transition-shadow duration-300">
+        {/* Hover Actions */}
+        <div className={`transition-all duration-300 overflow-hidden ${
+          isHovered && !isMobile ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+          <button className="w-full bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] py-3 font-medium hover:shadow-lg hover:shadow-[#8A0101]/30 transition-all duration-300 transform hover:scale-105">
             Adicionar ao Carrinho
-          </button>*/}
+          </button>
         </div>
       </div>
+
+      {/* Decorative Corner */}
+      <div className="absolute top-0 right-0 w-0 h-0 border-l-[20px] border-l-transparent border-t-[20px] border-t-[#4B014E]/20" />
     </div>
   );
 };
+
+// Mock data for demonstration
+const mockProducts = [
+  {
+    id: 1,
+    name: "Camiseta Premium Masculina",
+    price: 89.90,
+    originalPrice: 129.90,
+    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop",
+    category: "HOMEM",
+    isPromotion: true,
+    isLimitedStock: false,
+    isNew: false,
+    stockCount: 5
+  },
+  {
+    id: 2,
+    name: "Vestido Elegante Feminino",
+    price: 199.90,
+    image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop",
+    category: "MULHER",
+    isPromotion: false,
+    isLimitedStock: true,
+    isNew: false,
+    stockCount: 2
+  },
+  {
+    id: 3,
+    name: "Jaqueta de Couro Premium",
+    price: 299.90,
+    image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=500&fit=crop",
+    category: "HOMEM",
+    isPromotion: false,
+    isLimitedStock: false,
+    isNew: true
+  },
+  {
+    id: 4,
+    name: "Blusa Casual Feminina",
+    price: 79.90,
+    image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400&h=500&fit=crop",
+    category: "MULHER",
+    isPromotion: false,
+    isLimitedStock: false,
+    isNew: false
+  },
+  {
+    id: 5,
+    name: "Calça Jeans Masculina",
+    price: 149.90,
+    originalPrice: 199.90,
+    image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=500&fit=crop",
+    category: "HOMEM",
+    isPromotion: true,
+    isLimitedStock: false,
+    isNew: false
+  }
+];
 
 export default CarouselSection;
