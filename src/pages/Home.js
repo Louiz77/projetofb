@@ -21,6 +21,8 @@ const Home = () => {
     { id: 7, name: "Rebel Boots", price: 349, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop", sale: false, limited: true },
     { id: 8, name: "Rebel Boots", price: 349, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop", sale: false, limited: true },
     { id: 9, name: "Gothic Dress", price: 299, originalPrice: 399, image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop", sale: true, limited: false },
+    { id: 10, name: "Gothic Jacket", price: 429, originalPrice: 648, image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop", sale: true, limited: true },
+
   ];
 
   return (
