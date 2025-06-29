@@ -193,15 +193,15 @@ const Home = () => {
     transformProduct(edge.node)
   ) || [];
 
-  const bottomProducts = data?.topProducts?.edges?.map(edge => 
+  const bottomProducts = data?.bottomProducts?.edges?.map(edge => 
     transformProduct(edge.node)
   ) || [];
 
-  const dressesProducts = data?.topProducts?.edges?.map(edge => 
+  const dressesProducts = data?.dressesProducts?.edges?.map(edge => 
     transformProduct(edge.node)
   ) || [];
 
-  const footwearProducts = data?.topProducts?.edges?.map(edge => 
+  const footwearProducts = data?.footwearProducts?.edges?.map(edge => 
     transformProduct(edge.node)
   ) || [];
 
@@ -561,7 +561,7 @@ const Home = () => {
         id="FOOTWEAR"
         onAddToCart={addToCart}
       />
-      
+
       {/* Faixa Promocional para Cadastro */}
       <PromotionalBanner />
 
