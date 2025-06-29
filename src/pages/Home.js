@@ -9,9 +9,207 @@ import GridProduct from '../components/Home/GridProduct';
 import PromotionalBanner from '../components/Home/PromotionalBanner';
 import AccountBanner from '../components/Home/AccountBanner';
 import CategoryFilter from '../components/Home/CategoryFilter';
+import { auth, db, doc, getDoc, setDoc, onSnapshot } from '../client/firebaseConfig';
+import client from '../client/ShopifyClient';
+import { useQuery, gql } from '@apollo/client';
+
+const GET_HOME_PRODUCTS = gql`
+  query {
+    # Produtos com tag "Hot-Topics"
+    hotTopicsProducts: products(first: 10, query: "tag:Hot-Topics") {
+      edges {
+        node {
+          id
+          title
+          tags
+          images(first: 1) {
+            edges {
+              node {
+                url
+              }
+            }
+          }
+          variants(first: 5) {
+            edges {
+              node {
+                id
+                price { amount }
+                compareAtPrice { amount }
+                title
+                availableForSale
+              }
+            }
+          }
+        }
+      }
+    }
+
+    # Produtos com tag "Top"
+    topProducts: products(first: 10, query: "tag:Top") {
+      edges {
+        node {
+          id
+          title
+          tags
+          images(first: 1) {
+            edges {
+              node {
+                url
+              }
+            }
+          }
+          variants(first: 5) {
+            edges {
+              node {
+                id
+                price { amount }
+                compareAtPrice { amount }
+                title
+                availableForSale
+              }
+            }
+          }
+        }
+      }
+    }
+
+    # Produtos com tag "Bottom"
+    bottomProducts: products(first: 10, query: "tag:Bottom") {
+      edges {
+        node {
+          id
+          title
+          tags
+          images(first: 1) {
+            edges {
+              node {
+                url
+              }
+            }
+          }
+          variants(first: 5) {
+            edges {
+              node {
+                id
+                price { amount }
+                compareAtPrice { amount }
+                title
+                availableForSale
+              }
+            }
+          }
+        }
+      }
+    }
+
+    # Produtos com tag "Dresses"
+    dressesProducts: products(first: 10, query: "tag:Dresses") {
+      edges {
+        node {
+          id
+          title
+          tags
+          images(first: 1) {
+            edges {
+              node {
+                url
+              }
+            }
+          }
+          variants(first: 5) {
+            edges {
+              node {
+                id
+                price { amount }
+                compareAtPrice { amount }
+                title
+                availableForSale
+              }
+            }
+          }
+        }
+      }
+    }
+
+    # Produtos com tag "Footwear"
+    footwear: products(first: 10, query: "tag:Footwear") {
+      edges {
+        node {
+          id
+          title
+          tags
+          images(first: 1) {
+            edges {
+              node {
+                url
+              }
+            }
+          }
+          variants(first: 5) {
+            edges {
+              node {
+                id
+                price { amount }
+                compareAtPrice { amount }
+                title
+                availableForSale
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
 
 const Home = () => {
-    const mockProducts = [
+  const { loading, error, data } = useQuery(GET_HOME_PRODUCTS);
+
+  // Helper para transformar dados do produto
+  const transformProduct = (product) => {
+    const variant = product.variants.edges[0]?.node;
+    return {
+      id: product.id,
+      name: product.title,
+      image: product.images.edges[0]?.node.url || "https://via.placeholder.com/400x500 ",
+      price: parseFloat(variant?.price.amount || 0),
+      originalPrice: parseFloat(variant?.compareAtPrice?.amount || 0),
+      tags: product.tags || [],
+      isPromotion: product.tags.includes("promoção"),
+      isLimitedStock: product.tags.includes("estoque-limitado"),
+      isNew: product.tags.includes("novo"),
+      availableForSale: variant?.availableForSale || false,
+      variants: product.variants,
+      stockCount: variant?.availableForSale ? 3 : 0
+    };
+  };
+
+  // Transformar dados
+  const hotTopicProducts = data?.hotTopicsProducts?.edges?.map(edge => 
+    transformProduct(edge.node)
+  ) || [];
+
+  const topProducts = data?.topProducts?.edges?.map(edge => 
+    transformProduct(edge.node)
+  ) || [];
+
+  const bottomProducts = data?.topProducts?.edges?.map(edge => 
+    transformProduct(edge.node)
+  ) || [];
+
+  const dressesProducts = data?.topProducts?.edges?.map(edge => 
+    transformProduct(edge.node)
+  ) || [];
+
+  const footwearProducts = data?.topProducts?.edges?.map(edge => 
+    transformProduct(edge.node)
+  ) || [];
+
+  if (loading) return <div>Carregando...</div>;
+  if (error) return <div>Erro: {error.message}</div>;
+
+
+  const mockProducts = [
     { id: 1, name: "Gothic Dress", price: 299, originalPrice: 399, image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop", sale: true, limited: false },
     { id: 2, name: "Dark Angel Top", price: 159, image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop", sale: false, limited: true },
     { id: 3, name: "Shadow Jacket", price: 449, image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&h=500&fit=crop", sale: false, limited: false },
@@ -180,6 +378,115 @@ const Home = () => {
       stockCount: 5
     }
   ];
+
+  const getOrCreateCartId = async () => {
+    let cartId = localStorage.getItem('shopifyCartId');
+
+    if (!cartId) {
+      try {
+        const { data } = await client.mutate({
+          mutation: gql`
+            mutation {
+              cartCreate(input: {}) {
+                cart {
+                  id
+                  checkoutUrl
+                }
+              }
+            }
+          `,
+        });
+        cartId = data.cartCreate.cart.id;
+        localStorage.setItem('shopifyCartId', cartId);
+      } catch (error) {
+        console.error("Erro ao criar carrinho do Shopify:", error);
+        alert("Falha ao iniciar o carrinho. Tente recarregar a página.");
+        throw error;
+      }
+    }
+
+    return cartId;
+  };
+
+  // Função para adicionar ao carrinho
+  const addToCart = async (item) => {
+    try {
+      const cartId = localStorage.getItem('shopifyCartId') || (await getOrCreateCartId());
+
+      // Validar que o merchandiseId é um variantId válido
+      if (!item.variantId || !item.variantId.startsWith("gid://shopify/ProductVariant/")) {
+        alert("ID da variante inválido. Não foi possível adicionar ao carrinho.");
+        return;
+      }
+
+      const { data } = await client.mutate({
+        mutation: gql`
+          mutation ($cartId: ID!, $lines: [CartLineInput!]!) {
+            cartLinesAdd(cartId: $cartId, lines: $lines) {
+              cart {
+                checkoutUrl
+              }
+            }
+          }
+        `,
+        variables: {
+          cartId,
+          lines: [
+            {
+              merchandiseId: item.variantId,
+              quantity: item.quantity || 1,
+            },
+          ],
+        },
+      });
+
+      // Atualizar carrinho local com estrutura padronizada
+      const cartItem = {
+        id: item.variantId,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: item.quantity || 1,
+      };
+
+      // Lógica para atualizar carrinho no Firebase ou localStorage
+      const user = auth.currentUser;
+      if (user) {
+        const cartRef = doc(db, 'carts', user.uid);
+        const cartSnap = await getDoc(cartRef);
+        const existingItems = cartSnap.exists() ? cartSnap.data().items || [] : [];
+
+        const isAlreadyInCart = existingItems.some(cartItem => cartItem.id === cartItem.id);
+        const updatedItems = isAlreadyInCart
+          ? existingItems.map(cartItem => 
+              cartItem.id === cartItem.id 
+                ? { ...cartItem, quantity: cartItem.quantity + 1 } 
+                : cartItem
+            )
+          : [...existingItems, cartItem];
+
+        await setDoc(cartRef, { items: updatedItems }, { merge: true });
+      } else {
+        const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+        const isAlreadyInCart = guestCart.some(cartItem => cartItem.id === cartItem.id);
+        const updatedItems = isAlreadyInCart
+          ? guestCart.map(cartItem => 
+              cartItem.id === cartItem.id 
+                ? { ...cartItem, quantity: cartItem.quantity + 1 } 
+                : cartItem
+            )
+          : [...guestCart, cartItem];
+
+        localStorage.setItem('guestCart', JSON.stringify(updatedItems));
+      }
+
+      alert(`${item.name} adicionado ao carrinho`);
+    } catch (error) {
+      console.error("Erro ao adicionar ao carrinho:", error);
+      alert("Falha ao adicionar ao carrinho. Verifique os dados do produto.");
+    }
+  };
+
   return (
     <div>
       <HeroBanner />
@@ -203,7 +510,12 @@ const Home = () => {
       </section>
 
       {/* Hot Topics */}
-      <CarousselSection title="HOT TOPICS" products={mockProducts} id="hot-topics"/>
+      <CarousselSection 
+        title="HOT TOPICS" 
+        products={hotTopicProducts} 
+        id="hot-topics"
+        onAddToCart={addToCart}
+      />
 
       {/* Kits Section */}
       <ProductSection 
@@ -212,8 +524,18 @@ const Home = () => {
         />
 
       {/* Carrosseis de Destaques */}
-      <CarousselSection title="TOP" products={mockProducts} id="parte-cima" />
-      <CarousselSection title="BOTTOM PART" products={mockProducts} id="parte-baixo" />
+      <CarousselSection 
+        title="TOP" 
+        products={topProducts} 
+        id="parte-cima"
+        onAddToCart={addToCart}
+      />
+      <CarousselSection 
+        title="BOTTOM PART" 
+        products={bottomProducts} 
+        id="parte-baixo"
+        onAddToCart={addToCart}
+      />
 
       {/* Acessórios & Bolsas */}
       {/* <GridProduct mockProducts={mockProducts}/> */}
@@ -226,8 +548,19 @@ const Home = () => {
         heroButton="DISCOVER NOW"
       />
 
-      <CarousselSection title="DRESSES" products={mockProducts} id="vestidos" />
-      <CarousselSection title="FOOTWEAR" products={mockProducts} id="featured-collection" />
+
+      <CarousselSection 
+        title="DRESSES" 
+        products={dressesProducts} 
+        id="DRESSES"
+        onAddToCart={addToCart}
+      />
+      <CarousselSection 
+        title="FOOTWEAR" 
+        products={footwearProducts} 
+        id="FOOTWEAR"
+        onAddToCart={addToCart}
+      />
       
       {/* Faixa Promocional para Cadastro */}
       <PromotionalBanner />

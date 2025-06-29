@@ -1,5 +1,21 @@
 import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
+import { gql } from '@apollo/client';
+import { auth, db, doc, getDoc, setDoc } from '../../client/firebaseConfig';
+import client from '../../client/ShopifyClient';
+import { useNavigate } from 'react-router-dom';
+
+// Mutação para adicionar ao carrinho
+const ADD_TO_CART = gql`
+  mutation ($cartId: ID!, $lines: [CartLineInput!]!) {
+    cartLinesAdd(cartId: $cartId, lines: $lines) {
+      cart {
+        id
+        checkoutUrl
+      }
+    }
+  }
+`;
 
 const CarouselSection = ({ title, products, id }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -7,7 +23,7 @@ const CarouselSection = ({ title, products, id }) => {
   const [isMobile, setIsMobile] = useState(false);
   const carouselRef = useRef(null);
   const autoSlideRef = useRef(null);
-  
+
   // Touch handling states
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
@@ -82,6 +98,13 @@ const CarouselSection = ({ title, products, id }) => {
     if (hasMultipleSlides) setTimeout(() => startAutoSlide(), 3000);
   };
 
+  const stopAutoSlide = () => {
+    if (autoSlideRef.current) {
+      clearInterval(autoSlideRef.current);
+      autoSlideRef.current = null;
+    }
+  };
+  
   // Auto-slide com cleanup e verificação dinâmica
   useEffect(() => {
     // Reset currentIndex se estiver fora do range válido
@@ -134,13 +157,6 @@ const CarouselSection = ({ title, products, id }) => {
         return prev + 1;
       });
     }, 5000);
-  };
-
-  const stopAutoSlide = () => {
-    if (autoSlideRef.current) {
-      clearInterval(autoSlideRef.current);
-      autoSlideRef.current = null;
-    }
   };
 
   const navigateCarousel = (direction) => {
@@ -404,51 +420,175 @@ const CarouselSection = ({ title, products, id }) => {
   );
 };
 
-const EnhancedProductCard = ({ product, isVisible, isMobile }) => {
+const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  console.log(product)
+  const handleAddToCart = async () => {
+      if (!product.variants?.edges?.length) {
+        alert("Produto não tem variantes disponíveis.");
+        return;
+      }
+
+      const selectedVariant = product.variants.edges[selectedVariantIndex]?.node;
+      if (!selectedVariant) {
+        alert("Falha ao obter dados da variante.");
+        return;
+      }
+
+      try {
+        const cartId = await getOrCreateCartId();
+        
+        // Adicionar ao carrinho do Shopify
+        const { data } = await client.mutate({
+          mutation: ADD_TO_CART,
+          variables: {
+            cartId,
+            lines: [{
+              merchandiseId: selectedVariant.id,
+              quantity: 1
+            }]
+          }
+        });
+
+        // Estrutura do item para Firebase/localStorage
+        const cartItem = {
+          id: selectedVariant.id,
+          name: product.name,
+          price: parseFloat(selectedVariant.price.amount),
+          image: product.image,
+          quantity: 1
+        };
+
+        // Atualizar carrinho local
+        const user = auth.currentUser;
+        if (user) {
+          const cartRef = doc(db, 'carts', user.uid);
+          const cartSnap = await getDoc(cartRef);
+          const existingItems = cartSnap.exists() ? cartSnap.data().items : [];
+
+          existingItems.push(cartItem);
+          await setDoc(cartRef, { items: existingItems }, { merge: true });
+        } else {
+          const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+          guestCart.push(cartItem);
+          localStorage.setItem('guestCart', JSON.stringify(guestCart));
+        }
+
+        alert("Produto adicionado ao carrinho!");
+      } catch (error) {
+        console.error("Erro ao adicionar ao carrinho:", error);
+        alert("Falha ao adicionar ao carrinho. Verifique os dados do produto.");
+      }
+  };
+
+  const getOrCreateCartId = async () => {
+    let cartId = localStorage.getItem('shopifyCartId');
+
+    if (!cartId) {
+      try {
+        const { data } = await client.mutate({
+          mutation: gql`
+            mutation {
+              cartCreate(input: {}) {
+                cart {
+                  id
+                  checkoutUrl
+                }
+              }
+            }
+          `,
+        });
+        cartId = data.cartCreate.cart.id;
+        localStorage.setItem('shopifyCartId', cartId);
+      } catch (error) {
+        console.error("Erro ao criar carrinho do Shopify:", error);
+        alert("Falha ao iniciar o carrinho. Tente recarregar a página.");
+        throw error;
+      }
+    }
+
+    return cartId;
+  };
+
+  // Helper functions para manter compatibilidade
+  const hasTag = (tag) => product.tags?.includes?.(tag) || product[`is${tag.charAt(0).toUpperCase() + tag.slice(1)}`];
+  const isPromotion = hasTag('promoção') || hasTag('promotion') || product.isPromotion || product.sale;
+  const isLimitedStock = hasTag('estoque-limitado') || hasTag('limited-stock') || product.isLimitedStock || product.limited;
+  const isNew = hasTag('novo') || hasTag('new') || product.isNew;
+  const hasOriginalPrice = product.originalPrice && product.originalPrice > 0 && product.originalPrice !== product.price;
+  
+  // Função para otimizar URL da imagem
+  const getOptimizedImageUrl = (imageUrl) => {
+    if (!imageUrl) return '';
+    
+    // Se já tem parâmetros de tamanho, usar como está
+    if (imageUrl.includes('w=') && imageUrl.includes('h=')) {
+      return imageUrl;
+    }
+    
+    // Para Unsplash, adicionar parâmetros de otimização
+    if (imageUrl.includes('unsplash.com')) {
+      const separator = imageUrl.includes('?') ? '&' : '?';
+      return `${imageUrl}${separator}w=400&h=500&fit=crop&auto=format&q=80`;
+    }
+    
+    // Para Shopify CDN, adicionar parâmetros de redimensionamento
+    if (imageUrl.includes('shopify.com') || imageUrl.includes('myshopify.com')) {
+      // Remove parâmetros existentes de tamanho
+      const cleanUrl = imageUrl.split('?')[0];
+      return `${cleanUrl}?width=400&height=500&crop=center`;
+    }
+    
+    return imageUrl;
+  };
 
   return (
     <div
       className={`relative bg-[#1C1C1C] border border-[#4B014E]/20 overflow-hidden transform transition-all duration-300 ${
         isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-60'
-      } ${isHovered && !isMobile ? 'scale-105 shadow-2xl shadow-[#8A0101]/20' : ''} group`}
+      } ${isHovered && !isMobile ? 'scale-105 shadow-2xl shadow-[#8A0101]/20' : ''} group rounded-lg`}
       onMouseEnter={() => !isMobile && setIsHovered(true)}
       onMouseLeave={() => !isMobile && setIsHovered(false)}
     >
       {/* Priority Labels */}
       <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-        {product.isPromotion && (
-          <span className="bg-[#8A0101] text-[#F3ECE7] px-3 py-1 text-xs font-bold shadow-lg relative overflow-hidden">
+        {isPromotion && (
+          <span className="bg-[#8A0101] text-[#F3ECE7] px-3 py-1 text-xs font-bold shadow-lg relative overflow-hidden rounded-md">
             PROMOÇÃO
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
           </span>
         )}
-        {product.isLimitedStock && (
-          <span className="bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] px-3 py-1 text-xs font-bold shadow-lg">
+        {isLimitedStock && (
+          <span className="bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] px-3 py-1 text-xs font-bold shadow-lg rounded-md">
             ÚLTIMAS UNIDADES
           </span>
         )}
-        {product.isNew && !product.isPromotion && !product.isLimitedStock && (
-          <span className="bg-[#4B014E] text-[#F3ECE7] px-3 py-1 text-xs font-bold shadow-lg">
+        {isNew && !isPromotion && !isLimitedStock && (
+          <span className="bg-[#4B014E] text-[#F3ECE7] px-3 py-1 text-xs font-bold shadow-lg rounded-md">
             NOVO
           </span>
         )}
       </div>
 
       {/* Image Container */}
-      <div className="relative overflow-hidden aspect-[3/4] bg-[#1C1C1C]">
+      <div className="relative overflow-hidden aspect-[4/5] bg-[#1C1C1C] rounded-t-lg">
         {!imageLoaded && (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#4B014E]/20 to-[#8A0101]/20 animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#4B014E]/20 to-[#8A0101]/20 animate-pulse flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-[#4B014E] border-t-transparent rounded-full animate-spin"></div>
+          </div>
         )}
         
         <img
-          src={product.image}
-          alt={product.name}
-          className={`w-full h-full object-cover transition-all duration-700 ${
+          src={getOptimizedImageUrl(product.image || product.imageUrl || product.src || product.featured_image)}
+          alt={product.name || product.title}
+          className={`w-full h-full object-cover object-center transition-all duration-700 ${
             isHovered ? 'scale-110' : 'scale-100'
           } ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setImageLoaded(true)}
+          onError={() => setImageLoaded(true)}
+          loading="lazy"
         />
         
         {/* Overlay Effects */}
@@ -464,32 +604,75 @@ const EnhancedProductCard = ({ product, isVisible, isMobile }) => {
 
       {/* Product Information */}
       <div className="p-4 relative bg-gradient-to-b from-transparent to-[#1C1C1C]/50">
-        <h3 className="text-[#F3ECE7] font-semibold text-base md:text-lg mb-3 line-clamp-2 leading-tight">
-          {product.name}
+        <h3 className="text-[#F3ECE7] font-semibold text-base md:text-lg mb-3 line-clamp-2 leading-tight min-h-[3rem]">
+          {product.name || product.title}
         </h3>
         
         {/* Pricing */}
-        <div className="flex items-center gap-3 mb-4">
-          {product.isPromotion ? (
+        <div className="flex items-center gap-3 mb-4 min-h-[2rem]">
+          {hasOriginalPrice ? (
             <>
               <span className="text-[#F3ECE7]/60 line-through text-sm">
-                $ {product.originalPrice?.toFixed(2)}
+                $ {parseFloat(product.originalPrice).toFixed(2)}
               </span>
               <span className="text-[#8A0101] font-bold text-lg">
-                $ {product.price?.toFixed(2)}
+                $ {parseFloat(product.price).toFixed(2)}
+              </span>
+              <span className="bg-[#8A0101]/20 text-[#8A0101] px-2 py-1 text-xs font-bold rounded-full">
+                -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
               </span>
             </>
           ) : (
             <span className="text-[#F3ECE7] font-bold text-lg">
-              $ {product.price?.toFixed(2)}
+              $ {parseFloat(product.price || 0).toFixed(2)}
             </span>
           )}
         </div>
 
         {/* Stock Alert */}
-        {product.isLimitedStock && (
-          <div className="text-[#8A0101] text-sm mb-3">
-            <span className="font-medium">Restam apenas {product.stockCount || 3} unidades!</span>
+        {isLimitedStock && (
+          <div className="text-[#8A0101] text-sm mb-3 flex items-center gap-2">
+            <div className="w-2 h-2 bg-[#8A0101] rounded-full animate-pulse"></div>
+            <span className="font-medium">
+              Restam apenas {product.stockCount || product.inventory_quantity || (product.limited ? 3 : 5)} unidades!
+            </span>
+          </div>
+        )}
+
+        {/* Product Description Preview (if available) */}
+        {product.description && (
+          <p className="text-[#F3ECE7]/70 text-sm mb-3 line-clamp-2">
+            {product.description}
+          </p>
+        )}
+
+        {/* Rating (if available) */}
+        {product.rating && (
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex text-yellow-400">
+              {[...Array(5)].map((_, i) => (
+                <span key={i} className={i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-600'}>
+                  ★
+                </span>
+              ))}
+            </div>
+            <span className="text-[#F3ECE7]/60 text-sm">({product.reviewCount || 0})</span>
+          </div>
+        )}
+
+        {/* Seletor de variantes (ex: dropdown) */}
+        {product.variants.edges.length > 1 && (
+          <div className="mt-4">
+            <select
+              onChange={(e) => setSelectedVariantIndex(parseInt(e.target.value))}
+              className="w-full bg-gray-800 text-white rounded-md p-2"
+            >
+              {product.variants.edges.map((variant, index) => (
+                <option key={variant.node.id} value={index}>
+                  {variant.node.title} - $ {variant.node.price.amount}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
@@ -497,10 +680,27 @@ const EnhancedProductCard = ({ product, isVisible, isMobile }) => {
         <div className={`transition-all duration-300 overflow-hidden ${
           isHovered && !isMobile ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
         }`}>
-          <button className="w-full bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] py-3 font-medium hover:shadow-lg hover:shadow-[#8A0101]/30 transition-all duration-300 transform hover:scale-105">
-            Adicionar ao Carrinho
+          <button 
+            className="w-full bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] py-3 font-medium hover:shadow-lg hover:shadow-[#8A0101]/30 transition-all duration-300 transform hover:scale-105 rounded-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleAddToCart}
+            disabled={!product.available && product.available !== undefined}
+          >
+            {product.available === false ? 'Sold Out' : 'Add to Cart'}
           </button>
         </div>
+
+        {/* Mobile Action Button */}
+        {isMobile && (
+          <div className="mt-3">
+            <button 
+              className="w-full bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] py-3 font-medium hover:shadow-lg hover:shadow-[#8A0101]/30 transition-all duration-300 rounded-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => handleAddToCart(product)}
+              disabled={!product.available && product.available !== undefined}
+            >
+              {product.available === false ? 'Sold Out' : 'Add to Cart'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Decorative Corner */}
