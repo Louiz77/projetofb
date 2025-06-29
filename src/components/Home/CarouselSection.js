@@ -660,9 +660,9 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
           </div>
         )}
 
-        {/* Seletor de variantes (ex: dropdown) */}
+        {/* Seletor de variantes */}
         {product.variants.edges.length > 1 && (
-          <div className="mt-4">
+          <div className="mt-2 mb-2">
             <select
               onChange={(e) => setSelectedVariantIndex(parseInt(e.target.value))}
               className="w-full bg-gray-800 text-white rounded-md p-2"
