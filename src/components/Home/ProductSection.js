@@ -184,7 +184,7 @@ import { addKitToWishlist } from '../../hooks/addWishlist';
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {maleCollections.map(collection => (
                   <div key={collection.id}>
-                    <h4 className="text-lg font-semibold text-white mb-2">{collection.name}</h4>
+                    <h4 className="text-lg font-semibold text-white mb-2 truncate whitespace-nowrap min-h-[1.5rem] max-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
                       <CollectionCard key={collection.id} collection={collection} />
                   </div>
                 ))}
@@ -234,7 +234,7 @@ import { addKitToWishlist } from '../../hooks/addWishlist';
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {femaleCollections.map(collection => (
                   <div key={collection.id}>
-                    <h4 className="text-lg font-semibold text-white mb-2">{collection.name}</h4>
+                    <h4 className="text-lg font-semibold text-white mb-2 truncate whitespace-nowrap min-h-[1.5rem] max-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
                       <CollectionCard key={collection.id} collection={collection} />
                   </div>
                 ))}
@@ -512,7 +512,7 @@ const CollectionCard = ({ collection, sectionType }) => {
 
           {/* Conteúdo principal */}
           <div className="p-4">
-            <h4 className="font-semibold text-sm mb-2 line-clamp-1" style={{ color: '#1C1C1C' }}>
+            <h4 className="font-semibold text-sm mb-2 min-h-[1.25rem] max-h-[1.25rem] truncate whitespace-nowrap" style={{ color: '#1C1C1C' }}>
               {collection.name}
             </h4>
 

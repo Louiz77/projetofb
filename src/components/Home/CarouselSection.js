@@ -27,7 +27,9 @@ const CarouselSection = ({ title, products, id }) => {
   // Touch handling states
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  const [touchStartY, setTouchStartY] = useState(null); // Novo: para detectar swipe vertical
   const [isDragging, setIsDragging] = useState(false);
+  const [ignoreSwipe, setIgnoreSwipe] = useState(false); // Novo: flag para ignorar swipe após detectar vertical
 
   // Responsive items per view - mais eficiente para diferentes telas
   const getItemsPerView = () => {
@@ -65,35 +67,55 @@ const CarouselSection = ({ title, products, id }) => {
   
   // Touch handlers
   const minSwipeDistance = 50;
+  const minVerticalDistance = 40; // Para ignorar pequenos movimentos verticais
 
   const onTouchStart = (e) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
+    setTouchStartY(e.targetTouches[0].clientY);
     setIsDragging(true);
+    setIgnoreSwipe(false); // Resetar flag no início do gesto
     stopAutoSlide();
   };
 
   const onTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    if (touchStart === null || touchStartY === null || ignoreSwipe) return;
+    const currentX = e.targetTouches[0].clientX;
+    const currentY = e.targetTouches[0].clientY;
+    const deltaX = currentX - touchStart;
+    const deltaY = currentY - touchStartY;
+
+    // Se o movimento for mais vertical que horizontal, ignorar swipe do carousel até o próximo touchstart
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > minVerticalDistance) {
+      setIsDragging(false);
+      setIgnoreSwipe(true);
+      return;
+    }
+    setTouchEnd(currentX);
   };
 
   const onTouchEnd = () => {
+    if (ignoreSwipe) {
+      setIsDragging(false);
+      return;
+    }
     if (!touchStart || !touchEnd) {
       setIsDragging(false);
       if (hasMultipleSlides) setTimeout(() => startAutoSlide(), 3000);
       return;
     }
-
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
-    } else if (isRightSwipe) {
-      setCurrentIndex((prev) => (prev === 0 ? maxIndex : prev - 1));
+    // Só considera swipe se o movimento horizontal for maior que o vertical
+    if (touchStartY !== null && Math.abs(distance) > minSwipeDistance) {
+      if (Math.abs(distance) > minSwipeDistance) {
+        const isLeftSwipe = distance > 0;
+        if (isLeftSwipe) {
+          setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+        } else {
+          setCurrentIndex((prev) => (prev === 0 ? maxIndex : prev - 1));
+        }
+      }
     }
-
     setIsDragging(false);
     if (hasMultipleSlides) setTimeout(() => startAutoSlide(), 3000);
   };
@@ -248,12 +270,11 @@ const CarouselSection = ({ title, products, id }) => {
         <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-8 md:mb-12 gap-6">
           <div className="space-y-6 flex-1">
             {/* Título alinhado à esquerda */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div className={`flex flex-col ${isMobile ? 'gap-2' : 'md:flex-row md:justify-between md:items-center gap-4'}`}>
               <h2 className="text-3xl md:text-5xl font-bold text-[#F3ECE7] relative">
                 {title}
                 <div className="absolute -bottom-2 left-0 w-16 h-1 bg-gradient-to-r from-[#8A0101] to-[#4B014E]" />
               </h2>
-              
               {/* Botão "Ver Todos" no canto direito */}
               <button 
                 className={`flex items-center gap-2 mt-3 px-4 py-2 transition-all duration-300 group self-start md:self-center border-2 ${
@@ -264,20 +285,19 @@ const CarouselSection = ({ title, products, id }) => {
                     : selectedFilter === 'HOMEM'
                     ? 'bg-[#4B014E] text-[#F3ECE7] border-[#4B014E] hover:bg-[#4B014E]/80'
                     : 'bg-transparent text-[#F3ECE7] border-[#4B014E] hover:bg-[#4B014E]'
-                }`}
+                } ${isMobile ? 'w-full justify-center text-base mb-2' : ''}`}
               >
                 <Eye size={18} className="group-hover:scale-110 transition-transform duration-300" />
                 <span className="font-medium">Ver Todos</span>
               </button>
             </div>
-            
             {/* Filters */}
-            <div className="flex flex-wrap gap-3">
+            <div className={`flex ${isMobile ? 'flex-row w-full gap-2 justify-between' : 'flex-wrap gap-3'}`}>
               {['TODOS', 'HOMEM', 'MULHER'].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => handleFilterChange(filter)}
-                  className={`px-6 py-3 text-sm font-medium transition-all duration-300 relative overflow-hidden group border-2 ${
+                  className={`px-4 py-2 md:px-6 md:py-3 text-sm font-medium transition-all duration-300 relative overflow-hidden group border-2 ${
                     selectedFilter === filter
                       ? filter === 'TODOS'
                         ? 'bg-[#F3ECE7] text-[#1C1C1C] border-[#F3ECE7] shadow-lg shadow-[#F3ECE7]/25'
@@ -285,7 +305,7 @@ const CarouselSection = ({ title, products, id }) => {
                         ? 'bg-[#8A0101] text-[#F3ECE7] border-[#8A0101] shadow-lg shadow-[#8A0101]/25'
                         : 'bg-[#4B014E] text-[#F3ECE7] border-[#4B014E] shadow-lg shadow-[#4B014E]/25'
                       : 'bg-transparent text-[#F3ECE7] border-[#4B014E] hover:bg-[#4B014E]/20'
-                  }`}
+                  } ${isMobile ? 'w-full text-base' : ''}`}
                 >
                   <span className="relative z-10">{filter}</span>
                   {selectedFilter !== filter && (
@@ -342,7 +362,8 @@ const CarouselSection = ({ title, products, id }) => {
           {/* Carousel */}
           <div 
             ref={carouselRef}
-            className="overflow-hidden touch-pan-x"
+            className={`overflow-hidden${isMobile ? ' px-4' : ''}`}
+            style={{ touchAction: isMobile ? 'pan-y' : 'auto' }}
             onMouseEnter={!isMobile && hasMultipleSlides ? stopAutoSlide : undefined}
             onMouseLeave={!isMobile && hasMultipleSlides ? startAutoSlide : undefined}
             onTouchStart={isMobile ? onTouchStart : undefined}
@@ -350,21 +371,26 @@ const CarouselSection = ({ title, products, id }) => {
             onTouchEnd={isMobile ? onTouchEnd : undefined}
           >
             <div
-              className={`flex transition-transform duration-700 ease-in-out gap-4 md:gap-6 ${
-                isDragging ? 'transition-none' : ''
-              }`}
-              style={{
-                transform: `translateX(-${(currentIndex * 100) / organizedProducts.length}%)`,
-                width: `${organizedProducts.length * (100 / itemsPerView)}%`
-              }}
+              className={`flex transition-transform duration-700 ease-in-out gap-4 md:gap-6 ${isDragging ? 'transition-none' : ''}`}
+              style={
+                isMobile && itemsPerView === 1
+                  ? {
+                      width: `${organizedProducts.length * 80}vw`,
+                      transform: `translateX(-${currentIndex * 80}vw)`
+                    }
+                  : {
+                      transform: `translateX(-${(currentIndex * 100) / organizedProducts.length}%)`,
+                      width: `${organizedProducts.length * (100 / itemsPerView)}%`
+                    }
+              }
             >
               {organizedProducts.map((product, index) => (
                 <div
                   key={`${product.id}-${index}`}
-                  className="flex-shrink-0"
+                  className={isMobile && itemsPerView === 1 ? 'flex-shrink-0' : 'flex-shrink-0'}
                   style={{
-                    width: `${100 / itemsPerView}%`,
-                    maxWidth: '300px',
+                    width: isMobile && itemsPerView === 1 ? '80vw' : `${100 / itemsPerView}%`,
+                    maxWidth: isMobile ? '340px' : '300px',
                   }}
                 >
                   <EnhancedProductCard 
@@ -374,7 +400,6 @@ const CarouselSection = ({ title, products, id }) => {
                   />
                 </div>
               ))}
-
             </div>
           </div>
 
@@ -389,7 +414,7 @@ const CarouselSection = ({ title, products, id }) => {
           {/* Mobile Swipe Hint */}
           {isMobile && hasMultipleSlides && (
             <div className="absolute bottom-4 right-4 text-[#F3ECE7]/60 text-xs flex items-center gap-1">
-              <span>Deslize</span>
+              <span>Swipe</span>
               <ChevronRight size={12} />
             </div>
           )}
