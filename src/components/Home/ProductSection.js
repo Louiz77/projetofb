@@ -479,7 +479,7 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
   const currentItem = collection.items[currentItemIndex];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-8">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300"
@@ -490,62 +490,62 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 scale-100">
+      <div className="relative w-full max-w-xs sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-6xl max-h-[95vh] sm:max-h-[90vh] bg-white shadow-2xl overflow-hidden transform transition-all duration-300 scale-100 rounded-none sm:rounded-lg">
         {/* Header */}
         <div 
-          className="relative px-6 py-4 text-white"
+          className="relative px-3 py-3 sm:px-6 sm:py-4 text-white"
           style={{
             background: 'linear-gradient(135deg, #1C1C1C 0%, #2D2D2D 50%, #1C1C1C 100%)'
           }}
         >
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold tracking-wide">{collection.name}</h2>
-              <p className="text-sm opacity-80 mt-1">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide truncate">{collection.name}</h2>
+              <p className="text-xs sm:text-sm opacity-80 mt-1">
                 {collection.items.length} {collection.items.length === 1 ? 'item' : 'itens'} na coleção
               </p>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 z-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-200 hover:scale-110"
+              className="w-8 h-8 sm:w-10 sm:h-10 z-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-200 hover:scale-110 ml-3"
             >
-              <X size={20} />
+              <X size={16} className="sm:w-5 sm:h-5" />
             </button>
           </div>
           
           {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
+          <div className="absolute top-0 right-0 w-16 h-16 sm:w-32 sm:h-32 opacity-10">
             <div className="w-full h-full bg-gradient-to-br from-white to-transparent rounded-full transform rotate-45"></div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex flex-col lg:flex-row h-full">
+        <div className="flex flex-col lg:flex-row h-full max-h-[calc(95vh-80px)] sm:max-h-[calc(90vh-96px)]">
           {/* Main Item Display */}
-          <div className="flex-1 relative bg-gradient-to-br from-gray-50 to-white p-6">
+          <div className="flex-1 relative bg-gradient-to-br from-gray-50 to-white p-3 sm:p-6 overflow-auto">
             {/* Navigation Arrows */}
             {collection.items.length > 1 && (
               <>
                 <button
                   onClick={() => navigateItem('prev')}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
+                  className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
                   style={{ color: '#4B014E' }}
                 >
-                  <ArrowLeft size={20} />
+                  <ArrowLeft size={16} className="sm:w-5 sm:h-5" />
                 </button>
                 <button
                   onClick={() => navigateItem('next')}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
+                  className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
                   style={{ color: '#4B014E' }}
                 >
-                  <ArrowRight size={20} />
+                  <ArrowRight size={16} className="sm:w-5 sm:h-5" />
                 </button>
               </>
             )}
 
             {/* Current Item */}
-            <div className="h-full flex flex-col items-center justify-center">
-              <div className="relative mb-6">
+            <div className="h-full flex flex-col items-center justify-center py-4">
+              <div className="relative mb-4 sm:mb-6">
                 <div 
                   className="absolute inset-0 rounded-2xl blur-xl opacity-30"
                   style={{ backgroundColor: '#4B014E' }}
@@ -553,33 +553,33 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
                 <img
                   src={currentItem.image}
                   alt={currentItem.name}
-                  className={`relative w-80 h-80 object-cover rounded-2xl shadow-2xl transition-all duration-300 ${
+                  className={`relative w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 lg:w-80 lg:h-80 object-cover rounded-2xl shadow-2xl transition-all duration-300 ${
                     isAnimating ? 'scale-95 opacity-50' : 'scale-100 opacity-100'
                   }`}
                 />
                 
                 {/* Item number badge */}
                 <div 
-                  className="absolute -top-3 -right-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                  className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg"
                   style={{ backgroundColor: '#4B014E' }}
                 >
                   {currentItemIndex + 1}
                 </div>
               </div>
 
-              <div className="text-center">
-                <h3 className="text-2xl font-bold mb-2" style={{ color: '#1C1C1C' }}>
+              <div className="text-center px-4">
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 line-clamp-2" style={{ color: '#1C1C1C' }}>
                   {currentItem.name}
                 </h3>
-                <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
                   <div className="flex items-center gap-1">
-                    <Star size={16} className="fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-medium" style={{ color: '#1C1C1C' }}>
+                    <Star size={14} className="sm:w-4 sm:h-4 fill-yellow-400 text-yellow-400" />
+                    <span className="text-xs sm:text-sm font-medium" style={{ color: '#1C1C1C' }}>
                       4.8
                     </span>
                   </div>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-sm" style={{ color: '#1C1C1C' }}>
+                  <span className="text-gray-400 hidden sm:inline">•</span>
+                  <span className="text-xs sm:text-sm" style={{ color: '#1C1C1C' }}>
                     Item {currentItemIndex + 1} de {collection.items.length}
                   </span>
                 </div>
@@ -588,20 +588,20 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
           </div>
 
           {/* Sidebar */}
-          <div className="w-full lg:w-80 bg-white border-l border-gray-100 flex flex-col">
+          <div className="w-full lg:w-80 xl:w-96 bg-white border-t lg:border-t-0 lg:border-l border-gray-100 flex flex-col max-h-[40vh] lg:max-h-none">
             {/* Items Grid */}
-            <div className="flex-1 p-6">
-              <h4 className="text-lg font-bold mb-4" style={{ color: '#1C1C1C' }}>
+            <div className="flex-1 p-3 sm:p-4 overflow-hidden">
+              <h4 className="text-base sm:text-lg font-bold mb-3 sm:mb-4" style={{ color: '#1C1C1C' }}>
                 Todos os Itens
               </h4>
-              <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3 max-h-48 sm:max-h-64 lg:max-h-96 overflow-y-auto">
                 {collection.items.map((item, index) => (
                   <button
                     key={item.id || index}
                     onClick={() => setCurrentItemIndex(index)}
-                    className={`relative group aspect-square rounded-xl overflow-hidden transition-all duration-200 ${
+                    className={`relative group aspect-square rounded-lg sm:rounded-xl overflow-hidden transition-all duration-200 ${
                       index === currentItemIndex 
-                        ? 'ring-2 ring-offset-2 scale-105 shadow-lg' 
+                        ? 'ring-1 sm:ring-2 ring-offset-1 sm:ring-offset-2 scale-105 shadow-lg' 
                         : 'hover:scale-105 hover:shadow-md'
                     }`}
                     style={{
@@ -623,14 +623,14 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
                     
                     {/* Item number */}
                     <div 
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                      className="absolute top-1 right-1 sm:top-2 sm:right-2 w-4 h-4 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
                       style={{ backgroundColor: '#4B014E' }}
                     >
                       {index + 1}
                     </div>
                     
                     {/* Name overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1 sm:p-2">
                       <p className="text-white text-xs font-medium truncate">
                         {item.name}
                       </p>
@@ -641,23 +641,23 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="p-6 border-t border-gray-100 space-y-3">
+            <div className="p-3 sm:p-4 border-t border-gray-100 space-y-2 sm:space-y-3">
               <button
-                className="w-full py-4 font-bold text-white rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden group"
+                className="w-full py-3 sm:py-4 text-sm sm:text-base font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden group rounded-lg sm:rounded-xl"
                 style={{
                   background: 'linear-gradient(135deg, #4B014E 0%, #6B0261 50%, #4B014E 100%)',
                   boxShadow: '0 4px 20px rgba(75, 1, 78, 0.3)'
                 }}
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
-                  <ShoppingCart size={18} />
+                  <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
                   ADICIONAR COLEÇÃO
                 </span>
                 <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
               </button>
               
               <button
-                className="w-full py-4 font-bold rounded-xl transition-all duration-300 hover:scale-105 border-2 hover:shadow-lg"
+                className="w-full py-3 sm:py-4 text-sm sm:text-base font-bold rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-105 border-2 hover:shadow-lg"
                 style={{
                   color: '#4B014E',
                   borderColor: '#4B014E',
@@ -665,7 +665,7 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
                 }}
               >
                 <span className="flex items-center justify-center gap-2">
-                  <Heart size={18} />
+                  <Heart size={16} className="sm:w-[18px] sm:h-[18px]" />
                   ADICIONAR AOS FAVORITOS
                 </span>
               </button>
@@ -675,13 +675,13 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
 
         {/* Progress indicator */}
         {collection.items.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+          <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex gap-1 sm:gap-2 lg:hidden">
             {collection.items.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentItemIndex(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                  index === currentItemIndex ? 'w-8' : 'hover:scale-125'
+                className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-200 ${
+                  index === currentItemIndex ? 'w-6 sm:w-8' : 'hover:scale-125'
                 }`}
                 style={{
                   backgroundColor: index === currentItemIndex ? '#4B014E' : 'rgba(75, 1, 78, 0.3)'
