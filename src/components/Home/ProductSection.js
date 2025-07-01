@@ -1,16 +1,16 @@
-import { ChevronLeft, ChevronRight, Star, Heart, Eye, X } from "lucide-react";
-import { useState, useEffect } from "react";
+  import { ChevronLeft, ChevronRight, Star, Heart, Eye, X } from "lucide-react";
+  import { useState, useEffect } from "react";
 
-const ProductSection = ({ 
-  collections, 
-  sectionType = 'kits',
-  heroImage,
-  heroTitle,
-  heroSubtitle,
-  heroButton = 'SHOP NOW',
-  maleLabel = 'MASCULINOS',
-  femaleLabel = 'FEMININOS'
-}) => {
+  const ProductSection = ({ 
+    collections, 
+    sectionType = 'kits',
+    heroImage,
+    heroTitle,
+    heroSubtitle,
+    heroButton = 'SHOP NOW',
+    maleLabel = 'MASCULINOS',
+    femaleLabel = 'FEMININOS'
+  }) => {
   const [maleProductIndex, setMaleProductIndex] = useState(0);
   const [femaleProductIndex, setFemaleProductIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(4);
@@ -26,61 +26,34 @@ const ProductSection = ({
     return () => window.removeEventListener('resize', updateItemsPerView);
   }, []);
 
-  console.log('Collections received:', collections);
+ const transformedCollections = Array.isArray(collections)
+    ? collections.map(collection => {
+        const gender = collection.name?.includes('Men') || collection.name?.toLowerCase().includes('homem') ? 'male'
+                    : collection.name?.includes('Women') || collection.name?.toLowerCase().includes('mulher') ? 'female'
+                    : 'unisex';
 
-  // Transformar os produtos para o formato esperado pelo componente
-  const transformedProducts = (collections?.products || []).map(product => {
-    // Validar que cada produto tem os campos necessários
-    if (!product || !product.id) {
-      console.warn("Produto com estrutura inválida:", product);
-      console.log(product)
-      return null;
-    }
+        return {
+          id: collection.id,
+          name: collection.name,
+          image: collection.image || "https://via.placeholder.com/400x500",
+          description: collection.description || '',
+          gender,
+          items: (collection.products || []).map(product => ({
+            id: product.id,
+            name: product.name || "Produto sem nome",
+            image: product.image || "https://via.placeholder.com/400x500",
+          }))
+        };
+      })
+    : [];
 
-    return {
-      id: product.id,
-      name: product.title || "Produto sem nome",
-      image: product.images?.edges[0]?.node?.url || "https://via.placeholder.com/400x500 ",
-      price: parseFloat(product.variants?.edges[0]?.node?.price?.amount || 0),
-      originalPrice: parseFloat(product.variants?.edges[0]?.node?.compareAtPrice?.amount || 0),
-      rating: 4.5,
-      isPromotion: product.tags?.includes('Hot-Topics') || false,
-      isNew: product.tags?.includes('novo') || false,
-      isLimitedStock: !product.availableForSale,
-      stockCount: product.availableForSale ? null : Math.floor(Math.random() * 5) + 1,
-      gender: collections.title?.toLowerCase().includes('men') || 
-              collections.title?.toLowerCase().includes('homem') ? 'male' : 
-              collections.title?.toLowerCase().includes('women') || 
-              collections.title?.toLowerCase().includes('mulher') ? 'female' : 'male',
-      items: sectionType === 'kits' ? [
-        { name: "Item 1", image: product.images?.edges[0]?.node?.url || "https://via.placeholder.com/400x500 " },
-        { name: "Item 2", image: product.images?.edges[0]?.node?.url || "https://via.placeholder.com/400x500 " },
-        { name: "Item 3", image: product.images?.edges[0]?.node?.url || "https://via.placeholder.com/400x500 " }
-      ] : []
-    };
-  });
+  console.log(transformedCollections)
 
-  console.log(transformedProducts);
+  const maleCollections = transformedCollections.filter(c => c.gender === 'male');
+  const femaleCollections = transformedCollections.filter(c => c.gender === 'female');
 
-  // Filtrar produtos por gênero
-  const maleProducts = transformedProducts.filter(product => 
-    product.gender === 'male' || 
-    collections.name?.toLowerCase().includes('men') || 
-    collections.name?.toLowerCase().includes('homem')
-  );
-
-  const femaleProducts = transformedProducts.filter(product => 
-    product.gender === 'female' || 
-    collections.name?.toLowerCase().includes('women') || 
-    collections.name?.toLowerCase().includes('mulher')
-  );
-
-  // Se não houver separação por gênero, usar todos os produtos para ambos
-  const finalMaleProducts = maleProducts.length > 0 ? maleProducts : transformedProducts;
-  const finalFemaleProducts = femaleProducts.length > 0 ? femaleProducts : transformedProducts.slice().reverse();
-
-  const maxMaleIndex = Math.max(0, finalMaleProducts.length - itemsPerView);
-  const maxFemaleIndex = Math.max(0, finalFemaleProducts.length - itemsPerView);
+  const maxMaleIndex = Math.max(0, maleCollections.length - itemsPerView);
+  const maxFemaleIndex = Math.max(0, femaleCollections.length - itemsPerView);
 
   const navigateCarousel = (type, direction) => {
     if (type === 'male') {
@@ -190,8 +163,11 @@ const ProductSection = ({
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {finalMaleProducts.slice(maleProductIndex, maleProductIndex + itemsPerView).map((product) => (
-                  <ProductCard key={product.id} product={product} sectionType={sectionType} />
+                {maleCollections.map(collection => (
+                  <div key={collection.id}>
+                    <h4 className="text-lg font-semibold text-white mb-2">{collection.name}</h4>
+                      <CollectionCard key={collection.id} collection={collection} />
+                  </div>
                 ))}
               </div>
             </div>
@@ -237,8 +213,11 @@ const ProductSection = ({
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {finalFemaleProducts.slice(femaleProductIndex, femaleProductIndex + itemsPerView).map((product) => (
-                  <ProductCard key={product.id} product={product} sectionType={sectionType} />
+                {femaleCollections.map(collection => (
+                  <div key={collection.id}>
+                    <h4 className="text-lg font-semibold text-white mb-2">{collection.name}</h4>
+                      <CollectionCard key={collection.id} collection={collection} />
+                  </div>
                 ))}
               </div>
             </div>
@@ -455,6 +434,49 @@ const ProductCard = ({ product, sectionType }) => {
               <span className="relative z-10 tracking-wide">ADICIONAR AO CARRINHO</span>
               <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
             </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CollectionCard = ({ collection }) => {
+  const [showItems, setShowItems] = useState(false);
+
+  return (
+    <div className="relative bg-white shadow-lg rounded overflow-hidden">
+      <div className="relative">
+        <img src={collection.image} alt={collection.name} className="w-full h-64 object-cover" />
+        <button
+          onClick={() => setShowItems(!showItems)}
+          className="absolute top-2 left-2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center"
+        >
+          <Eye size={16} />
+        </button>
+      </div>
+
+      <div className="p-4">
+        <h4 className="font-bold text-lg">{collection.name}</h4>
+        <p className="text-sm text-gray-600">{collection.description}</p>
+      </div>
+
+      {showItems && (
+        <div className="absolute inset-0 bg-black bg-opacity-90 p-4 overflow-y-auto z-10">
+          <div className="flex justify-between items-center text-white mb-4">
+            <span>Itens do Kit</span>
+            <button onClick={() => setShowItems(false)}>
+              <X />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {collection.items.map(item => (
+              <div key={item.id} className="flex flex-col items-center text-white">
+                <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded mb-2" />
+                <span className="text-sm text-center">{item.name}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
