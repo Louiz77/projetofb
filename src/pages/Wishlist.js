@@ -368,7 +368,7 @@ const Wishlist = () => {
                       />
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg text-white">{item.name}</h3>
-                        <p className="text-gray-400">R$ {item.price.toFixed(2)}</p>
+                        <p className="text-gray-400">$ {item.price.toFixed(2)}</p>
                         <div className="mt-2 flex gap-2">
                           <button
                             onClick={() => removeFromWishlist(item.id)}
@@ -400,7 +400,7 @@ const Wishlist = () => {
                       />
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg text-white">{item.name}</h3>
-                        <p className="text-gray-400">R$ {item.price.toFixed(2)}</p>
+                        <p className="text-gray-400">$ {item.price.toFixed(2)}</p>
                       </div>
                       <div className="flex space-x-2">
                         <button

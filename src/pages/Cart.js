@@ -313,9 +313,9 @@ const CartModal = () => {
       />
       
       {/* Cart Panel */}
-      <div className="relative ml-auto h-full w-full max-w-md bg-[#1C1C1C] shadow-2xl overflow-hidden">
+      <div className="relative ml-auto h-screen w-full max-w-md bg-[#1C1C1C] shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[#8A0101]/20">
+        <div className="flex items-center justify-between p-6 border-b border-[#8A0101]/20 flex-shrink-0">
           <h2 className="text-xl font-bold text-[#F3ECE7] tracking-wide">
             CART {cart.length > 0 && `(${cart.reduce((sum, item) => sum + item.quantity, 0)})`}
           </h2>
@@ -328,12 +328,12 @@ const CartModal = () => {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex items-center justify-center flex-1">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8A0101]"></div>
             <div className="text-[#F3ECE7] ml-3">Loading...</div>
           </div>
         ) : cart.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 px-6">
+          <div className="flex flex-col items-center justify-center flex-1 px-6">
             <ShoppingCart size={48} className="text-[#4B014E] mb-4" />
             <p className="text-[#F3ECE7]/70 text-center mb-6">Your cart is empty</p>
             <button
@@ -344,7 +344,7 @@ const CartModal = () => {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col h-90">
+          <>
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {cart.map((item) => (
@@ -394,7 +394,7 @@ const CartModal = () => {
               ))}
             </div>
 
-            <div className="p-6 border-t border-[#8A0101]/20">
+            <div className="p-6 border-t border-[#8A0101]/20 flex-shrink-0">
               {/* Totals */}
               <div className="space-y-2 mb-6">
                 <div className="flex justify-between text-[#F3ECE7] text-sm">
@@ -422,7 +422,7 @@ const CartModal = () => {
                 <span>Fast delivery</span>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

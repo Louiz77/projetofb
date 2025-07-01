@@ -82,7 +82,7 @@ const FAQ = () => {
       },
       {
         question: 'How much is shipping?',
-        answer: 'FREE shipping on orders over R$199. Below that: PAC R$15-25 | SEDEX R$25-35. Exact cost is calculated at checkout based on your ZIP code.'
+        answer: 'FREE shipping on orders over $199. Below that: PAC $15-25 | SEDEX $25-35. Exact cost is calculated at checkout based on your ZIP code.'
       },
       {
         question: 'Can I choose the shipping carrier?',
@@ -100,7 +100,7 @@ const FAQ = () => {
       },
       {
         question: 'Who pays for the return shipping?',
-        answer: 'If the issue is a defect, wrong item or mismatch, we cover the shipping. For size exchanges or cancellations, shipping is the customer’s responsibility (R$15-25).'
+        answer: 'If the issue is a defect, wrong item or mismatch, we cover the shipping. For size exchanges or cancellations, shipping is the customer’s responsibility ($15-25).'
       },
       {
         question: 'How long does it take to process a return/exchange?',

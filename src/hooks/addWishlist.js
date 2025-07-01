@@ -95,7 +95,7 @@ const showVariantSelector = (variants, productTitle, onSelect) => {
               >
                 <div style="font-weight: bold;">${variant.title}</div>
                 <div style="font-size: 0.9em; color: #666;">${options}</div>
-                <div style="font-size: 0.9em; color: #333;">R$ ${parseFloat(variant.price.amount).toFixed(2)}</div>
+                <div style="font-size: 0.9em; color: #333;">$ ${parseFloat(variant.price.amount).toFixed(2)}</div>
               </button>
             </div>
           `;
@@ -255,6 +255,65 @@ const isItemInWishlist = async (variantId) => {
   } catch (error) {
     console.error("Erro ao verificar wishlist:", error);
     return false;
+  }
+};
+
+export const addKitToWishlist = async (kit) => {
+  try {
+    if (!Array.isArray(kit.items) || kit.items.length === 0) {
+      alert('Kit sem produtos válidos.');
+      return;
+    }
+    for (const product of kit.items) {
+      // Buscar variantes do produto
+      const { data } = await client.query({
+        query: GET_PRODUCT_VARIANTS,
+        variables: { productId: product.id },
+      });
+      const variants = data.product.variants.edges.map((edge) => edge.node);
+      if (variants.length === 0) {
+        alert(`O produto "${product.name}" não possui variantes disponíveis.`);
+        continue;
+      }
+      const selectedVariant = await showVariantSelector(variants, data.product.title);
+      if (!selectedVariant) {
+        alert(`Seleção de variante cancelada para "${product.name}".`);
+        continue;
+      }
+      // Criar item da wishlist
+      const wishlistItem = {
+        id: `wishlist_${Date.now()}_${Math.random()}`,
+        productId: product.id,
+        variantId: selectedVariant.id,
+        name: data.product.title,
+        variantTitle: selectedVariant.title,
+        price: parseFloat(selectedVariant.price.amount),
+        image: data.product.images.edges[0]?.node?.url || 'https://via.placeholder.com/400x400',
+        selectedOptions: selectedVariant.selectedOptions,
+        addedAt: new Date().toISOString(),
+      };
+      const user = auth.currentUser;
+      if (user) {
+        const wishlistRef = doc(db, 'wishlists', user.uid);
+        const wishlistSnap = await getDoc(wishlistRef);
+        const existingItems = wishlistSnap.exists() ? wishlistSnap.data().items || [] : [];
+        const isAlreadyInWishlist = existingItems.some(item => item.variantId === selectedVariant.id);
+        if (!isAlreadyInWishlist) {
+          await setDoc(wishlistRef, { items: [...existingItems, wishlistItem] }, { merge: true });
+        }
+      } else {
+        const guestWishlist = JSON.parse(localStorage.getItem('wishlistItems') || '[]');
+        const isAlreadyInWishlist = guestWishlist.some(item => item.variantId === selectedVariant.id);
+        if (!isAlreadyInWishlist) {
+          guestWishlist.push(wishlistItem);
+          localStorage.setItem('wishlistItems', JSON.stringify(guestWishlist));
+        }
+      }
+    }
+    alert('Kit adicionado à wishlist!');
+  } catch (error) {
+    console.error('Erro ao adicionar kit à wishlist:', error);
+    alert('Falha ao adicionar o kit à wishlist. Verifique os dados dos produtos.');
   }
 };
 

@@ -6,7 +6,7 @@ import NewsletterSection from '../components/Home/NewsletterSection';
 import CarousselSection from '../components/Home/CarouselSection';
 import ProductSection from '../components/Home/ProductSection';
 import GridProduct from '../components/Home/GridProduct';
-import PromotionalBanner from '../components/Home/PromotionalBanner';
+import PromotionalBanner from '../components/Home/AccountBanner';
 import AccountBanner from '../components/Home/AccountBanner';
 import CategoryFilter from '../components/Home/CategoryFilter';
 import { auth, db, doc, getDoc, setDoc, onSnapshot } from '../client/firebaseConfig';
@@ -227,6 +227,10 @@ const Home = () => {
     const products = collection.products.edges.map(productEdge => {
       const product = productEdge.node;
       const variant = product.variants.edges[0]?.node;
+      // Gerar rating mockado de forma consistente por produto
+      const rating = (product.id && typeof product.id === 'string')
+        ? 4.0 + (parseInt(product.id.replace(/\D/g, '').slice(-1)) % 10) * 0.1 // rating entre 4.0 e 4.9
+        : 4.5;
       return {
         id: product.id,
         name: product.title,
@@ -234,7 +238,8 @@ const Home = () => {
         price: parseFloat(variant?.price.amount || 0),
         tags: product.tags || [],
         availableForSale: variant?.availableForSale || false,
-        variants: product.variants
+        variants: product.variants,
+        rating
       };
     });
 
@@ -249,7 +254,7 @@ const Home = () => {
       description: collection.description || "Coleção sem descrição",
       image: collection.image?.url || "https://via.placeholder.com/800x400 ",
       priceRange: prices.length ? `${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}` : "N/A",
-      products
+      products // <-- importante para ProductSection
     };
   };
 
@@ -281,109 +286,7 @@ const Home = () => {
   if (loading) return <div>Carregando...</div>;
   if (error) return <div>Erro: {error.message}</div>;
 
-  const kits = [
-    { 
-      id: 1, 
-      name: "Dark Prince Kit", 
-      price: 449, 
-      originalPrice: 529,
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop", 
-      gender: "male",
-      items: [
-        { name: "Camiseta", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop" },
-        { name: "Jaqueta", image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300&h=300&fit=crop" },
-        { name: "Calça", image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.8,
-      isPromotion: true
-    },
-    { 
-      id: 2, 
-      name: "Shadow Warrior Kit", 
-      price: 389, 
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop", 
-      gender: "male",
-      items: [
-        { name: "Tank Top", image: "https://images.unsplash.com/photo-1583743814966-8936f37f4678?w=300&h=300&fit=crop" },
-        { name: "Shorts", image: "https://images.unsplash.com/photo-1506629905607-e9e501629f83?w=300&h=300&fit=crop" },
-        { name: "Boné", image: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.7,
-      isLimitedStock: true,
-      stockCount: 8
-    },
-    { 
-      id: 3, 
-      name: "Urban Rebel Kit", 
-      price: 459, 
-      originalPrice: 529,
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop", 
-      gender: "male",
-      items: [
-        { name: "Hoodie", image: "https://images.unsplash.com/photo-1556821840-3a9c6c1b0520?w=300&h=300&fit=crop" },
-        { name: "Calça Cargo", image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300&h=300&fit=crop" },
-        { name: "Tênis", image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.6,
-      isPromotion: true
-    },
-    { 
-      id: 4, 
-      name: "Mystical Kit", 
-      price: 399, 
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop", 
-      gender: "male",
-      items: [
-        { name: "Regata", image: "https://images.unsplash.com/photo-1583743814966-8936f37f4678?w=300&h=300&fit=crop" },
-        { name: "Bermuda", image: "https://images.unsplash.com/photo-1506629905607-e9e501629f83?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.5
-    },
-    { 
-      id: 5, 
-      name: "Shadow Queen Kit", 
-      price: 519, 
-      originalPrice: 649,
-      image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop", 
-      gender: "female",
-      items: [
-        { name: "Top Cropped", image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=300&fit=crop" },
-        { name: "Saia", image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=300&h=300&fit=crop" },
-        { name: "Meias", image: "https://images.unsplash.com/photo-1586281002406-c954bb5c23dd?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.9,
-      isPromotion: true
-    },
-    { 
-      id: 6, 
-      name: "Rebel Princess Kit", 
-      price: 479, 
-      image: "https://images.unsplash.com/photo-1494790108755-2616c056ca96?w=400&h=500&fit=crop", 
-      gender: "female",
-      items: [
-        { name: "Vestido", image: "https://images.unsplash.com/photo-1566479179817-c0b2bbadccca?w=300&h=300&fit=crop" },
-        { name: "Jaqueta", image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300&h=300&fit=crop" },
-        { name: "Botas", image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.8,
-      isNew: true
-    },
-    { 
-      id: 7, 
-      name: "Dark Angel Kit", 
-      price: 399, 
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop", 
-      gender: "female",
-      items: [
-        { name: "Blusa Mesh", image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=300&fit=crop" },
-        { name: "Shorts", image: "https://images.unsplash.com/photo-1506629905607-e9e501629f83?w=300&h=300&fit=crop" },
-        { name: "Acessórios", image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=300&h=300&fit=crop" }
-      ],
-      rating: 4.7,
-      isLimitedStock: true,
-      stockCount: 5
-    }
-  ];
+
 
   const getOrCreateCartId = async () => {
     let cartId = localStorage.getItem('shopifyCartId');
@@ -546,7 +449,7 @@ const Home = () => {
       {/* Acessórios & Bolsas */}
       {/* <GridProduct mockProducts={mockProducts}/> */}
       <ProductSection 
-        products={kits} 
+        products={collectionProducts} 
         sectionType="acessórios"
         heroImage="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=600&fit=crop"
         heroTitle="STYLE ESSENTIALS"
