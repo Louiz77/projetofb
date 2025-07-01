@@ -159,13 +159,51 @@ const GET_HOME_PRODUCTS = gql`
         }
       }
     }
+    collectionProducts: collections(first: 10) {
+      edges {
+        node {
+          id
+          title
+          description
+          image {
+            url
+          }
+          products(first: 10) {
+            edges {
+              node {
+                id
+                title
+                tags
+                images(first: 1) {
+                  edges {
+                    node {
+                      url
+                    }
+                  }
+                }
+                variants(first: 5) {
+                  edges {
+                    node {
+                      id
+                      price {
+                        amount
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 `;
 
 const Home = () => {
   const { loading, error, data } = useQuery(GET_HOME_PRODUCTS);
 
-  // Helper para transformar dados do produto
+  // Helper para transformar dados do produto SECTION
   const transformProduct = (product) => {
     const variant = product.variants.edges[0]?.node;
     return {
@@ -181,6 +219,37 @@ const Home = () => {
       availableForSale: variant?.availableForSale || false,
       variants: product.variants,
       stockCount: variant?.availableForSale ? 3 : 0
+    };
+  };
+
+  const transformCollection = (collection) => {
+    // Extrair produtos da collection
+    const products = collection.products.edges.map(productEdge => {
+      const product = productEdge.node;
+      const variant = product.variants.edges[0]?.node;
+      return {
+        id: product.id,
+        name: product.title,
+        image: product.images.edges[0]?.node.url || "https://via.placeholder.com/400x500 ",
+        price: parseFloat(variant?.price.amount || 0),
+        tags: product.tags || [],
+        availableForSale: variant?.availableForSale || false,
+        variants: product.variants
+      };
+    });
+
+    // Calcular faixa de preço
+    const prices = products.map(p => p.price).filter(p => p > 0);
+    const minPrice = prices.length ? Math.min(...prices) : 0;
+    const maxPrice = prices.length ? Math.max(...prices) : 0;
+
+    return {
+      id: collection.id,
+      name: collection.title,
+      description: collection.description || "Coleção sem descrição",
+      image: collection.image?.url || "https://via.placeholder.com/800x400 ",
+      priceRange: prices.length ? `${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}` : "N/A",
+      products
     };
   };
 
@@ -205,9 +274,12 @@ const Home = () => {
     transformProduct(edge.node)
   ) || [];
 
+  const collectionProducts = data?.collectionProducts?.edges.map(edge => 
+    transformCollection(edge.node)
+  );
+
   if (loading) return <div>Carregando...</div>;
   if (error) return <div>Erro: {error.message}</div>;
-
 
   const mockProducts = [
     { id: 1, name: "Gothic Dress", price: 299, originalPrice: 399, image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=500&fit=crop", sale: true, limited: false },
@@ -519,9 +591,9 @@ const Home = () => {
 
       {/* Kits Section */}
       <ProductSection 
-          products={kits} 
+          collections={collectionProducts} 
           sectionType="kits"
-        />
+      />
 
       {/* Carrosseis de Destaques */}
       <CarousselSection 

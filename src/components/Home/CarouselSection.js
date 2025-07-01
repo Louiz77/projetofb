@@ -424,7 +424,7 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
-  console.log(product)
+
   const handleAddToCart = async () => {
       if (!product.variants?.edges?.length) {
         alert("Produto não tem variantes disponíveis.");

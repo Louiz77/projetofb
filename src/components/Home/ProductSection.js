@@ -1,8 +1,8 @@
 import { ChevronLeft, ChevronRight, Star, Heart, Eye, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const ProductSection = ({ 
-  products, 
+  collections, 
   sectionType = 'kits',
   heroImage,
   heroTitle,
@@ -13,13 +13,74 @@ const ProductSection = ({
 }) => {
   const [maleProductIndex, setMaleProductIndex] = useState(0);
   const [femaleProductIndex, setFemaleProductIndex] = useState(0);
+  const [itemsPerView, setItemsPerView] = useState(4);
 
-  const maleProducts = products.filter(product => product.gender === 'male');
-  const femaleProducts = products.filter(product => product.gender === 'female');
+  // Atualizar itemsPerView baseado no tamanho da tela
+  useEffect(() => {
+    const updateItemsPerView = () => {
+      setItemsPerView(window.innerWidth < 768 ? 2 : 4);
+    };
 
-  const itemsPerView = window.innerWidth < 768 ? 2 : 4;
-  const maxMaleIndex = Math.max(0, maleProducts.length - itemsPerView);
-  const maxFemaleIndex = Math.max(0, femaleProducts.length - itemsPerView);
+    updateItemsPerView();
+    window.addEventListener('resize', updateItemsPerView);
+    return () => window.removeEventListener('resize', updateItemsPerView);
+  }, []);
+
+  console.log('Collections received:', collections);
+
+  // Transformar os produtos para o formato esperado pelo componente
+  const transformedProducts = (collections?.products || []).map(product => {
+    // Validar que cada produto tem os campos necessários
+    if (!product || !product.id) {
+      console.warn("Produto com estrutura inválida:", product);
+      console.log(product)
+      return null;
+    }
+
+    return {
+      id: product.id,
+      name: product.title || "Produto sem nome",
+      image: product.images?.edges[0]?.node?.url || "https://via.placeholder.com/400x500 ",
+      price: parseFloat(product.variants?.edges[0]?.node?.price?.amount || 0),
+      originalPrice: parseFloat(product.variants?.edges[0]?.node?.compareAtPrice?.amount || 0),
+      rating: 4.5,
+      isPromotion: product.tags?.includes('Hot-Topics') || false,
+      isNew: product.tags?.includes('novo') || false,
+      isLimitedStock: !product.availableForSale,
+      stockCount: product.availableForSale ? null : Math.floor(Math.random() * 5) + 1,
+      gender: collections.title?.toLowerCase().includes('men') || 
+              collections.title?.toLowerCase().includes('homem') ? 'male' : 
+              collections.title?.toLowerCase().includes('women') || 
+              collections.title?.toLowerCase().includes('mulher') ? 'female' : 'male',
+      items: sectionType === 'kits' ? [
+        { name: "Item 1", image: product.images?.edges[0]?.node?.url || "https://via.placeholder.com/400x500 " },
+        { name: "Item 2", image: product.images?.edges[0]?.node?.url || "https://via.placeholder.com/400x500 " },
+        { name: "Item 3", image: product.images?.edges[0]?.node?.url || "https://via.placeholder.com/400x500 " }
+      ] : []
+    };
+  });
+
+  console.log(transformedProducts);
+
+  // Filtrar produtos por gênero
+  const maleProducts = transformedProducts.filter(product => 
+    product.gender === 'male' || 
+    collections.name?.toLowerCase().includes('men') || 
+    collections.name?.toLowerCase().includes('homem')
+  );
+
+  const femaleProducts = transformedProducts.filter(product => 
+    product.gender === 'female' || 
+    collections.name?.toLowerCase().includes('women') || 
+    collections.name?.toLowerCase().includes('mulher')
+  );
+
+  // Se não houver separação por gênero, usar todos os produtos para ambos
+  const finalMaleProducts = maleProducts.length > 0 ? maleProducts : transformedProducts;
+  const finalFemaleProducts = femaleProducts.length > 0 ? femaleProducts : transformedProducts.slice().reverse();
+
+  const maxMaleIndex = Math.max(0, finalMaleProducts.length - itemsPerView);
+  const maxFemaleIndex = Math.max(0, finalFemaleProducts.length - itemsPerView);
 
   const navigateCarousel = (type, direction) => {
     if (type === 'male') {
@@ -52,7 +113,7 @@ const ProductSection = ({
           <div className="lg:col-span-5 flex mt-2">
             <div className="relative overflow-hidden w-full group cursor-pointer">
               <img
-                src={heroImage || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=600&fit=crop"}
+                src={heroImage || collections.image || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=600&fit=crop"}
                 alt={`${sectionType} promocionais`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
@@ -70,10 +131,10 @@ const ProductSection = ({
 
               <div className="absolute inset-0 flex flex-col justify-end p-8">
                 <h2 className="text-4xl font-bold mb-2" style={{ color: '#F3ECE7' }}>
-                  {heroTitle || 'ARCANE ELEGANCE'}
+                  {heroTitle || collections.name || 'ARCANE ELEGANCE'}
                 </h2>
                 <p className="text-lg mb-6" style={{ color: '#F3ECE7' }}>
-                  {heroSubtitle || 'SHOP OCCASION'}
+                  {heroSubtitle || collections.description || 'SHOP OCCASION'}
                 </p>
                 <button 
                   className="self-start px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
@@ -129,7 +190,7 @@ const ProductSection = ({
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {maleProducts.slice(maleProductIndex, maleProductIndex + itemsPerView).map((product) => (
+                {finalMaleProducts.slice(maleProductIndex, maleProductIndex + itemsPerView).map((product) => (
                   <ProductCard key={product.id} product={product} sectionType={sectionType} />
                 ))}
               </div>
@@ -176,7 +237,7 @@ const ProductSection = ({
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {femaleProducts.slice(femaleProductIndex, femaleProductIndex + itemsPerView).map((product) => (
+                {finalFemaleProducts.slice(femaleProductIndex, femaleProductIndex + itemsPerView).map((product) => (
                   <ProductCard key={product.id} product={product} sectionType={sectionType} />
                 ))}
               </div>
@@ -192,10 +253,11 @@ const ProductSection = ({
 const ProductCard = ({ product, sectionType }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showItems, setShowItems] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -247,12 +309,12 @@ const ProductCard = ({ product, sectionType }) => {
           {(product.isPromotion || product.isNew || product.isLimitedStock) && (
             <div className="absolute bottom-2 left-2 z-10">
               {product.isPromotion && (
-                <span className="text-white px-2 py-1 rounded text-xs font-medium" style={{ backgroundColor: '#A80101' }}>
+                <span className="text-white px-2 py-1 rounded text-xs font-medium mr-1" style={{ backgroundColor: '#A80101' }}>
                   SALE
                 </span>
               )}
               {product.isNew && (
-                <span className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
+                <span className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium mr-1">
                   NEW
                 </span>
               )}
