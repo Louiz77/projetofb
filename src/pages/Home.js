@@ -132,7 +132,7 @@ const GET_HOME_PRODUCTS = gql`
     }
 
     # Produtos com tag "Footwear"
-    footwear: products(first: 10, query: "tag:Footwear") {
+    footwearProducts: products(first: 10, query: "tag:Footwear") {
       edges {
         node {
           id
