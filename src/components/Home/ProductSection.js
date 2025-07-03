@@ -1,19 +1,25 @@
-import { ChevronLeft, ChevronRight, Star, Heart, Eye, X, ArrowLeft, ArrowRight, ShoppingCart } from "lucide-react";
-  import { useState, useEffect } from "react";
-  import { addToCart, addKitToCart } from '../../hooks/addToCart';
-import { addToWishlist } from '../../hooks/wishlist';
-import { addKitToWishlist } from '../../hooks/addWishlist';
+import { ChevronLeft, ChevronRight, Star, Heart, Eye, ArrowLeft, ArrowRight, ShoppingCart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { addToCart, addKitToCart } from '../../hooks/addToCart';
+import addToWishlist, { addKitToWishlist } from '../../hooks/addWishlist';
 
-  const ProductSection = ({ 
-    collections, 
-    sectionType = 'kits',
-    heroImage,
-    heroTitle,
-    heroSubtitle,
-    heroButton = 'SHOP NOW',
-    maleLabel = 'MASCULINOS',
-    femaleLabel = 'FEMININOS'
-  }) => {
+const ProductSection = ({ 
+  collections, 
+  products, // Novo: para acessórios/bolsas
+  sectionType = 'kits',
+  heroImage,
+  heroTitle,
+  heroSubtitle,
+  heroButton = 'SHOP NOW',
+  maleLabel = 'MASCULINOS',
+  femaleLabel = 'FEMININOS'
+}) => {
+  // Estados do modal global de produto individual (devem estar dentro do componente)
+  const [modalProduct, setModalProduct] = useState(null);
+  const [modalVariant, setModalVariant] = useState(null);
+  const [addingCart, setAddingCart] = useState(false);
+  const [addingWishlist, setAddingWishlist] = useState(false);
+
   const [maleProductIndex, setMaleProductIndex] = useState(0);
   const [femaleProductIndex, setFemaleProductIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(4);
@@ -93,6 +99,115 @@ import { addKitToWishlist } from '../../hooks/addWishlist';
       });
     }
   };
+
+  // Lógica para acessórios/bolsas (produtos individuais)
+  if (sectionType === 'acessorios' && products) {
+    return (
+      <section className="py-12" style={{ backgroundColor: '#1C1C1C' }}>
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-12 gap-8 items-stretch">
+            {/* Hero Banner */}
+            <div className="lg:col-span-5 flex mt-2">
+              <div className="relative overflow-hidden w-full group cursor-pointer">
+                <img
+                  src={heroImage}
+                  alt="Acessórios & Bolsas"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(168, 1, 1, 0.3), rgba(75, 1, 78, 0.4))' }} />
+                <div className="absolute inset-0 flex flex-col justify-end p-8">
+                  <h2 className="text-4xl font-bold mb-2" style={{ color: '#F3ECE7' }}>{heroTitle}</h2>
+                  <p className="text-lg mb-6" style={{ color: '#F3ECE7' }}>{heroSubtitle}</p>
+                  <button className="self-start px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105" style={{ backgroundColor: '#F3ECE7', color: '#1C1C1C' }}>{heroButton}</button>
+                </div>
+              </div>
+            </div>
+            {/* Carrossel de Produtos Individuais */}
+            <div className="lg:col-span-7 flex flex-col gap-8">
+              {/* Accessories */}
+              <div>
+                <h3 className="text-2xl font-bold mb-4" style={{ color: '#F3ECE7' }}>Acessories</h3>
+                <ProductCarousel products={products.accessories} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
+              </div>
+              {/* Bags */}
+              <div>
+                <h3 className="text-2xl font-bold mb-4" style={{ color: '#F3ECE7' }}>Bags</h3>
+                <ProductCarousel products={products.bags} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Modal global de produto individual */}
+        {modalProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-8 animate-fade-in">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300" onClick={() => setModalProduct(null)} />
+            <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-slide-up">
+              <img src={modalProduct.image} alt={modalProduct.name} className="w-full h-64 object-cover" />
+              <div className="p-6 flex-1 flex flex-col gap-3">
+                <h3 className="text-xl font-bold mb-1" style={{ color: '#1C1C1C' }}>{modalProduct.name}</h3>
+                <div className="text-lg font-bold mb-2" style={{ color: '#4B014E' }}>$ {modalVariant ? parseFloat(modalVariant.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '--'}</div>
+                {/* Seletor de variantes */}
+                {modalProduct.variants.edges.length > 1 && (
+                  <select
+                    className="w-full bg-gray-100 border border-gray-300 rounded-md p-2 mb-2"
+                    value={modalVariant?.id}
+                    onChange={e => setModalVariant(modalProduct.variants.edges.find(v => v.node.id === e.target.value)?.node)}
+                  >
+                    {modalProduct.variants.edges.map(variant => (
+                      <option key={variant.node.id} value={variant.node.id}>
+                        {variant.node.title} - $ {parseFloat(variant.node.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <div className="flex gap-2 mt-2">
+                  <button
+                    className="flex-1 py-3 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white font-bold rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                    onClick={async () => {
+                      if (!modalVariant) return alert('Selecione uma variante!');
+                      setAddingCart(true);
+                      await addToCart({
+                        variantId: modalVariant.id,
+                        name: modalProduct.name,
+                        price: parseFloat(modalVariant.price.amount),
+                        image: modalProduct.image,
+                        quantity: 1
+                      });
+                      setAddingCart(false);
+                      setModalProduct(null);
+                    }}
+                    disabled={addingCart}
+                  >
+                    {addingCart ? 'Adicionando...' : 'Adicionar ao Carrinho'}
+                  </button>
+                  <button
+                    className="flex-1 py-3 border-2 border-[#4B014E] text-[#4B014E] font-bold rounded-lg hover:bg-[#4B014E] hover:text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                    onClick={async () => {
+                      if (!modalVariant) return alert('Selecione uma variante!');
+                      setAddingWishlist(true);
+                      await addToWishlist({
+                        variantId: modalVariant.id,
+                        name: modalProduct.name,
+                        price: parseFloat(modalVariant.price.amount),
+                        image: modalProduct.image,
+                        quantity: 1
+                      });
+                      setAddingWishlist(false);
+                      setModalProduct(null);
+                    }}
+                    disabled={addingWishlist}
+                  >
+                    {addingWishlist ? 'Adicionando...' : 'Favoritar'}
+                  </button>
+                </div>
+                <button className="mt-4 text-sm text-gray-500 hover:text-[#8A0101] transition-all" onClick={() => setModalProduct(null)}>Fechar</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
     <section className="py-12" style={{ backgroundColor: '#1C1C1C' }}>
@@ -185,7 +300,7 @@ import { addKitToWishlist } from '../../hooks/addWishlist';
                 {maleCollections.map(collection => (
                   <div key={collection.id}>
                     <h4 className="text-lg font-semibold text-white mb-2 truncate whitespace-nowrap min-h-[1.5rem] max-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
-                      <CollectionCard key={collection.id} collection={collection} />
+                      <CollectionCard key={collection.id} collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
                   </div>
                 ))}
               </div>
@@ -235,15 +350,259 @@ import { addKitToWishlist } from '../../hooks/addWishlist';
                 {femaleCollections.map(collection => (
                   <div key={collection.id}>
                     <h4 className="text-lg font-semibold text-white mb-2 truncate whitespace-nowrap min-h-[1.5rem] max-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
-                      <CollectionCard key={collection.id} collection={collection} />
+                      <CollectionCard key={collection.id} collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
                   </div>
                 ))}
               </div>
             </div>
           </div>
+        </div> {/* Fim do .grid lg:grid-cols-12 ... */}
+      </div> {/* Fim do .container mx-auto px-4 */}
+    </section>
+  );
+};
+
+const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [screenSize, setScreenSize] = useState('desktop');
+
+  // Detectar tamanho da tela de forma mais robusta
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 640) setScreenSize('mobile');
+      else if (width < 1024) setScreenSize('tablet');
+      else setScreenSize('desktop');
+    };
+
+    // Executar imediatamente
+    handleResize();
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Determinar itens por visualização baseado no tamanho da tela
+  const getItemsPerView = () => {
+    switch (screenSize) {
+      case 'mobile': return 1;
+      case 'tablet': return 2;
+      default: return 3;
+    }
+  };
+
+  const itemsPerView = getItemsPerView();
+  // Corrigir cálculo do maxIndex para evitar slides vazios
+  const maxIndex = Math.max(0, Math.ceil(products.length / itemsPerView) - 1);
+
+  const goTo = (dir) => {
+    setCurrentIndex((prev) => {
+      if (dir === 'left') return prev === 0 ? maxIndex : prev - 1;
+      return prev >= maxIndex ? 0 : prev + 1;
+    });
+  };
+
+  // Auto-play (opcional)
+  useEffect(() => {
+    if (products.length <= itemsPerView) return;
+    
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => prev >= maxIndex ? 0 : prev + 1);
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [products.length, itemsPerView, maxIndex]);
+
+  // Reset index quando produtos mudam
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [products]);
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+        <p className="text-gray-500">Nenhum produto disponível</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative group">
+      {/* Setas de navegação */}
+      {products.length > itemsPerView && (
+        <>
+          <button 
+            onClick={() => goTo('left')} 
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 
+                     bg-white/90 backdrop-blur-sm text-gray-800 
+                     w-10 h-10 rounded-full shadow-lg
+                     hover:bg-[#8A0101] hover:text-white hover:scale-110
+                     transition-all duration-300 ease-out
+                     opacity-0 group-hover:opacity-100
+                     flex items-center justify-center
+                     border border-gray-200"
+            aria-label="Produto anterior"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button 
+            onClick={() => goTo('right')} 
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 
+                     bg-white/90 backdrop-blur-sm text-gray-800 
+                     w-10 h-10 rounded-full shadow-lg
+                     hover:bg-[#8A0101] hover:text-white hover:scale-110
+                     transition-all duration-300 ease-out
+                     opacity-0 group-hover:opacity-100
+                     flex items-center justify-center
+                     border border-gray-200"
+            aria-label="Próximo produto"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </>
+      )}
+
+      {/* Container do carrossel */}
+      <div className="overflow-hidden rounded-xl">
+        <div
+          className="flex transition-transform duration-500 ease-out gap-4"
+          style={{
+            transform: `translateX(-${currentIndex * 100}%)`,
+          }}
+        >
+          {/* Agrupar produtos por slide */}
+          {Array.from({ length: Math.ceil(products.length / itemsPerView) }).map((_, slideIndex) => (
+            <div 
+              key={slideIndex}
+              className="flex gap-4 flex-shrink-0"
+              style={{ width: '100%' }}
+            >
+              {products
+                .slice(slideIndex * itemsPerView, (slideIndex + 1) * itemsPerView)
+                .map((product, idx) => (
+                <div
+                  key={product.id || `${slideIndex}-${idx}`}
+                  className="flex-1"
+                  style={{ 
+                    minWidth: screenSize === 'mobile' ? '100%' : 
+                             screenSize === 'tablet' ? '50%' : '33.333%' 
+                  }}
+                >
+                  <div
+                    className="bg-white rounded-xl shadow-md overflow-hidden cursor-pointer 
+                             hover:shadow-xl hover:scale-[1.02] 
+                             transition-all duration-300 ease-out
+                             border border-gray-100
+                             h-full flex flex-col"
+                    onClick={() => {
+                      setModalProduct?.(product);
+                      setModalVariant?.(product.variants?.edges?.[0]?.node);
+                    }}
+                  >
+                    {/* Imagem do produto */}
+                    <div className="relative overflow-hidden bg-gray-50">
+                      <img 
+                        src={product.image || '/api/placeholder/300/300'} 
+                        alt={product.name || 'Produto'} 
+                        className="w-full h-48 sm:h-52 lg:h-56 object-cover
+                                 hover:scale-110 transition-transform duration-500 ease-out"
+                        loading="lazy"
+                      />
+                      {/* Badge de novo - só mostra se tags inclui 'novo' */}
+                      {product.tags?.includes('novo') && (
+                        <div className="absolute top-2 left-2 bg-[#8A0101] text-white text-xs px-2 py-1 rounded-full font-medium">
+                          Novo
+                        </div>
+                      )}
+                      {product.discount && (
+                        <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          -{product.discount}%
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Informações do produto */}
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base mb-2 
+                                     line-clamp-2 leading-tight">
+                          {product.name || 'Nome do produto'}
+                        </h4>
+                        
+                        {product.category && (
+                          <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">
+                            {product.category}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        {/* Preço */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            {product.originalPrice && product.originalPrice !== product.price && (
+                              <span className="text-xs text-gray-400 line-through">
+                                R$ {product.originalPrice?.toLocaleString('pt-BR', { 
+                                  minimumFractionDigits: 2 
+                                })}
+                              </span>
+                            )}
+                            <span className="text-lg font-bold text-[#8A0101]">
+                              R$ {(product.price || 0).toLocaleString('pt-BR', { 
+                                minimumFractionDigits: 2 
+                              })}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Rating (se disponível) */}
+                        {product.rating && (
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <span 
+                                key={i} 
+                                className={`text-xs ${
+                                  i < Math.floor(product.rating) 
+                                    ? 'text-yellow-400' 
+                                    : 'text-gray-300'
+                                }`}
+                              >
+                                ★
+                              </span>
+                            ))}
+                            <span className="text-xs text-gray-500 ml-1">
+                              ({product.reviewCount || 0})
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
-    </section>
+
+      {/* Indicadores de posição */}
+      {products.length > itemsPerView && maxIndex > 0 && (
+        <div className="flex justify-center mt-4 gap-2">
+          {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                i === currentIndex 
+                  ? 'bg-[#8A0101] w-8' 
+                  : 'bg-gray-300 hover:bg-gray-400'
+              }`}
+              aria-label={`Ir para slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -285,18 +644,50 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
   const currentItem = items[currentItemIndex];
 
   // Funções para adicionar ao carrinho e wishlist
-  const handleAddToCart = () => {
-    if (items.length > 0) {
-      addKitToCart({ ...collection, items });
-    } else {
-      addToCart(collection);
+  const handleAddToCart = async () => {
+    if (items.length > 1) {
+      await addKitToCart({ ...collection, items });
+    } else if (currentItem && currentItem.variants && currentItem.variants.edges && currentItem.variants.edges.length > 0) {
+      // Produto individual com variantes
+      const variant = currentItem.variants.edges[0].node;
+      await addToCart({
+        variantId: variant.id,
+        name: currentItem.name,
+        price: parseFloat(variant.price.amount),
+        image: currentItem.image,
+        quantity: 1
+      });
+    } else if (currentItem) {
+      // Produto individual sem variantes
+      await addToCart({
+        variantId: currentItem.variantId || currentItem.id,
+        name: currentItem.name,
+        price: parseFloat(currentItem.price),
+        image: currentItem.image,
+        quantity: 1
+      });
     }
   };
-  const handleAddToWishlist = () => {
-    if (items.length > 0) {
-      addKitToWishlist({ ...collection, items });
-    } else {
-      addToWishlist(collection);
+  const handleAddToWishlist = async () => {
+    if (items.length > 1) {
+      await addKitToWishlist({ ...collection, items });
+    } else if (currentItem && currentItem.variants && currentItem.variants.edges && currentItem.variants.edges.length > 0) {
+      const variant = currentItem.variants.edges[0].node;
+      await addToWishlist({
+        variantId: variant.id,
+        name: currentItem.name,
+        price: parseFloat(variant.price.amount),
+        image: currentItem.image,
+        quantity: 1
+      });
+    } else if (currentItem) {
+      await addToWishlist({
+        variantId: currentItem.variantId || currentItem.id,
+        name: currentItem.name,
+        price: parseFloat(currentItem.price),
+        image: currentItem.image,
+        quantity: 1
+      });
     }
   };
 

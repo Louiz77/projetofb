@@ -159,6 +159,62 @@ const GET_HOME_PRODUCTS = gql`
         }
       }
     }
+    # Produtos com tag "Acessories"
+    accessoriesProducts: products(first: 10, query: "tag:Accessories") {
+      edges {
+        node {
+          id
+          title
+          tags
+          images(first: 1) {
+            edges {
+              node {
+                url
+              }
+            }
+          }
+          variants(first: 5) {
+            edges {
+              node {
+                id
+                price { amount }
+                compareAtPrice { amount }
+                title
+                availableForSale
+              }
+            }
+          }
+        }
+      }
+    }
+    # Produtos com tag "Bags"
+    bagsProducts: products(first: 10, query: "tag:Bags") {
+      edges {
+        node {
+          id
+          title
+          tags
+          images(first: 1) {
+            edges {
+              node {
+                url
+              }
+            }
+          }
+          variants(first: 5) {
+            edges {
+              node {
+                id
+                price { amount }
+                compareAtPrice { amount }
+                title
+                availableForSale
+              }
+            }
+          }
+        }
+      }
+    }
     collectionProducts: collections(first: 10) {
       edges {
         node {
@@ -276,6 +332,14 @@ const Home = () => {
   ) || [];
 
   const footwearProducts = data?.footwearProducts?.edges?.map(edge => 
+    transformProduct(edge.node)
+  ) || [];
+
+  const accessoriesProducts = data?.accessoriesProducts?.edges?.map(edge => 
+    transformProduct(edge.node)
+  ) || [];
+
+  const bagsProducts = data?.bagsProducts?.edges?.map(edge => 
     transformProduct(edge.node)
   ) || [];
 
@@ -449,8 +513,8 @@ const Home = () => {
       {/* Acessórios & Bolsas */}
       {/* <GridProduct mockProducts={mockProducts}/> */}
       <ProductSection 
-        products={collectionProducts} 
-        sectionType="acessórios"
+        products={{ accessories: accessoriesProducts, bags: bagsProducts }} 
+        sectionType="acessorios"
         heroImage="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=600&fit=crop"
         heroTitle="STYLE ESSENTIALS"
         heroSubtitle="COMPLETE YOUR LOOK"
