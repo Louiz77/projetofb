@@ -76,8 +76,6 @@ const ProductSection = ({
       })
     : [];
 
-  console.log(transformedCollections)
-
   const maleCollections = transformedCollections.filter(c => c.gender === 'male');
   const femaleCollections = transformedCollections.filter(c => c.gender === 'female');
 
@@ -111,16 +109,17 @@ const ProductSection = ({
         <div className="container mx-auto px-4">
           <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8">
             {/* Hero Banner */}
-            <div className="lg:col-span-5 lg:order-1 order-2">
-              <div className="relative overflow-hidden w-full group cursor-pointer">
-                {/* Altura responsiva para a imagem */}
-                <div className="aspect-[4/3] sm:aspect-[3/2] lg:aspect-[3/4] lg:min-h-[400px]">
-                  <img
-                    src={heroImage}
-                    alt="Acessórios & Bolsas"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
+            <div className="lg:col-span-5 lg:order-1 order-2 flex">
+              <div className="relative overflow-hidden w-full group cursor-pointer flex-1">
+                <img
+                  src={heroImage}
+                  alt="Acessórios & Bolsas"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  style={{ 
+                    height: '100%',
+                    minHeight: '400px'
+                  }}
+                />
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(168, 1, 1, 0.3), rgba(75, 1, 78, 0.4))' }} />
                 <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-6 lg:p-8">
                   <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2" style={{ color: '#F3ECE7' }}>{heroTitle}</h2>
@@ -133,12 +132,12 @@ const ProductSection = ({
             {/* Carrossel de Produtos Individuais */}
             <div className="lg:col-span-7 lg:order-2 order-1 flex flex-col gap-6 lg:gap-8">
               {/* Accessories */}
-              <div>
+              <div className="flex-1">
                 <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: '#F3ECE7' }}>Acessories</h3>
                 <ProductCarousel products={products.accessories} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
               </div>
               {/* Bags */}
-              <div>
+              <div className="flex-1">
                 <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: '#F3ECE7' }}>Bags</h3>
                 <ProductCarousel products={products.bags} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
               </div>
@@ -338,11 +337,11 @@ const ProductSection = ({
       <div className="container mx-auto px-4">
         
         {/* Main Layout: Hero + Products */}
-        <div className="grid lg:grid-cols-12 gap-8 items-stretch">
+        <div className="grid lg:grid-cols-12 gap-8">
           
           {/* Hero Banner - Lado Esquerdo */}
-          <div className="lg:col-span-5 flex mt-2">
-            <div className="relative overflow-hidden w-full group cursor-pointer">
+          <div className="lg:col-span-5 h-full">
+            <div className="relative overflow-hidden w-full h-full min-h-[600px] lg:min-h-[700px] group cursor-pointer">
               <img
                 src={heroImage || collections.image || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=600&fit=crop"}
                 alt={`${sectionType} promocionais`}
@@ -360,11 +359,11 @@ const ProductSection = ({
                 </div>
               </div>
 
-              <div className="absolute inset-0 flex flex-col justify-end p-8">
-                <h2 className="text-4xl font-bold mb-2" style={{ color: '#F3ECE7' }}>
+              <div className="absolute inset-0 flex flex-col justify-end p-6 lg:p-8">
+                <h2 className="text-3xl lg:text-4xl font-bold mb-2" style={{ color: '#F3ECE7' }}>
                   {heroTitle || collections.name || 'ARCANE ELEGANCE'}
                 </h2>
-                <p className="text-lg mb-6" style={{ color: '#F3ECE7' }}>
+                <p className="text-base lg:text-lg mb-6" style={{ color: '#F3ECE7' }}>
                   {heroSubtitle || collections.description || 'SHOP OCCASION'}
                 </p>
                 <button 
@@ -378,105 +377,115 @@ const ProductSection = ({
           </div>
 
           {/* Products Grid - Lado Direito */}
-          <div className="lg:col-span-7 flex flex-col">
-            
-            {/* Produtos Masculinos */}
-            <div className="mb-8 flex-1">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold" style={{ color: '#F3ECE7' }}>
-                  {sectionType.toUpperCase()} {maleLabel}
-                </h3>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => navigateCarousel('male', 'left')}
-                    disabled={maleProductIndex === 0}
-                    className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
-                      maleProductIndex === 0 
-                        ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
-                        : 'text-white hover:scale-110'
-                    }`}
-                    style={{ 
-                      borderColor: maleProductIndex === 0 ? '#666' : '#A80101',
-                      backgroundColor: maleProductIndex === 0 ? 'transparent' : '#A80101'
-                    }}
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-                  <button
-                    onClick={() => navigateCarousel('male', 'right')}
-                    disabled={maleProductIndex >= maxMaleIndex}
-                    className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
-                      maleProductIndex >= maxMaleIndex 
-                        ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
-                        : 'text-white hover:scale-110'
-                    }`}
-                    style={{ 
-                      borderColor: maleProductIndex >= maxMaleIndex ? '#666' : '#A80101',
-                      backgroundColor: maleProductIndex >= maxMaleIndex ? 'transparent' : '#A80101'
-                    }}
-                  >
-                    <ChevronRight size={14} />
-                  </button>
+          <div className="lg:col-span-7 h-full">
+            <div className="flex flex-col h-full min-h-[600px] lg:min-h-[700px]">
+              
+              {/* Produtos Masculinos */}
+              <div className="flex-1 mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl lg:text-2xl font-bold" style={{ color: '#F3ECE7' }}>
+                    {sectionType.toUpperCase()} {maleLabel}
+                  </h3>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => navigateCarousel('male', 'left')}
+                      disabled={maleProductIndex === 0}
+                      className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
+                        maleProductIndex === 0 
+                          ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
+                          : 'text-white hover:scale-110'
+                      }`}
+                      style={{ 
+                        borderColor: maleProductIndex === 0 ? '#666' : '#A80101',
+                        backgroundColor: maleProductIndex === 0 ? 'transparent' : '#A80101'
+                      }}
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    <button
+                      onClick={() => navigateCarousel('male', 'right')}
+                      disabled={maleProductIndex >= maxMaleIndex}
+                      className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
+                        maleProductIndex >= maxMaleIndex 
+                          ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
+                          : 'text-white hover:scale-110'
+                      }`}
+                      style={{ 
+                        borderColor: maleProductIndex >= maxMaleIndex ? '#666' : '#A80101',
+                        backgroundColor: maleProductIndex >= maxMaleIndex ? 'transparent' : '#A80101'
+                      }}
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="h-full">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 h-full">
+                    {maleCollections.map(collection => (
+                      <div key={collection.id} className="flex flex-col">
+                        <h4 className="text-sm lg:text-lg font-semibold text-white mb-2 truncate whitespace-nowrap min-h-[1.2rem] lg:min-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
+                        <div className="flex-1">
+                          <CollectionCard key={collection.id} collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {maleCollections.map(collection => (
-                  <div key={collection.id}>
-                    <h4 className="text-lg font-semibold text-white mb-2 truncate whitespace-nowrap min-h-[1.5rem] max-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
-                      <CollectionCard key={collection.id} collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
+              {/* Produtos Femininos */}
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl lg:text-2xl font-bold" style={{ color: '#F3ECE7' }}>
+                    {sectionType.toUpperCase()} {femaleLabel}
+                  </h3>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => navigateCarousel('female', 'left')}
+                      disabled={femaleProductIndex === 0}
+                      className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
+                        femaleProductIndex === 0 
+                          ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
+                          : 'text-white hover:scale-110'
+                      }`}
+                      style={{ 
+                        borderColor: femaleProductIndex === 0 ? '#666' : '#4B014E',
+                        backgroundColor: femaleProductIndex === 0 ? 'transparent' : '#4B014E'
+                      }}
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    <button
+                      onClick={() => navigateCarousel('female', 'right')}
+                      disabled={femaleProductIndex >= maxFemaleIndex}
+                      className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
+                        femaleProductIndex >= maxFemaleIndex 
+                          ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
+                          : 'text-white hover:scale-110'
+                      }`}
+                      style={{ 
+                        borderColor: femaleProductIndex >= maxFemaleIndex ? '#666' : '#4B014E',
+                        backgroundColor: femaleProductIndex >= maxFemaleIndex ? 'transparent' : '#4B014E'
+                      }}
+                    >
+                      <ChevronRight size={14} />
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Produtos Femininos */}
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold" style={{ color: '#F3ECE7' }}>
-                  {sectionType.toUpperCase()} {femaleLabel}
-                </h3>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => navigateCarousel('female', 'left')}
-                    disabled={femaleProductIndex === 0}
-                    className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
-                      femaleProductIndex === 0 
-                        ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
-                        : 'text-white hover:scale-110'
-                    }`}
-                    style={{ 
-                      borderColor: femaleProductIndex === 0 ? '#666' : '#4B014E',
-                      backgroundColor: femaleProductIndex === 0 ? 'transparent' : '#4B014E'
-                    }}
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-                  <button
-                    onClick={() => navigateCarousel('female', 'right')}
-                    disabled={femaleProductIndex >= maxFemaleIndex}
-                    className={`w-8 h-8 rounded-full border transition-all duration-300 flex items-center justify-center ${
-                      femaleProductIndex >= maxFemaleIndex 
-                        ? 'border-gray-600 text-gray-600 cursor-not-allowed' 
-                        : 'text-white hover:scale-110'
-                    }`}
-                    style={{ 
-                      borderColor: femaleProductIndex >= maxFemaleIndex ? '#666' : '#4B014E',
-                      backgroundColor: femaleProductIndex >= maxFemaleIndex ? 'transparent' : '#4B014E'
-                    }}
-                  >
-                    <ChevronRight size={14} />
-                  </button>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {femaleCollections.map(collection => (
-                  <div key={collection.id}>
-                    <h4 className="text-lg font-semibold text-white mb-2 truncate whitespace-nowrap min-h-[1.5rem] max-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
-                      <CollectionCard key={collection.id} collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
+                <div className="h-full">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 h-full">
+                    {femaleCollections.map(collection => (
+                      <div key={collection.id} className="flex flex-col">
+                        <h4 className="text-sm lg:text-lg font-semibold text-white mb-2 truncate whitespace-nowrap min-h-[1.2rem] lg:min-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
+                        <div className="flex-1">
+                          <CollectionCard key={collection.id} collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           </div>
@@ -969,25 +978,16 @@ const CollectionCard = ({ collection, sectionType }) => {
 
   return (
     <>
-      <div className="relative">
+      <div className="relative h-full">
         <div
-          className="bg-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
+          className="bg-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer h-full flex flex-col"
           onMouseEnter={() => !isMobile && setIsHovered(true)}
           onMouseLeave={() => !isMobile && setIsHovered(false)}
           style={{ backgroundColor: '#F3ECE7' }}
         >
           {/* Ícones no topo */}
-          <div className="relative">
-            {/* Ícone coração */}
-            <div className="absolute top-2 right-2 z-10">
-              <button
-                className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:text-white transition-all duration-200 hover:scale-110 shadow-sm"
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#A80101'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.9)'}
-              >
-                <Heart size={14} />
-              </button>
-            </div>
+          <div className="relative flex-1">
+
 
             {/* Ícone visualizar itens */}
             {hasItems && (
@@ -1016,7 +1016,7 @@ const CollectionCard = ({ collection, sectionType }) => {
             )}
 
             {/* Imagem da coleção */}
-            <div className="aspect-[3/4] overflow-hidden ">
+            <div className="aspect-[3/4] overflow-hidden">
               <img
                 src={collection.image}
                 alt={collection.name}
@@ -1026,14 +1026,14 @@ const CollectionCard = ({ collection, sectionType }) => {
           </div>
 
           {/* Conteúdo principal */}
-          <div className="p-4">
-            <h4 className="font-semibold text-sm mb-2 min-h-[1.25rem] max-h-[1.25rem] truncate whitespace-nowrap" style={{ color: '#1C1C1C' }}>
+          <div className="p-3 lg:p-4 flex-shrink-0">
+            <h4 className="font-semibold text-xs lg:text-sm mb-2 min-h-[1rem] lg:min-h-[1.25rem] line-clamp-1" style={{ color: '#1C1C1C' }}>
               {collection.name}
             </h4>
 
             {/* Rating */}
             <div className="flex items-center gap-1 mb-1">
-              <Star size={14} className="fill-yellow-400 text-yellow-400" />
+              <Star size={12} className="fill-yellow-400 text-yellow-400" />
               <span className="text-xs font-medium" style={{ color: '#1C1C1C' }}>
                 {avgRating !== null ? avgRating.toFixed(1) : '--'}
               </span>
@@ -1041,14 +1041,14 @@ const CollectionCard = ({ collection, sectionType }) => {
 
             {/* Valor total da coleção */}
             {hasItems && (
-              <div className="text-xs text-gray-600 mb-2">
+              <div className="text-xs text-gray-600 mb-1">
                 Total: $ {totalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             )}
 
             {/* Faixa de preço (mantido caso queira usar) */}
             {collection.priceRange && (
-              <div className="text-sm font-bold" style={{ color: '#1C1C1C' }}>
+              <div className="text-xs lg:text-sm font-bold" style={{ color: '#1C1C1C' }}>
                 {collection.priceRange}
               </div>
             )}
