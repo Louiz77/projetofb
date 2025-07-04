@@ -1,7 +1,11 @@
 import { ChevronLeft, ChevronRight, Star, Heart, Eye, ArrowLeft, ArrowRight, ShoppingCart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { addToCart, addKitToCart } from '../../hooks/addToCart';
-import addToWishlist, { addKitToWishlist } from '../../hooks/addWishlist';
+import wishlistHooks, { addKitToWishlist } from '../../hooks/addWishlist';
+import { auth, db, doc, getDoc, setDoc } from '../../client/firebaseConfig';
+import client from '../../client/ShopifyClient';
+import { gql } from '@apollo/client';
+const { addToWishlist } = wishlistHooks;
 
 const ProductSection = ({ 
   collections, 
@@ -103,35 +107,39 @@ const ProductSection = ({
   // Lógica para acessórios/bolsas (produtos individuais)
   if (sectionType === 'acessorios' && products) {
     return (
-      <section className="py-12" style={{ backgroundColor: '#1C1C1C' }}>
+      <section className="py-8 sm:py-12" style={{ backgroundColor: '#1C1C1C' }}>
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-12 gap-8 items-stretch">
+          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8">
             {/* Hero Banner */}
-            <div className="lg:col-span-5 flex mt-2">
+            <div className="lg:col-span-5 lg:order-1 order-2">
               <div className="relative overflow-hidden w-full group cursor-pointer">
-                <img
-                  src={heroImage}
-                  alt="Acessórios & Bolsas"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
+                {/* Altura responsiva para a imagem */}
+                <div className="aspect-[4/3] sm:aspect-[3/2] lg:aspect-[3/4] lg:min-h-[400px]">
+                  <img
+                    src={heroImage}
+                    alt="Acessórios & Bolsas"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                </div>
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(168, 1, 1, 0.3), rgba(75, 1, 78, 0.4))' }} />
-                <div className="absolute inset-0 flex flex-col justify-end p-8">
-                  <h2 className="text-4xl font-bold mb-2" style={{ color: '#F3ECE7' }}>{heroTitle}</h2>
-                  <p className="text-lg mb-6" style={{ color: '#F3ECE7' }}>{heroSubtitle}</p>
-                  <button className="self-start px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105" style={{ backgroundColor: '#F3ECE7', color: '#1C1C1C' }}>{heroButton}</button>
+                <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-6 lg:p-8">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2" style={{ color: '#F3ECE7' }}>{heroTitle}</h2>
+                  <p className="text-sm sm:text-base lg:text-lg mb-4 lg:mb-6" style={{ color: '#F3ECE7' }}>{heroSubtitle}</p>
+                  <button className="self-start px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105" style={{ backgroundColor: '#F3ECE7', color: '#1C1C1C' }}>{heroButton}</button>
                 </div>
               </div>
             </div>
+            
             {/* Carrossel de Produtos Individuais */}
-            <div className="lg:col-span-7 flex flex-col gap-8">
+            <div className="lg:col-span-7 lg:order-2 order-1 flex flex-col gap-6 lg:gap-8">
               {/* Accessories */}
               <div>
-                <h3 className="text-2xl font-bold mb-4" style={{ color: '#F3ECE7' }}>Acessories</h3>
+                <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: '#F3ECE7' }}>Acessories</h3>
                 <ProductCarousel products={products.accessories} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
               </div>
               {/* Bags */}
               <div>
-                <h3 className="text-2xl font-bold mb-4" style={{ color: '#F3ECE7' }}>Bags</h3>
+                <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: '#F3ECE7' }}>Bags</h3>
                 <ProductCarousel products={products.bags} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
               </div>
             </div>
@@ -145,36 +153,115 @@ const ProductSection = ({
               <img src={modalProduct.image} alt={modalProduct.name} className="w-full h-64 object-cover" />
               <div className="p-6 flex-1 flex flex-col gap-3">
                 <h3 className="text-xl font-bold mb-1" style={{ color: '#1C1C1C' }}>{modalProduct.name}</h3>
-                <div className="text-lg font-bold mb-2" style={{ color: '#4B014E' }}>$ {modalVariant ? parseFloat(modalVariant.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '--'}</div>
+                <div className="text-lg font-bold mb-2" style={{ color: '#4B014E' }}>
+                  R$ {modalVariant ? parseFloat(modalVariant.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : modalProduct.price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '--'}
+                </div>
+                
                 {/* Seletor de variantes */}
-                {modalProduct.variants.edges.length > 1 && (
+                {modalProduct.variants?.edges?.length > 1 && (
                   <select
                     className="w-full bg-gray-100 border border-gray-300 rounded-md p-2 mb-2"
-                    value={modalVariant?.id}
-                    onChange={e => setModalVariant(modalProduct.variants.edges.find(v => v.node.id === e.target.value)?.node)}
+                    value={modalVariant?.id || ''}
+                    onChange={e => {
+                      const variant = modalProduct.variants.edges.find(v => v.node.id === e.target.value)?.node;
+                      setModalVariant(variant);
+                    }}
                   >
                     {modalProduct.variants.edges.map(variant => (
                       <option key={variant.node.id} value={variant.node.id}>
-                        {variant.node.title} - $ {parseFloat(variant.node.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {variant.node.title} - R$ {parseFloat(variant.node.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </option>
                     ))}
                   </select>
                 )}
+                
                 <div className="flex gap-2 mt-2">
                   <button
                     className="flex-1 py-3 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white font-bold rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={async () => {
-                      if (!modalVariant) return alert('Selecione uma variante!');
+                      if (!modalVariant && !modalProduct.price) {
+                        alert('Selecione uma variante!');
+                        return;
+                      }
                       setAddingCart(true);
-                      await addToCart({
-                        variantId: modalVariant.id,
-                        name: modalProduct.name,
-                        price: parseFloat(modalVariant.price.amount),
-                        image: modalProduct.image,
-                        quantity: 1
-                      });
-                      setAddingCart(false);
-                      setModalProduct(null);
+                      try {
+                        // Usar a função addToCart com os dados já processados
+                        const cartItem = {
+                          id: modalVariant?.id || modalProduct.id,
+                          variantId: modalVariant?.id,
+                          name: modalProduct.name,
+                          price: modalVariant ? parseFloat(modalVariant.price.amount) : modalProduct.price,
+                          image: modalProduct.image,
+                          quantity: 1
+                        };
+
+                        // Adicionar ao carrinho do Shopify
+                        let cartId = localStorage.getItem('shopifyCartId');
+                        if (!cartId) {
+                          const { data: cartData } = await client.mutate({
+                            mutation: gql`
+                              mutation { 
+                                cartCreate(input: {}) { 
+                                  cart { id checkoutUrl } 
+                                } 
+                              }
+                            `,
+                          });
+                          cartId = cartData.cartCreate.cart.id;
+                          localStorage.setItem('shopifyCartId', cartId);
+                        }
+
+                        if (modalVariant?.id) {
+                          await client.mutate({
+                            mutation: gql`
+                              mutation ($cartId: ID!, $lines: [CartLineInput!]!) {
+                                cartLinesAdd(cartId: $cartId, lines: $lines) {
+                                  cart { id checkoutUrl }
+                                }
+                              }
+                            `,
+                            variables: {
+                              cartId,
+                              lines: [{ 
+                                merchandiseId: modalVariant.id, 
+                                quantity: 1 
+                              }],
+                            },
+                          });
+                        }
+
+                        // Adicionar ao carrinho local/Firebase
+                        const user = auth.currentUser;
+                        if (user) {
+                          const cartRef = doc(db, 'carts', user.uid);
+                          const cartSnap = await getDoc(cartRef);
+                          const existingItems = cartSnap.exists() ? cartSnap.data().items || [] : [];
+                          const existingItemIndex = existingItems.findIndex((i) => i.id === cartItem.id);
+                          if (existingItemIndex !== -1) {
+                            existingItems[existingItemIndex].quantity += 1;
+                          } else {
+                            existingItems.push(cartItem);
+                          }
+                          await setDoc(cartRef, { items: existingItems }, { merge: true });
+                        } else {
+                          const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+                          const existingItemIndex = guestCart.findIndex((i) => i.id === cartItem.id);
+                          if (existingItemIndex !== -1) {
+                            guestCart[existingItemIndex].quantity += 1;
+                          } else {
+                            guestCart.push(cartItem);
+                          }
+                          localStorage.setItem('guestCart', JSON.stringify(guestCart));
+                        }
+
+                        alert(`${modalProduct.name} adicionado ao carrinho!`);
+                        setModalProduct(null);
+                      } catch (error) {
+                        console.error('Erro ao adicionar ao carrinho:', error);
+                        alert('Erro ao adicionar ao carrinho');
+                      } finally {
+                        setAddingCart(false);
+                      }
                     }}
                     disabled={addingCart}
                   >
@@ -183,17 +270,54 @@ const ProductSection = ({
                   <button
                     className="flex-1 py-3 border-2 border-[#4B014E] text-[#4B014E] font-bold rounded-lg hover:bg-[#4B014E] hover:text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={async () => {
-                      if (!modalVariant) return alert('Selecione uma variante!');
+                      if (!modalVariant && !modalProduct.price) {
+                        alert('Selecione uma variante!');
+                        return;
+                      }
                       setAddingWishlist(true);
-                      await addToWishlist({
-                        variantId: modalVariant.id,
-                        name: modalProduct.name,
-                        price: parseFloat(modalVariant.price.amount),
-                        image: modalProduct.image,
-                        quantity: 1
-                      });
-                      setAddingWishlist(false);
-                      setModalProduct(null);
+                      try {
+                        // Criar item para wishlist
+                        const wishlistItem = {
+                          id: modalVariant?.id || modalProduct.id,
+                          variantId: modalVariant?.id,
+                          name: modalProduct.name,
+                          price: modalVariant ? parseFloat(modalVariant.price.amount) : modalProduct.price,
+                          image: modalProduct.image,
+                          quantity: 1
+                        };
+
+                        // Adicionar à wishlist local/Firebase
+                        const user = auth.currentUser;
+                        if (user) {
+                          const wishlistRef = doc(db, 'wishlists', user.uid);
+                          const wishlistSnap = await getDoc(wishlistRef);
+                          const existingItems = wishlistSnap.exists() ? wishlistSnap.data().items || [] : [];
+                          const isAlreadyInWishlist = existingItems.some(item => item.id === wishlistItem.id);
+                          if (!isAlreadyInWishlist) {
+                            await setDoc(wishlistRef, { items: [...existingItems, wishlistItem] }, { merge: true });
+                            alert(`${modalProduct.name} adicionado aos favoritos!`);
+                          } else {
+                            alert(`${modalProduct.name} já está nos favoritos!`);
+                          }
+                        } else {
+                          const guestWishlist = JSON.parse(localStorage.getItem('wishlistItems') || '[]');
+                          const isAlreadyInWishlist = guestWishlist.some(item => item.id === wishlistItem.id);
+                          if (!isAlreadyInWishlist) {
+                            guestWishlist.push(wishlistItem);
+                            localStorage.setItem('wishlistItems', JSON.stringify(guestWishlist));
+                            alert(`${modalProduct.name} adicionado aos favoritos!`);
+                          } else {
+                            alert(`${modalProduct.name} já está nos favoritos!`);
+                          }
+                        }
+
+                        setModalProduct(null);
+                      } catch (error) {
+                        console.error('Erro ao adicionar aos favoritos:', error);
+                        alert('Erro ao adicionar aos favoritos');
+                      } finally {
+                        setAddingWishlist(false);
+                      }
                     }}
                     disabled={addingWishlist}
                   >
@@ -364,51 +488,52 @@ const ProductSection = ({
 
 const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [screenSize, setScreenSize] = useState('desktop');
+  const [itemsPerView, setItemsPerView] = useState(3);
 
-  // Detectar tamanho da tela de forma mais robusta
+  // Detectar tamanho da tela e ajustar itemsPerView
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-      if (width < 640) setScreenSize('mobile');
-      else if (width < 1024) setScreenSize('tablet');
-      else setScreenSize('desktop');
+      if (width < 640) {
+        setItemsPerView(1); // Mobile: 1 item
+      } else if (width < 1024) {
+        setItemsPerView(2); // Tablet: 2 itens
+      } else {
+        setItemsPerView(3); // Desktop: 3 itens
+      }
     };
 
-    // Executar imediatamente
     handleResize();
-    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Determinar itens por visualização baseado no tamanho da tela
-  const getItemsPerView = () => {
-    switch (screenSize) {
-      case 'mobile': return 1;
-      case 'tablet': return 2;
-      default: return 3;
-    }
-  };
-
-  const itemsPerView = getItemsPerView();
-  // Corrigir cálculo do maxIndex para evitar slides vazios
-  const maxIndex = Math.max(0, Math.ceil(products.length / itemsPerView) - 1);
+  // Calcular maxIndex corretamente - número de páginas possíveis
+  const totalPages = Math.ceil(products.length / itemsPerView);
+  const maxIndex = Math.max(0, totalPages - 1);
 
   const goTo = (dir) => {
     setCurrentIndex((prev) => {
-      if (dir === 'left') return prev === 0 ? maxIndex : prev - 1;
-      return prev >= maxIndex ? 0 : prev + 1;
+      if (dir === 'left') {
+        return Math.max(0, prev - 1);
+      } else {
+        return Math.min(maxIndex, prev + 1);
+      }
     });
   };
 
-  // Auto-play (opcional)
+  // Auto-play
   useEffect(() => {
     if (products.length <= itemsPerView) return;
     
     const interval = setInterval(() => {
-      setCurrentIndex(prev => prev >= maxIndex ? 0 : prev + 1);
-    }, 15000);
+      setCurrentIndex(prev => {
+        if (prev >= maxIndex) {
+          return 0;
+        }
+        return prev + 1;
+      });
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [products.length, itemsPerView, maxIndex]);
@@ -433,6 +558,7 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
         <>
           <button 
             onClick={() => goTo('left')} 
+            disabled={currentIndex === 0}
             className="absolute left-2 top-1/2 -translate-y-1/2 z-20 
                      bg-white/90 backdrop-blur-sm text-gray-800 
                      w-10 h-10 rounded-full shadow-lg
@@ -440,13 +566,15 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                      transition-all duration-300 ease-out
                      opacity-0 group-hover:opacity-100
                      flex items-center justify-center
-                     border border-gray-200"
+                     border border-gray-200
+                     disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Produto anterior"
           >
             <ChevronLeft size={18} />
           </button>
           <button 
-            onClick={() => goTo('right')} 
+            onClick={() => goTo('right')}
+            disabled={currentIndex >= maxIndex}
             className="absolute right-2 top-1/2 -translate-y-1/2 z-20 
                      bg-white/90 backdrop-blur-sm text-gray-800 
                      w-10 h-10 rounded-full shadow-lg
@@ -454,7 +582,8 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                      transition-all duration-300 ease-out
                      opacity-0 group-hover:opacity-100
                      flex items-center justify-center
-                     border border-gray-200"
+                     border border-gray-200
+                     disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Próximo produto"
           >
             <ChevronRight size={18} />
@@ -465,27 +594,26 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
       {/* Container do carrossel */}
       <div className="overflow-hidden rounded-xl">
         <div
-          className="flex transition-transform duration-500 ease-out gap-4"
+          className="flex transition-transform duration-500 ease-out"
           style={{
             transform: `translateX(-${currentIndex * 100}%)`,
           }}
         >
-          {/* Agrupar produtos por slide */}
-          {Array.from({ length: Math.ceil(products.length / itemsPerView) }).map((_, slideIndex) => (
+          {/* Criar páginas de produtos */}
+          {Array.from({ length: totalPages }).map((_, pageIndex) => (
             <div 
-              key={slideIndex}
+              key={pageIndex}
               className="flex gap-4 flex-shrink-0"
               style={{ width: '100%' }}
             >
               {products
-                .slice(slideIndex * itemsPerView, (slideIndex + 1) * itemsPerView)
+                .slice(pageIndex * itemsPerView, (pageIndex + 1) * itemsPerView)
                 .map((product, idx) => (
                 <div
-                  key={product.id || `${slideIndex}-${idx}`}
+                  key={product.id || `${pageIndex}-${idx}`}
                   className="flex-1"
                   style={{ 
-                    minWidth: screenSize === 'mobile' ? '100%' : 
-                             screenSize === 'tablet' ? '50%' : '33.333%' 
+                    minWidth: `${100 / itemsPerView}%`
                   }}
                 >
                   <div
@@ -499,7 +627,7 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                       setModalVariant?.(product.variants?.edges?.[0]?.node);
                     }}
                   >
-                    {/* Imagem do produto */}
+                    {/* ...existing code... */}
                     <div className="relative overflow-hidden bg-gray-50">
                       <img 
                         src={product.image || '/api/placeholder/300/300'} 
@@ -508,7 +636,6 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                                  hover:scale-110 transition-transform duration-500 ease-out"
                         loading="lazy"
                       />
-                      {/* Badge de novo - só mostra se tags inclui 'novo' */}
                       {product.tags?.includes('novo') && (
                         <div className="absolute top-2 left-2 bg-[#8A0101] text-white text-xs px-2 py-1 rounded-full font-medium">
                           Novo
@@ -521,7 +648,6 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                       )}
                     </div>
 
-                    {/* Informações do produto */}
                     <div className="p-4 flex-1 flex flex-col justify-between">
                       <div>
                         <h4 className="font-semibold text-gray-900 text-sm sm:text-base mb-2 
@@ -537,7 +663,6 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                       </div>
 
                       <div className="space-y-2">
-                        {/* Preço */}
                         <div className="flex items-center justify-between">
                           <div className="flex flex-col">
                             {product.originalPrice && product.originalPrice !== product.price && (
@@ -555,7 +680,6 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                           </div>
                         </div>
 
-                        {/* Rating (se disponível) */}
                         {product.rating && (
                           <div className="flex items-center gap-1">
                             {[...Array(5)].map((_, i) => (
@@ -586,9 +710,9 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
       </div>
 
       {/* Indicadores de posição */}
-      {products.length > itemsPerView && maxIndex > 0 && (
+      {totalPages > 1 && (
         <div className="flex justify-center mt-4 gap-2">
-          {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+          {Array.from({ length: totalPages }).map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentIndex(i)}
@@ -597,7 +721,7 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                   ? 'bg-[#8A0101] w-8' 
                   : 'bg-gray-300 hover:bg-gray-400'
               }`}
-              aria-label={`Ir para slide ${i + 1}`}
+              aria-label={`Ir para página ${i + 1}`}
             />
           ))}
         </div>
