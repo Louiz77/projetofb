@@ -155,3 +155,92 @@ code {
     max-height: 50vh;
   }
 }
+
+/* Responsividade otimizada para telas 4K e ultra-wide */
+@media (min-width: 2560px) {
+  .container {
+    max-width: 2000px;
+  }
+  
+  /* Cards em grids responsivos para 4K */
+  .grid-4k-responsive {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  
+  /* Padding otimizado para telas muito grandes */
+  .px-4k {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 1920px) and (max-width: 2559px) {
+  .container {
+    max-width: 1800px;
+  }
+  
+  .grid-2k-responsive {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .container {
+    max-width: 1400px;
+  }
+  
+  .grid-large-responsive {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Utilitários personalizados para breakpoints grandes */
+@layer utilities {
+  .max-w-4k {
+    max-width: 2000px;
+  }
+  
+  .max-w-2k {
+    max-width: 1800px;
+  }
+  
+  .px-responsive {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  @media (min-width: 768px) {
+    .px-responsive {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .px-responsive {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+  
+  @media (min-width: 1440px) {
+    .px-responsive {
+      padding-left: 2.5rem;
+      padding-right: 2.5rem;
+    }
+  }
+  
+  @media (min-width: 1920px) {
+    .px-responsive {
+      padding-left: 3rem;
+      padding-right: 3rem;
+    }
+  }
+  
+  @media (min-width: 2560px) {
+    .px-responsive {
+      padding-left: 4rem;
+      padding-right: 4rem;
+    }
+  }
+}

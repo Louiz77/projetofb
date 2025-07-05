@@ -245,7 +245,7 @@ const Header = ({ }) => {
   return (
     <>
       <header className={getHeaderClasses()} style={getHeaderStyle()}>
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k">
           {/* Top announcement bar */}
           <div 
             className="text-center py-1 text-sm tracking-wider text-gray-300 border-b border-gray-800 transition-opacity duration-300"

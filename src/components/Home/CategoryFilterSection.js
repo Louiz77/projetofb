@@ -13,7 +13,7 @@ const CategoryFilterSection = () => {
 
   return (
       <section className="py-6 md:py-8 bg-black text-white">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k">
           <h2 className="text-2xl md:text-4xl font-bold text-center mb-8 md:mb-16">EXPLORE BY CATEGORY</h2>
           
           {/* Divisão entre gêneros */}

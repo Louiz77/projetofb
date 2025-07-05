@@ -527,7 +527,7 @@ const Home = () => {
           <div className="w-full h-full bg-[#8A0101]" />
         </div>
         <div className="py-4">
-          <div className="container mx-auto px-4 text-center relative z-10">
+          <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k text-center relative z-10">
             <p className="text-white text-sm sm:text-base lg:text-lg font-semibold animate-pulse">
               🔥 <span className="hidden sm:inline">FREE SHIPPING ($450) • INTEREST-FREE INSTALLMENTS IN UP TO 3X • </span>
               <span className="sm:hidden">FREE SHIPPING • INSTALLMENTS • </span>

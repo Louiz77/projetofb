@@ -31,14 +31,17 @@ const CarouselSection = ({ title, products, id }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [ignoreSwipe, setIgnoreSwipe] = useState(false); // Novo: flag para ignorar swipe após detectar vertical
 
-  // Responsive items per view - mais eficiente para diferentes telas
+  // Responsive items per view - otimizado para todas as resoluções incluindo 4K
   const getItemsPerView = () => {
     if (typeof window === 'undefined') return 4;
     const width = window.innerWidth;
     if (width < 640) return 1;      // Mobile
     if (width < 768) return 2;      // Small tablets
     if (width < 1024) return 3;     // Medium tablets
-    return 4;                       // Desktop
+    if (width < 1440) return 4;     // Desktop padrão
+    if (width < 1920) return 5;     // Telas grandes (1440p)
+    if (width < 2560) return 6;     // Telas muito grandes (1080p ultrawide, 1440p ultrawide)
+    return 7;                       // 4K e superiores
   };
 
   const [itemsPerView, setItemsPerView] = useState(getItemsPerView);
@@ -159,7 +162,7 @@ const CarouselSection = ({ title, products, id }) => {
   if (!products || products.length === 0) {
     return (
       <section className="py-12 md:py-20 bg-[#1C1C1C]">
-        <div className="container mx-auto px-4 md:px-6 text-center">
+        <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k text-center">
           <h2 className="text-3xl md:text-5xl font-bold text-[#F3ECE7] mb-4">{title}</h2>
           <p className="text-[#F3ECE7]/60">Nenhum produto disponível no momento.</p>
         </div>
@@ -265,7 +268,7 @@ const CarouselSection = ({ title, products, id }) => {
         }} />
       </div>
 
-      <div className="container mx-auto px-4 md:px-6 relative z-10">
+      <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k relative z-10">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-8 md:mb-12 gap-6">
           <div className="space-y-6 flex-1">
@@ -375,21 +378,34 @@ const CarouselSection = ({ title, products, id }) => {
               style={
                 isMobile && itemsPerView === 1
                   ? (() => {
-                      // Card width: 80vw, container: 100vw, so offset = (container - card)/2 = 10vw
-                      const cardWidth = 80;
+                      // Largura do card: 85vw
+                      const cardWidth = 85;
+                      const gap = 4; // gap em vw
+                      const totalCards = organizedProducts.length;
+                      
+                      // Para centralizar corretamente cada card
                       const containerWidth = 100;
-                      const offset = (containerWidth - cardWidth) / 2;
-                      // Para centralizar o card atual, calcula o deslocamento
-                      // No último card, impede que ele passe do limite direito
-                      let translate = currentIndex * cardWidth - offset;
-                      const maxTranslate = (organizedProducts.length - 1) * cardWidth;
-                      if (translate > maxTranslate - offset) {
-                        translate = maxTranslate - offset;
+                      const sideMargin = (containerWidth - cardWidth) / 2;
+                      
+                      // Calcular o translate para centralizar o card atual
+                      // Para o primeiro card (index 0), começar com margem lateral
+                      let translateX;
+                      
+                      if (currentIndex === 0) {
+                        // Primeiro card: apenas a margem lateral
+                        translateX = sideMargin;
+                      } else {
+                        // Cards subsequentes: posição baseada no índice
+                        translateX = currentIndex * (cardWidth + gap) + sideMargin;
                       }
-                      if (translate < 0) translate = 0;
+                      
+                      // Limitar para não ultrapassar os limites (último card)
+                      const maxTranslate = (totalCards - 1) * (cardWidth + gap) + sideMargin;
+                      if (translateX > maxTranslate) translateX = maxTranslate;
+                      
                       return {
-                        width: `${organizedProducts.length * cardWidth}vw`,
-                        transform: `translateX(-${translate}vw)`
+                        width: `${totalCards * (cardWidth + gap) - gap}vw`,
+                        transform: `translateX(-${translateX}vw)`
                       };
                     })()
                   : {
@@ -403,8 +419,8 @@ const CarouselSection = ({ title, products, id }) => {
                   key={`${product.id}-${index}`}
                   className={isMobile && itemsPerView === 1 ? 'flex-shrink-0' : 'flex-shrink-0'}
                   style={{
-                    width: isMobile && itemsPerView === 1 ? '80vw' : `${100 / itemsPerView}%`,
-                    maxWidth: isMobile ? '340px' : '300px',
+                    width: isMobile && itemsPerView === 1 ? '85vw' : `${100 / itemsPerView}%`,
+                    maxWidth: isMobile ? '360px' : '300px',
                   }}
                 >
                   <EnhancedProductCard 
@@ -427,7 +443,7 @@ const CarouselSection = ({ title, products, id }) => {
 
           {/* Mobile Swipe Hint */}
           {isMobile && hasMultipleSlides && (
-            <div className="absolute bottom-4 right-4 text-[#F3ECE7]/60 text-xs flex items-center gap-1">
+            <div className="absolute bottom-0 right-4 text-[#F3ECE7]/60 text-xs flex items-center gap-1">
               <span>Swipe</span>
               <ChevronRight size={12} />
             </div>
@@ -463,6 +479,40 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  const [showVariants, setShowVariants] = useState(isMobile); // No mobile sempre mostra
+
+  // Parse variant titles para trabalhar com Shopify - cores, tamanhos, etc.
+  const parseVariantTitle = (title) => {
+    if (!title || title === 'Default Title') return '';
+    
+    // Para Shopify, o formato comum é "Color / Size" ou apenas "Color" ou apenas "Size"
+    const parts = title.split(' / ');
+    
+    if (parts.length > 1) {
+      // Se tem múltiplas partes, prioriza a segunda (normalmente tamanho)
+      // mas se a segunda for muito longa, usa a primeira (cor)
+      const second = parts[1].trim();
+      const first = parts[0].trim();
+      
+      // Se a segunda parte é um tamanho comum, usa ela
+      if (['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL'].includes(second.toUpperCase()) || 
+          /^\d+$/.test(second)) {
+        return second;
+      }
+      
+      // Senão, usa a primeira parte (cor) mas abreviada
+      return first.length > 4 ? first.substring(0, 3).toUpperCase() : first.toUpperCase();
+    }
+    
+    // Para título simples, verifica se é tamanho ou cor
+    const upper = title.toUpperCase();
+    if (['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL'].includes(upper) || /^\d+$/.test(title)) {
+      return title;
+    }
+    
+    // Para cores ou outros atributos, abrevia se necessário
+    return title.length > 4 ? title.substring(0, 3).toUpperCase() : title.toUpperCase();
+  };
 
   const handleAddToCart = async () => {
       if (!product.variants?.edges?.length) {
@@ -590,6 +640,7 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
       } ${isHovered && !isMobile ? 'scale-105 shadow-2xl shadow-[#8A0101]/20' : ''} group rounded-lg`}
       onMouseEnter={() => !isMobile && setIsHovered(true)}
       onMouseLeave={() => !isMobile && setIsHovered(false)}
+      onClick={() => isMobile && setShowVariants(!showVariants)}
     >
       {/* Priority Labels */}
       <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
@@ -702,36 +753,77 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
           </div>
         )}
 
-        {/* Seletor de variantes */}
-        <div className="my-3 min-h-[38px] flex items-center">
-          {product.variants.edges.length > 1 ? (
-            <div className="flex gap-2 flex-wrap w-full justify-center">
-              {product.variants.edges.map((variant, index) => {
-                const selected = selectedVariantIndex === index;
-                return (
-                  <button
-                    key={variant.node.id}
-                    type="button"
-                    onClick={() => setSelectedVariantIndex(index)}
-                    className={`px-3 py-1 rounded-full border text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#8A0101] focus:z-10
-                      ${selected
-                        ? 'bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white border-transparent shadow-md scale-105'
-                        : 'bg-[#232025] text-[#F3ECE7]/80 border-[#4B014E]/30 hover:bg-[#4B014E]/10 hover:text-[#F3ECE7]'}
-                    `}
-                    style={{minWidth: 60, boxShadow: selected ? '0 2px 8px #8A010133' : undefined}}
-                  >
-                    <span className="truncate max-w-[80px]">{variant.node.title}</span>
-                  </button>
-                );
-              })}
+        {/* Seletor de variantes - Desktop (hover) */}
+        {!isMobile && product.variants.edges.length > 1 && (
+          <div className={`absolute bottom-20 left-4 right-4 transition-all duration-500 ease-out z-30 ${
+            isHovered ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'
+          }`}>
+            <div className="bg-[#1C1C1C]/95 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg p-3 shadow-xl">
+              <div className="flex gap-1 justify-center flex-wrap">
+                {product.variants.edges.map((variant, index) => {
+                  const selected = selectedVariantIndex === index;
+                  const displayText = parseVariantTitle(variant.node.title);
+                  
+                  return displayText ? (
+                    <button
+                      key={variant.node.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedVariantIndex(index);
+                      }}
+                      className={`min-w-[32px] h-8 px-2 rounded-full text-xs font-medium transition-all duration-200 flex items-center justify-center ${
+                        selected 
+                          ? 'bg-[#8A0101] text-white shadow-lg scale-110' 
+                          : 'bg-[#2A2A2A] text-[#F3ECE7]/80 hover:bg-[#4B014E]/50 hover:scale-105'
+                      }`}
+                      title={variant.node.title} // Tooltip com título completo
+                    >
+                      {displayText}
+                    </button>
+                  ) : null;
+                })}
+              </div>
             </div>
-          ) : (
-            <div className="h-[32px] w-full" />
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Seletor de variantes - Mobile */}
+        {isMobile && product.variants.edges.length > 1 && (
+          <div className={`absolute bottom-4 left-4 right-4 transition-all duration-300 ${
+            showVariants ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+          }`}>
+            <div className="bg-[#1C1C1C]/95 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg p-3">
+              <div className="grid grid-cols-4 gap-2">
+                {product.variants.edges.map((variant, index) => {
+                  const selected = selectedVariantIndex === index;
+                  const displayText = parseVariantTitle(variant.node.title);
+                  
+                  return displayText ? (
+                    <button
+                      key={variant.node.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedVariantIndex(index);
+                      }}
+                      className={`h-10 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center ${
+                        selected 
+                          ? 'bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white shadow-lg' 
+                          : 'bg-[#2A2A2A] text-[#F3ECE7]/80 border border-[#4B014E]/30'
+                      }`}
+                    >
+                      {displayText}
+                    </button>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Hover Actions */}
-        <div className={`transition-all duration-300 overflow-hidden ${
+        <div className={`transition-all duration-300 overflow-hidden z-20 relative ${
           isHovered && !isMobile ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
         }`}>
           <button 
@@ -756,6 +848,18 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
           </div>
         )}
       </div>
+
+        {/* Mobile tap indicator para variantes */}
+        {isMobile && product.variants.edges.length > 1 && (
+          <div className="absolute top-4 right-4 z-20">
+            <div className="bg-[#1C1C1C]/90 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg px-3 py-2 shadow-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-[#8A0101] rounded-full animate-pulse"></div>
+                <span className="text-[#F3ECE7] text-xs font-medium">Tap for options</span>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Decorative Corner */}
       <div className="absolute top-0 right-0 w-0 h-0 border-l-[20px] border-l-transparent border-t-[20px] border-t-[#4B014E]/20" />

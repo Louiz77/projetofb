@@ -11,7 +11,7 @@ const NewsletterSection = () => {
 
   return (
     <section className="py-5 bg-black text-white">
-      <div className="container mx-auto px-2 text-center">
+      <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k text-center">
         <h2 className="text-2xl font-bold mb-2">JOIN OUR COMMUNITY</h2>
         <p className="text-xl mb-8">Get exclusive releases and dark promotions</p>
         <form onSubmit={handleSubmit} className="max-w-md mx-auto">

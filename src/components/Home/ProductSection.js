@@ -29,10 +29,21 @@ const ProductSection = ({
   const [femaleProductIndex, setFemaleProductIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(4);
 
-  // Atualizar itemsPerView baseado no tamanho da tela
+  // Atualizar itemsPerView baseado no tamanho da tela - otimizado para 4K
   useEffect(() => {
     const updateItemsPerView = () => {
-      setItemsPerView(window.innerWidth < 768 ? 2 : 4);
+      const width = window.innerWidth;
+      if (width < 768) {
+        setItemsPerView(2);          // Mobile/tablet
+      } else if (width < 1440) {
+        setItemsPerView(4);          // Desktop padrão
+      } else if (width < 1920) {
+        setItemsPerView(5);          // Telas grandes
+      } else if (width < 2560) {
+        setItemsPerView(6);          // Telas muito grandes
+      } else {
+        setItemsPerView(7);          // 4K e superiores
+      }
     };
 
     updateItemsPerView();
@@ -123,7 +134,7 @@ const ProductSection = ({
   if (sectionType === 'acessorios' && products) {
     return (
       <section className="py-8 sm:py-12" style={{ backgroundColor: '#1C1C1C' }}>
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k">
           <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8">
             {/* Hero Banner */}
             <div className="lg:col-span-5 lg:order-1 order-2 flex">
@@ -430,7 +441,8 @@ const ProductSection = ({
                       })}
                     </div>
                   </div>
-                )}                  {/* Descrição do Produto */}
+                )}                  
+                {/* Descrição do Produto */}
                   {modalProduct.description && (
                     <div className="mb-6">
                       <p className="text-gray-600 leading-relaxed">{modalProduct.description}</p>
@@ -606,7 +618,7 @@ const ProductSection = ({
 
   return (
     <section className="py-12" style={{ backgroundColor: '#1C1C1C' }}>
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k">
         
         {/* Main Layout: Hero + Products */}
         <div className="grid lg:grid-cols-12 gap-8">
@@ -1332,16 +1344,6 @@ const CollectionCard = ({ collection, sectionType }) => {
         >
           {/* Ícones no topo */}
           <div className="relative">
-            {/* Ícone coração */}
-            <div className="absolute top-2 right-2 z-10">
-              <button
-                className="w-7 h-7 bg-white/90 rounded-full flex items-center justify-center hover:text-white transition-all duration-200 hover:scale-110 shadow-sm"
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#A80101'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.9)'}
-              >
-                <Heart size={12} />
-              </button>
-            </div>
 
             {/* Ícone visualizar itens */}
             {hasItems && (
