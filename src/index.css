@@ -53,6 +53,68 @@
   overflow: hidden;
 }
 
+/* Classe de escala hover suave */
+.hover\:scale-102:hover {
+  transform: scale(1.02);
+}
+
+/* Animação de pulso suave para elementos selecionados */
+.pulse-soft {
+  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* Transição suave para bg-clip-text */
+.bg-clip-text {
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Utilitários para qualidade de imagem aprimorada */
+.image-crisp {
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.image-smooth {
+  image-rendering: auto;
+  image-rendering: smooth;
+}
+
+/* Prevenção de layout shift em imagens */
+.aspect-ratio-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.aspect-ratio-container img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Animação suave para mudança de imagem */
+.image-fade-transition {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Melhor centralização de objetos */
+.object-center {
+  object-position: center center;
+}
+
 body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
@@ -62,4 +124,34 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Melhorias para responsividade de modais */
+@media (max-width: 1024px) {
+  .modal-content {
+    max-height: 90vh;
+  }
+  
+  .modal-image-section {
+    min-height: 50vh;
+  }
+  
+  .modal-content-section {
+    max-height: 40vh;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal-content {
+    margin: 1rem;
+    border-radius: 1rem;
+  }
+  
+  .modal-image-section {
+    min-height: 40vh;
+  }
+  
+  .modal-content-section {
+    max-height: 50vh;
+  }
 }

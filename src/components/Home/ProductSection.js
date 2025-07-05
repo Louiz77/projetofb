@@ -23,6 +23,7 @@ const ProductSection = ({
   const [modalVariant, setModalVariant] = useState(null);
   const [addingCart, setAddingCart] = useState(false);
   const [addingWishlist, setAddingWishlist] = useState(false);
+  const [variantCarouselIndex, setVariantCarouselIndex] = useState(0);
 
   const [maleProductIndex, setMaleProductIndex] = useState(0);
   const [femaleProductIndex, setFemaleProductIndex] = useState(0);
@@ -38,6 +39,22 @@ const ProductSection = ({
     window.addEventListener('resize', updateItemsPerView);
     return () => window.removeEventListener('resize', updateItemsPerView);
   }, []);
+
+  // Auto-selecionar primeira variante disponível quando modal abre
+  useEffect(() => {
+    if (modalProduct && modalProduct.variants?.edges?.length > 0) {
+      const firstAvailableVariant = modalProduct.variants.edges.find(
+        variant => variant.node.availableForSale
+      )?.node;
+      
+      if (firstAvailableVariant && !modalVariant) {
+        setModalVariant(firstAvailableVariant);
+      }
+      
+      // Reset variant carousel index quando modal muda
+      setVariantCarouselIndex(0);
+    }
+  }, [modalProduct, modalVariant]);
 
  const transformedCollections = Array.isArray(collections)
     ? collections.map(collection => {
@@ -146,37 +163,286 @@ const ProductSection = ({
         </div>
         {/* Modal global de produto individual */}
         {modalProduct && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-8 animate-fade-in">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-fade-in">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300" onClick={() => setModalProduct(null)} />
-            <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-slide-up">
-              <img src={modalProduct.image} alt={modalProduct.name} className="w-full h-64 object-cover" />
-              <div className="p-6 flex-1 flex flex-col gap-3">
-                <h3 className="text-xl font-bold mb-1" style={{ color: '#1C1C1C' }}>{modalProduct.name}</h3>
-                <div className="text-lg font-bold mb-2" style={{ color: '#4B014E' }}>
-                  R$ {modalVariant ? parseFloat(modalVariant.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : modalProduct.price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '--'}
-                </div>
-                
-                {/* Seletor de variantes */}
-                {modalProduct.variants?.edges?.length > 1 && (
-                  <select
-                    className="w-full bg-gray-100 border border-gray-300 rounded-md p-2 mb-2"
-                    value={modalVariant?.id || ''}
-                    onChange={e => {
-                      const variant = modalProduct.variants.edges.find(v => v.node.id === e.target.value)?.node;
-                      setModalVariant(variant);
+            <div className="relative w-full max-w-xs sm:max-w-lg lg:max-w-5xl xl:max-w-6xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row animate-slide-up max-h-[95vh] lg:max-h-[90vh]">
+              
+              {/* Seção da Imagem - Lado Esquerdo */}
+              <div className="lg:w-1/2 relative bg-gradient-to-br from-gray-50 to-gray-100 flex">
+                <div className="w-full relative overflow-hidden flex">
+                  <img 
+                    src={modalVariant?.image?.url || modalProduct.image} 
+                    alt={modalProduct.name} 
+                    className="w-full h-full object-cover object-center transition-all duration-500 ease-out transform hover:scale-105 image-fade-transition" 
+                    style={{
+                      objectPosition: 'center center',
+                      imageRendering: 'auto',
+                      minHeight: '100%'
                     }}
-                  >
-                    {modalProduct.variants.edges.map(variant => (
-                      <option key={variant.node.id} value={variant.node.id}>
-                        {variant.node.title} - R$ {parseFloat(variant.node.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                
-                <div className="flex gap-2 mt-2">
+                    loading="eager"
+                  />
+                  
+                  {/* Badge de desconto (se houver) */}
+                  {modalProduct.discount && (
+                    <div className="absolute top-4 left-4 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                      -{modalProduct.discount}% OFF
+                    </div>
+                  )}
+                  
+                  {/* Indicador de nova variante */}
+                  {modalVariant && (
+                    <div className="absolute top-4 right-4 bg-gradient-to-r from-[#4B014E] to-[#6B0261] text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                      {modalVariant.title}
+                    </div>
+                  )}
+                  
+                  {/* Overlay gradient bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Seção de Conteúdo - Lado Direito */}
+              <div className="lg:w-1/2 flex flex-col max-h-[60vh] lg:max-h-none">
+                {/* Área de scroll para conteúdo */}
+                <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+                  {/* Header */}
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex-1">
+                      <h3 className="text-2xl lg:text-3xl font-bold mb-2 text-gray-900 leading-tight">
+                        {modalProduct.name}
+                      </h3>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="text-3xl font-bold bg-gradient-to-r from-[#8A0101] to-[#4B014E] bg-clip-text text-transparent">
+                          $ {modalVariant ? parseFloat(modalVariant.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : modalProduct.price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '--'}
+                        </div>
+                        {/* Mostrar preço original da variante ou do produto */}
+                        {((modalVariant?.compareAtPrice?.amount && parseFloat(modalVariant.compareAtPrice.amount) > parseFloat(modalVariant.price.amount)) || modalProduct.originalPrice) && (
+                          <div className="text-lg text-gray-400 line-through">
+                            $ {modalVariant?.compareAtPrice?.amount 
+                              ? parseFloat(modalVariant.compareAtPrice.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                              : modalProduct.originalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                            }
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Rating e Reviews */}
+                      {modalProduct.rating && (
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star 
+                                key={i} 
+                                size={16} 
+                                className={`${i < Math.floor(modalProduct.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-600">
+                            {modalProduct.rating.toFixed(1)} ({modalProduct.reviewCount || 0} avaliações)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Botão Fechar */}
+                    <button 
+                      onClick={() => setModalProduct(null)}
+                      className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+
+                {/* Seleção de Variantes */}
+                {modalProduct.variants?.edges?.length > 1 && (
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Escolha uma opção:</h4>
+                    
+                    {/* Layout Desktop - Carrossel para muitas variantes, Grid para poucas */}
+                    <div className="hidden sm:block">
+                      {modalProduct.variants.edges.length <= 6 ? (
+                        /* Grid simples para até 6 variantes */
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                          {modalProduct.variants.edges.map((variant, index) => (
+                            <VariantCard 
+                              key={variant.node.id}
+                              variant={variant.node}
+                              isSelected={modalVariant?.id === variant.node.id}
+                              onSelect={() => variant.node.availableForSale && setModalVariant(variant.node)}
+                              modalProduct={modalProduct}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        /* Carrossel para mais de 6 variantes */
+                        <div className="relative">
+                          {/* Setas de navegação */}
+                          <button
+                            onClick={() => setVariantCarouselIndex(prev => Math.max(0, prev - 3))}
+                            disabled={variantCarouselIndex === 0}
+                            className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${
+                              variantCarouselIndex === 0 
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                : 'bg-white text-gray-800 hover:bg-[#4B014E] hover:text-white hover:scale-110'
+                            }`}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="15,18 9,12 15,6"></polyline>
+                            </svg>
+                          </button>
+                          
+                          <button
+                            onClick={() => setVariantCarouselIndex(prev => Math.min(modalProduct.variants.edges.length - 3, prev + 3))}
+                            disabled={variantCarouselIndex >= modalProduct.variants.edges.length - 3}
+                            className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${
+                              variantCarouselIndex >= modalProduct.variants.edges.length - 3
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                : 'bg-white text-gray-800 hover:bg-[#4B014E] hover:text-white hover:scale-110'
+                            }`}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="9,18 15,12 9,6"></polyline>
+                            </svg>
+                          </button>
+
+                          {/* Container do carrossel */}
+                          <div className="overflow-hidden rounded-xl">
+                            <div 
+                              className="grid grid-cols-3 gap-3 transition-transform duration-300 ease-out"
+                              style={{
+                                transform: `translateX(-${variantCarouselIndex * (100 / 3)}%)`,
+                                gridTemplateColumns: `repeat(${modalProduct.variants.edges.length}, minmax(0, 1fr))`,
+                                width: `${(modalProduct.variants.edges.length / 3) * 100}%`
+                              }}
+                            >
+                              {modalProduct.variants.edges.map((variant, index) => (
+                                <VariantCard 
+                                  key={variant.node.id}
+                                  variant={variant.node}
+                                  isSelected={modalVariant?.id === variant.node.id}
+                                  onSelect={() => variant.node.availableForSale && setModalVariant(variant.node)}
+                                  modalProduct={modalProduct}
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Indicadores */}
+                          <div className="flex justify-center mt-4 gap-2">
+                            {Array.from({ length: Math.ceil(modalProduct.variants.edges.length / 3) }).map((_, i) => (
+                              <button
+                                key={i}
+                                onClick={() => setVariantCarouselIndex(i * 3)}
+                                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                                  Math.floor(variantCarouselIndex / 3) === i 
+                                    ? 'bg-[#4B014E] w-6' 
+                                    : 'bg-gray-300 hover:bg-gray-400'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Layout Mobile - Lista Otimizada */}
+                    <div className="sm:hidden space-y-3 max-h-60 overflow-y-auto">
+                      {modalProduct.variants.edges.map((variant, index) => {
+                        const isSelected = modalVariant?.id === variant.node.id;
+                        const isAvailable = variant.node.availableForSale;
+                        
+                        return (
+                          <button
+                            key={variant.node.id}
+                            onClick={() => {
+                              if (isAvailable) {
+                                setModalVariant(variant.node);
+                              }
+                            }}
+                            disabled={!isAvailable}
+                            className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-300 ${
+                              isSelected 
+                                ? 'border-[#4B014E] bg-[#4B014E] bg-opacity-5 shadow-lg' 
+                                : isAvailable 
+                                  ? 'border-gray-200 hover:border-[#4B014E] hover:bg-gray-50' 
+                                  : 'border-gray-200 opacity-50 cursor-not-allowed'
+                            }`}
+                          >
+                            {/* Imagem Mobile - Tamanho Fixo Responsivo */}
+                            <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50">
+                              <img
+                                src={variant.node.image?.url || modalProduct.image}
+                                alt={variant.node.title}
+                                className={`w-full h-full object-cover object-center transition-transform duration-300 ${
+                                  !isAvailable ? 'grayscale' : ''
+                                }`}
+                                style={{
+                                  objectPosition: 'center center'
+                                }}
+                                loading="lazy"
+                              />
+                              
+                              {/* Indicador de seleção mobile */}
+                              {isSelected && (
+                                <div className="absolute top-1 right-1 w-5 h-5 bg-[#4B014E] rounded-full flex items-center justify-center">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                                    <polyline points="20,6 9,17 4,12"></polyline>
+                                  </svg>
+                                </div>
+                              )}
+                              
+                              {/* Indicador de indisponível mobile */}
+                              {!isAvailable && (
+                                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Info da Variante Mobile */}
+                            <div className="flex-1 text-left min-w-0">
+                              <h5 className={`font-semibold text-base mb-1 line-clamp-1 ${isSelected ? 'text-[#4B014E]' : 'text-gray-900'}`}>
+                                {variant.node.title}
+                              </h5>
+                              <p className={`text-lg font-bold ${isSelected ? 'text-[#4B014E]' : 'text-gray-600'}`}>
+                                $ {parseFloat(variant.node.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                              {!isAvailable && (
+                                <span className="text-sm text-red-500 font-medium">Indisponível</span>
+                              )}
+                            </div>
+
+                            {/* Seta indicadora mobile */}
+                            <div className={`transition-transform duration-300 ${isSelected ? 'rotate-90' : ''}`}>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isSelected ? 'text-[#4B014E]' : 'text-gray-400'}>
+                                <polyline points="9,18 15,12 9,6"></polyline>
+                              </svg>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}                  {/* Descrição do Produto */}
+                  {modalProduct.description && (
+                    <div className="mb-6">
+                      <p className="text-gray-600 leading-relaxed">{modalProduct.description}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Ações - Fixas na parte inferior */}
+                <div className="p-4 sm:p-6 lg:p-8 pt-0 lg:pt-0 border-t lg:border-t-0 bg-white">
+                  <div className="space-y-3">
                   <button
-                    className="flex-1 py-3 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white font-bold rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full py-4 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white font-bold rounded-2xl hover:scale-105 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg hover:shadow-xl relative overflow-hidden group"
                     onClick={async () => {
                       if (!modalVariant && !modalProduct.price) {
                         alert('Selecione uma variante!');
@@ -184,13 +450,12 @@ const ProductSection = ({
                       }
                       setAddingCart(true);
                       try {
-                        // Usar a função addToCart com os dados já processados
                         const cartItem = {
                           id: modalVariant?.id || modalProduct.id,
                           variantId: modalVariant?.id,
                           name: modalProduct.name,
                           price: modalVariant ? parseFloat(modalVariant.price.amount) : modalProduct.price,
-                          image: modalProduct.image,
+                          image: modalVariant?.image?.url || modalProduct.image,
                           quantity: 1
                         };
 
@@ -264,10 +529,16 @@ const ProductSection = ({
                     }}
                     disabled={addingCart}
                   >
-                    {addingCart ? 'Adicionando...' : 'Adicionar ao Carrinho'}
+                    <span className="relative z-10 flex items-center justify-center gap-3">
+                      <ShoppingCart size={20} />
+                      {addingCart ? 'Adicionando...' : 'Adicionar ao Carrinho'}
+                    </span>
+                    {/* Efeito shimmer */}
+                    <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                   </button>
+
                   <button
-                    className="flex-1 py-3 border-2 border-[#4B014E] text-[#4B014E] font-bold rounded-lg hover:bg-[#4B014E] hover:text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full py-4 border-2 border-[#4B014E] text-[#4B014E] font-bold rounded-2xl hover:bg-[#4B014E] hover:text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed hover:scale-105"
                     onClick={async () => {
                       if (!modalVariant && !modalProduct.price) {
                         alert('Selecione uma variante!');
@@ -275,17 +546,15 @@ const ProductSection = ({
                       }
                       setAddingWishlist(true);
                       try {
-                        // Criar item para wishlist
                         const wishlistItem = {
                           id: modalVariant?.id || modalProduct.id,
                           variantId: modalVariant?.id,
                           name: modalProduct.name,
                           price: modalVariant ? parseFloat(modalVariant.price.amount) : modalProduct.price,
-                          image: modalProduct.image,
+                          image: modalVariant?.image?.url || modalProduct.image,
                           quantity: 1
                         };
 
-                        // Adicionar à wishlist local/Firebase
                         const user = auth.currentUser;
                         if (user) {
                           const wishlistRef = doc(db, 'wishlists', user.uid);
@@ -320,10 +589,13 @@ const ProductSection = ({
                     }}
                     disabled={addingWishlist}
                   >
-                    {addingWishlist ? 'Adicionando...' : 'Favoritar'}
+                    <span className="flex items-center justify-center gap-3">
+                      <Heart size={20} />
+                      {addingWishlist ? 'Adicionando...' : 'Adicionar aos Favoritos'}
+                    </span>
                   </button>
+                  </div>
                 </div>
-                <button className="mt-4 text-sm text-gray-500 hover:text-[#8A0101] transition-all" onClick={() => setModalProduct(null)}>Fechar</button>
               </div>
             </div>
           </div>
@@ -666,15 +938,15 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex flex-col">
-                            {product.originalPrice && product.originalPrice !== product.price && (
+                            {product.originalPrice && (
                               <span className="text-xs text-gray-400 line-through">
-                                R$ {product.originalPrice?.toLocaleString('pt-BR', { 
+                                $ {product.originalPrice.toLocaleString('pt-BR', { 
                                   minimumFractionDigits: 2 
                                 })}
                               </span>
                             )}
                             <span className="text-lg font-bold text-[#8A0101]">
-                              R$ {(product.price || 0).toLocaleString('pt-BR', { 
+                              $ {(product.price || 0).toLocaleString('pt-BR', { 
                                 minimumFractionDigits: 2 
                               })}
                             </span>
@@ -930,6 +1202,87 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
         </div>
       </div>
     </div>
+  );
+};
+
+const VariantCard = ({ variant, isSelected, onSelect, modalProduct }) => {
+  const isAvailable = variant.availableForSale;
+  
+  return (
+    <button
+      onClick={onSelect}
+      disabled={!isAvailable}
+      className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 ${
+        isSelected 
+          ? 'border-[#4B014E] ring-2 ring-[#4B014E] ring-opacity-30 shadow-lg scale-105' 
+          : isAvailable 
+            ? 'border-gray-200 hover:border-[#4B014E] hover:shadow-md hover:scale-102' 
+            : 'border-gray-200 opacity-50 cursor-not-allowed'
+      }`}
+    >
+      {/* Imagem da Variante - Redimensionamento Aprimorado */}
+      <div className="aspect-square relative overflow-hidden bg-gray-50">
+        <img
+          src={variant.image?.url || modalProduct.image}
+          alt={variant.title}
+          className={`w-full h-full object-cover object-center transition-all duration-300 ${
+            isAvailable ? 'group-hover:scale-110' : 'grayscale'
+          }`}
+          style={{
+            objectPosition: 'center center',
+            imageRendering: 'crisp-edges'
+          }}
+          loading="lazy"
+        />
+        
+        {/* Overlay para variante selecionada */}
+        {isSelected && (
+          <div className="absolute inset-0 bg-[#4B014E] bg-opacity-10 flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#4B014E] rounded-full flex items-center justify-center shadow-lg animate-pulse">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                <polyline points="20,6 9,17 4,12"></polyline>
+              </svg>
+            </div>
+          </div>
+        )}
+        
+        {/* Indicador de indisponível */}
+        {!isAvailable && (
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <span className="text-white text-sm font-semibold">Indisponível</span>
+          </div>
+        )}
+        
+        {/* Badge de desconto da variante */}
+        {variant.compareAtPrice?.amount && parseFloat(variant.compareAtPrice.amount) > parseFloat(variant.price.amount) && (
+          <div className="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+            -{Math.round(((parseFloat(variant.compareAtPrice.amount) - parseFloat(variant.price.amount)) / parseFloat(variant.compareAtPrice.amount)) * 100)}%
+          </div>
+        )}
+      </div>
+
+      {/* Info da Variante */}
+      <div className="p-3">
+        <h5 className={`font-semibold text-sm mb-1 line-clamp-2 ${isSelected ? 'text-[#4B014E]' : 'text-gray-900'}`}>
+          {variant.title}
+        </h5>
+        <div className="flex flex-col">
+          {variant.compareAtPrice?.amount && parseFloat(variant.compareAtPrice.amount) > parseFloat(variant.price.amount) && (
+            <span className="text-xs text-gray-400 line-through">
+              $ {parseFloat(variant.compareAtPrice.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </span>
+          )}
+          <p className={`text-sm font-bold ${isSelected ? 'text-[#4B014E]' : 'text-gray-600'}`}>
+            $ {parseFloat(variant.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+        </div>
+      </div>
+
+      {/* Animação de seleção */}
+      <div className={`absolute inset-0 border-2 border-[#4B014E] rounded-2xl transition-opacity duration-300 ${
+        isSelected ? 'opacity-100' : 'opacity-0'
+      }`} />
+    </button>
   );
 };
 

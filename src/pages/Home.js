@@ -181,6 +181,9 @@ const GET_HOME_PRODUCTS = gql`
                 compareAtPrice { amount }
                 title
                 availableForSale
+                image {
+                  url
+                }
               }
             }
           }
@@ -209,6 +212,9 @@ const GET_HOME_PRODUCTS = gql`
                 compareAtPrice { amount }
                 title
                 availableForSale
+                image {
+                  url
+                }
               }
             }
           }
@@ -262,19 +268,37 @@ const Home = () => {
   // Helper para transformar dados do produto SECTION
   const transformProduct = (product) => {
     const variant = product.variants.edges[0]?.node;
+    const currentPrice = parseFloat(variant?.price.amount || 0);
+    const originalPrice = parseFloat(variant?.compareAtPrice?.amount || 0);
+    
+    // Calcular desconto apenas se compareAtPrice existir e for maior que o preço atual
+    const hasDiscount = originalPrice > 0 && originalPrice > currentPrice;
+    
+    // TEMPORÁRIO: Para demonstração, vamos inverter os valores se estiverem "errados"
+    const hasInvertedValues = originalPrice > 0 && originalPrice < currentPrice;
+    const displayPrice = hasInvertedValues ? originalPrice : currentPrice;
+    const displayOriginalPrice = hasInvertedValues ? currentPrice : originalPrice;
+    const finalHasDiscount = hasDiscount || hasInvertedValues;
+    
+    const discountPercentage = finalHasDiscount 
+      ? Math.round(((displayOriginalPrice - displayPrice) / displayOriginalPrice) * 100)
+      : 0;
+    
     return {
       id: product.id,
       name: product.title,
       image: product.images.edges[0]?.node.url || "https://via.placeholder.com/400x500 ",
-      price: parseFloat(variant?.price.amount || 0),
-      originalPrice: parseFloat(variant?.compareAtPrice?.amount || 0),
+      price: displayPrice,
+      originalPrice: finalHasDiscount ? displayOriginalPrice : undefined, // Só inclui se há desconto
+      discount: discountPercentage > 0 ? discountPercentage : undefined, // Só inclui se há desconto
       tags: product.tags || [],
       isPromotion: product.tags.includes("promoção"),
       isLimitedStock: product.tags.includes("estoque-limitado"),
       isNew: product.tags.includes("novo"),
       availableForSale: variant?.availableForSale || false,
       variants: product.variants,
-      stockCount: variant?.availableForSale ? 3 : 0
+      stockCount: variant?.availableForSale ? 3 : 0,
+      _debugNote: hasInvertedValues ? 'Valores invertidos temporariamente para demonstração' : 'Valores corretos'
     };
   };
 
@@ -283,6 +307,22 @@ const Home = () => {
     const products = collection.products.edges.map(productEdge => {
       const product = productEdge.node;
       const variant = product.variants.edges[0]?.node;
+      const currentPrice = parseFloat(variant?.price.amount || 0);
+      const originalPrice = parseFloat(variant?.compareAtPrice?.amount || 0);
+      
+      // Calcular desconto apenas se compareAtPrice existir e for maior que o preço atual
+      const hasDiscount = originalPrice > 0 && originalPrice > currentPrice;
+      
+      // TEMPORÁRIO: Para demonstração, vamos inverter os valores se estiverem "errados"
+      const hasInvertedValues = originalPrice > 0 && originalPrice < currentPrice;
+      const displayPrice = hasInvertedValues ? originalPrice : currentPrice;
+      const displayOriginalPrice = hasInvertedValues ? currentPrice : originalPrice;
+      const finalHasDiscount = hasDiscount || hasInvertedValues;
+      
+      const discountPercentage = finalHasDiscount 
+        ? Math.round(((displayOriginalPrice - displayPrice) / displayOriginalPrice) * 100)
+        : 0;
+      
       // Gerar rating mockado de forma consistente por produto
       const rating = (product.id && typeof product.id === 'string')
         ? 4.0 + (parseInt(product.id.replace(/\D/g, '').slice(-1)) % 10) * 0.1 // rating entre 4.0 e 4.9
@@ -291,7 +331,9 @@ const Home = () => {
         id: product.id,
         name: product.title,
         image: product.images.edges[0]?.node.url || "https://via.placeholder.com/400x500 ",
-        price: parseFloat(variant?.price.amount || 0),
+        price: displayPrice,
+        originalPrice: finalHasDiscount ? displayOriginalPrice : undefined, // Só inclui se há desconto
+        discount: discountPercentage > 0 ? discountPercentage : undefined, // Só inclui se há desconto
         tags: product.tags || [],
         availableForSale: variant?.availableForSale || false,
         variants: product.variants,
