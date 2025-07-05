@@ -377,11 +377,11 @@ const ProductSection = ({
           </div>
 
           {/* Products Grid - Lado Direito */}
-          <div className="lg:col-span-7 h-full">
-            <div className="flex flex-col h-full min-h-[600px] lg:min-h-[700px]">
+          <div className="lg:col-span-7">
+            <div className="space-y-8 h-full min-h-[600px] lg:min-h-[700px]">
               
               {/* Produtos Masculinos */}
-              <div className="flex-1 mb-8">
+              <div className="flex-1">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl lg:text-2xl font-bold" style={{ color: '#F3ECE7' }}>
                     {sectionType.toUpperCase()} {maleLabel}
@@ -420,17 +420,13 @@ const ProductSection = ({
                   </div>
                 </div>
 
-                <div className="h-full">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 h-full">
-                    {maleCollections.map(collection => (
-                      <div key={collection.id} className="flex flex-col">
-                        <h4 className="text-sm lg:text-lg font-semibold text-white mb-2 truncate whitespace-nowrap min-h-[1.2rem] lg:min-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
-                        <div className="flex-1">
-                          <CollectionCard key={collection.id} collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {maleCollections.slice(maleProductIndex, maleProductIndex + itemsPerView).map(collection => (
+                    <div key={collection.id}>
+                      <h4 className="text-sm lg:text-lg font-semibold text-white mb-2 line-clamp-1 min-h-[1.2rem] lg:min-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
+                      <CollectionCard collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -474,17 +470,13 @@ const ProductSection = ({
                   </div>
                 </div>
 
-                <div className="h-full">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 h-full">
-                    {femaleCollections.map(collection => (
-                      <div key={collection.id} className="flex flex-col">
-                        <h4 className="text-sm lg:text-lg font-semibold text-white mb-2 truncate whitespace-nowrap min-h-[1.2rem] lg:min-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
-                        <div className="flex-1">
-                          <CollectionCard key={collection.id} collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {femaleCollections.slice(femaleProductIndex, femaleProductIndex + itemsPerView).map(collection => (
+                    <div key={collection.id}>
+                      <h4 className="text-sm lg:text-lg font-semibold text-white mb-2 line-clamp-1 min-h-[1.2rem] lg:min-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
+                      <CollectionCard collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -978,27 +970,36 @@ const CollectionCard = ({ collection, sectionType }) => {
 
   return (
     <>
-      <div className="relative h-full">
+      <div className="relative">
         <div
-          className="bg-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer h-full flex flex-col"
+          className="bg-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
           onMouseEnter={() => !isMobile && setIsHovered(true)}
           onMouseLeave={() => !isMobile && setIsHovered(false)}
           style={{ backgroundColor: '#F3ECE7' }}
         >
           {/* Ícones no topo */}
-          <div className="relative flex-1">
-
+          <div className="relative">
+            {/* Ícone coração */}
+            <div className="absolute top-2 right-2 z-10">
+              <button
+                className="w-7 h-7 bg-white/90 rounded-full flex items-center justify-center hover:text-white transition-all duration-200 hover:scale-110 shadow-sm"
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#A80101'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.9)'}
+              >
+                <Heart size={12} />
+              </button>
+            </div>
 
             {/* Ícone visualizar itens */}
             {hasItems && (
               <div className="absolute top-2 left-2 z-10">
                 <button
                   onClick={handleItemView}
-                  className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:text-white transition-all duration-200 hover:scale-110 shadow-sm"
+                  className="w-7 h-7 bg-white/90 rounded-full flex items-center justify-center hover:text-white transition-all duration-200 hover:scale-110 shadow-sm"
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#4B014E'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.9)'}
                 >
-                  <Eye size={14} />
+                  <Eye size={12} />
                 </button>
               </div>
             )}
@@ -1026,8 +1027,8 @@ const CollectionCard = ({ collection, sectionType }) => {
           </div>
 
           {/* Conteúdo principal */}
-          <div className="p-3 lg:p-4 flex-shrink-0">
-            <h4 className="font-semibold text-xs lg:text-sm mb-2 min-h-[1rem] lg:min-h-[1.25rem] line-clamp-1" style={{ color: '#1C1C1C' }}>
+          <div className="p-3">
+            <h4 className="font-semibold text-sm mb-2 line-clamp-1 min-h-[1.25rem]" style={{ color: '#1C1C1C' }}>
               {collection.name}
             </h4>
 
@@ -1048,7 +1049,7 @@ const CollectionCard = ({ collection, sectionType }) => {
 
             {/* Faixa de preço (mantido caso queira usar) */}
             {collection.priceRange && (
-              <div className="text-xs lg:text-sm font-bold" style={{ color: '#1C1C1C' }}>
+              <div className="text-sm font-bold" style={{ color: '#1C1C1C' }}>
                 {collection.priceRange}
               </div>
             )}
