@@ -374,10 +374,24 @@ const CarouselSection = ({ title, products, id }) => {
               className={`flex transition-transform duration-700 ease-in-out gap-4 md:gap-6 ${isDragging ? 'transition-none' : ''}`}
               style={
                 isMobile && itemsPerView === 1
-                  ? {
-                      width: `${organizedProducts.length * 80}vw`,
-                      transform: `translateX(-${currentIndex * 80}vw)`
-                    }
+                  ? (() => {
+                      // Card width: 80vw, container: 100vw, so offset = (container - card)/2 = 10vw
+                      const cardWidth = 80;
+                      const containerWidth = 100;
+                      const offset = (containerWidth - cardWidth) / 2;
+                      // Para centralizar o card atual, calcula o deslocamento
+                      // No último card, impede que ele passe do limite direito
+                      let translate = currentIndex * cardWidth - offset;
+                      const maxTranslate = (organizedProducts.length - 1) * cardWidth;
+                      if (translate > maxTranslate - offset) {
+                        translate = maxTranslate - offset;
+                      }
+                      if (translate < 0) translate = 0;
+                      return {
+                        width: `${organizedProducts.length * cardWidth}vw`,
+                        transform: `translateX(-${translate}vw)`
+                      };
+                    })()
                   : {
                       transform: `translateX(-${(currentIndex * 100) / organizedProducts.length}%)`,
                       width: `${organizedProducts.length * (100 / itemsPerView)}%`
@@ -606,7 +620,10 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
         )}
         
         <img
-          src={getOptimizedImageUrl(product.image || product.imageUrl || product.src || product.featured_image)}
+          src={getOptimizedImageUrl(
+            product.variants?.edges?.[selectedVariantIndex]?.node?.image?.url ||
+            product.image || product.imageUrl || product.src || product.featured_image
+          )}
           alt={product.name || product.title}
           className={`w-full h-full object-cover object-center transition-all duration-700 ${
             isHovered ? 'scale-110' : 'scale-100'
@@ -686,20 +703,32 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
         )}
 
         {/* Seletor de variantes */}
-        {product.variants.edges.length > 1 && (
-          <div className="mt-2 mb-2">
-            <select
-              onChange={(e) => setSelectedVariantIndex(parseInt(e.target.value))}
-              className="w-full bg-gray-800 text-white rounded-md p-2"
-            >
-              {product.variants.edges.map((variant, index) => (
-                <option key={variant.node.id} value={index}>
-                  {variant.node.title} - $ {variant.node.price.amount}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div className="my-3 min-h-[38px] flex items-center">
+          {product.variants.edges.length > 1 ? (
+            <div className="flex gap-2 flex-wrap w-full justify-center">
+              {product.variants.edges.map((variant, index) => {
+                const selected = selectedVariantIndex === index;
+                return (
+                  <button
+                    key={variant.node.id}
+                    type="button"
+                    onClick={() => setSelectedVariantIndex(index)}
+                    className={`px-3 py-1 rounded-full border text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#8A0101] focus:z-10
+                      ${selected
+                        ? 'bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white border-transparent shadow-md scale-105'
+                        : 'bg-[#232025] text-[#F3ECE7]/80 border-[#4B014E]/30 hover:bg-[#4B014E]/10 hover:text-[#F3ECE7]'}
+                    `}
+                    style={{minWidth: 60, boxShadow: selected ? '0 2px 8px #8A010133' : undefined}}
+                  >
+                    <span className="truncate max-w-[80px]">{variant.node.title}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="h-[32px] w-full" />
+          )}
+        </div>
 
         {/* Hover Actions */}
         <div className={`transition-all duration-300 overflow-hidden ${

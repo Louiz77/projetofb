@@ -37,6 +37,9 @@ const GET_HOME_PRODUCTS = gql`
                 compareAtPrice { amount }
                 title
                 availableForSale
+                image {
+                  url
+                }
               }
             }
           }
@@ -66,6 +69,9 @@ const GET_HOME_PRODUCTS = gql`
                 compareAtPrice { amount }
                 title
                 availableForSale
+                image {
+                  url
+                }
               }
             }
           }
@@ -95,6 +101,9 @@ const GET_HOME_PRODUCTS = gql`
                 compareAtPrice { amount }
                 title
                 availableForSale
+                image {
+                  url
+                }
               }
             }
           }
@@ -124,6 +133,9 @@ const GET_HOME_PRODUCTS = gql`
                 compareAtPrice { amount }
                 title
                 availableForSale
+                image {
+                  url
+                }
               }
             }
           }
@@ -153,6 +165,9 @@ const GET_HOME_PRODUCTS = gql`
                 compareAtPrice { amount }
                 title
                 availableForSale
+                image {
+                  url
+                }
               }
             }
           }
@@ -274,7 +289,6 @@ const Home = () => {
     // Calcular desconto apenas se compareAtPrice existir e for maior que o preço atual
     const hasDiscount = originalPrice > 0 && originalPrice > currentPrice;
     
-    // TEMPORÁRIO: Para demonstração, vamos inverter os valores se estiverem "errados"
     const hasInvertedValues = originalPrice > 0 && originalPrice < currentPrice;
     const displayPrice = hasInvertedValues ? originalPrice : currentPrice;
     const displayOriginalPrice = hasInvertedValues ? currentPrice : originalPrice;
@@ -392,8 +406,7 @@ const Home = () => {
   if (loading) return <div>Carregando...</div>;
   if (error) return <div>Erro: {error.message}</div>;
 
-
-
+  // Função para obter ou criar um carrinho no Shopify
   const getOrCreateCartId = async () => {
     let cartId = localStorage.getItem('shopifyCartId');
 
