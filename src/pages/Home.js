@@ -245,6 +245,13 @@ const GET_HOME_PRODUCTS = gql`
           image {
             url
           }
+          # Metafields para desconto (opcional - caso configurados no Shopify)
+          discountPercentage: metafield(namespace: "custom", key: "discount_percentage") {
+            value
+          }
+          minItemsForDiscount: metafield(namespace: "custom", key: "min_items_for_discount") {
+            value
+          }
           products(first: 10) {
             edges {
               node {
@@ -397,13 +404,26 @@ const Home = () => {
     const minPrice = prices.length ? Math.min(...prices) : 0;
     const maxPrice = prices.length ? Math.max(...prices) : 0;
 
+    // Obter valores de desconto dos metafields (se disponíveis) ou usar valores padrão
+    const discountPercentage = collection.discountPercentage?.value 
+      ? parseInt(collection.discountPercentage.value) 
+      : 20; // Valor padrão
+
+    const minItemsForDiscount = collection.minItemsForDiscount?.value 
+      ? parseInt(collection.minItemsForDiscount.value)
+      : Math.max(1, products.length - 1); // Permitir remover apenas 1 item
+
     return {
       id: collection.id,
       name: collection.title,
       description: collection.description || "Coleção sem descrição",
       image: collection.image?.url || "https://via.placeholder.com/800x400 ",
       priceRange: prices.length ? `${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}` : "N/A",
-      products // <-- importante para ProductSection
+      products, // <-- importante para ProductSection
+      // Metadados de desconto
+      discountPercentage,
+      minItemsForDiscount,
+      hasCollectionDiscount: true // Flag para identificar coleções com desconto
     };
   };
 

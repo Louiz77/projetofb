@@ -276,6 +276,7 @@ export const addKitToCart = async (kit) => {
       alert('Kit sem produtos válidos.');
       return;
     }
+
     let cartId = localStorage.getItem('shopifyCartId');
     if (!cartId) {
       const { data: cartData } = await client.mutate({
@@ -286,6 +287,7 @@ export const addKitToCart = async (kit) => {
       cartId = cartData.cartCreate.cart.id;
       localStorage.setItem('shopifyCartId', cartId);
     }
+
     const selectedVariants = [];
     for (const product of kit.items) {
       // Se já veio variantId e selectedVariant, usa direto
@@ -297,37 +299,109 @@ export const addKitToCart = async (kit) => {
         });
         continue;
       }
+
       // Caso contrário, fluxo antigo (fallback)
       const { data } = await client.query({
         query: GET_PRODUCT_VARIANTS,
         variables: { productId: product.id },
       });
+
       const variants = data.product.variants.edges.map((edge) => edge.node);
       if (variants.length === 0) {
         alert(`O produto "${product.name}" não possui variantes disponíveis.`);
         continue;
       }
+
       const selectedVariant = await showVariantSelector(variants, data.product.title);
       if (!selectedVariant) {
         alert(`Seleção de variante cancelada para "${product.name}".`);
         continue;
       }
+
       selectedVariants.push({
         variant: selectedVariant,
         product: data.product,
         image: data.product.images.edges[0]?.node?.url || 'https://via.placeholder.com/400x400',
       });
     }
-    // Adicionar todos ao carrinho Shopify
-    for (const { variant, product, image } of selectedVariants) {
-      await client.mutate({
-        mutation: ADD_TO_CART,
-        variables: {
-          cartId,
-          lines: [{ merchandiseId: variant.id, quantity: 1 }],
-        },
+
+    // Preparar linhas do carrinho
+    const cartLines = selectedVariants.map(({ variant }) => ({
+      merchandiseId: variant.id,
+      quantity: 1
+    }));
+
+    // Adicionar todos ao carrinho Shopify de uma vez
+    await client.mutate({
+      mutation: ADD_TO_CART,
+      variables: {
+        cartId,
+        lines: cartLines,
+      },
+    });
+
+    // Aplicar desconto de coleção se aplicável
+    if (kit.hasCollectionDiscount && kit.discountCode) {
+      console.log('🎯 Tentando aplicar desconto:', {
+        cartId,
+        discountCode: kit.discountCode,
+        hasDiscount: kit.hasCollectionDiscount,
+        percentage: kit.discountPercentage
       });
-      // Local/Firebase add
+
+      try {
+        const discountResult = await client.mutate({
+          mutation: gql`
+            mutation ($cartId: ID!, $discountCodes: [String!]!) {
+              cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
+                cart {
+                  id
+                  discountCodes {
+                    code
+                    applicable
+                  }
+                  cost {
+                    totalAmount {
+                      amount
+                    }
+                    subtotalAmount {
+                      amount
+                    }
+                  }
+                }
+                userErrors {
+                  field
+                  message
+                }
+              }
+            }
+          `,
+          variables: {
+            cartId,
+            discountCodes: [kit.discountCode],
+          },
+        });
+
+        console.log('✅ Resultado do desconto:', discountResult.data);
+        
+        if (discountResult.data.cartDiscountCodesUpdate.userErrors.length > 0) {
+          console.error('❌ Erros ao aplicar desconto:', discountResult.data.cartDiscountCodesUpdate.userErrors);
+        } else {
+          console.log('🎉 Desconto aplicado com sucesso:', kit.discountCode);
+        }
+      } catch (discountError) {
+        console.error('❌ Erro ao aplicar desconto:', discountError);
+        // Não falhar o processo inteiro se o desconto não funcionar
+      }
+    } else {
+      console.log('ℹ️ Sem desconto aplicável:', {
+        hasCollectionDiscount: kit.hasCollectionDiscount,
+        discountCode: kit.discountCode
+      });
+    }
+
+    // Adicionar ao carrinho local/Firebase
+    for (const { variant, product, image } of selectedVariants) {
       const cartItem = {
         id: variant.id,
         name: product.title,
@@ -335,26 +409,31 @@ export const addKitToCart = async (kit) => {
         image,
         quantity: 1,
       };
+
       const user = auth.currentUser;
       if (user) {
         const cartRef = doc(db, 'carts', user.uid);
         const cartSnap = await getDoc(cartRef);
         const existingItems = cartSnap.exists() ? cartSnap.data().items : [];
         const existingItemIndex = existingItems.findIndex((i) => i.id === cartItem.id);
+        
         if (existingItemIndex !== -1) {
           existingItems[existingItemIndex].quantity += 1;
         } else {
           existingItems.push(cartItem);
         }
+        
         await setDoc(cartRef, { items: existingItems }, { merge: true });
       } else {
         const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
         const existingItemIndex = guestCart.findIndex((i) => i.id === cartItem.id);
+        
         if (existingItemIndex !== -1) {
           guestCart[existingItemIndex].quantity += 1;
         } else {
           guestCart.push(cartItem);
         }
+        
         localStorage.setItem('guestCart', JSON.stringify(guestCart));
       }
     }

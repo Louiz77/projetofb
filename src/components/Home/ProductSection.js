@@ -192,12 +192,20 @@ const ProductSection = ({
               <div className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
                 notification.type === 'success' 
                   ? 'bg-green-500 text-white' 
+                  : notification.type === 'warning'
+                  ? 'bg-yellow-500 text-white'
                   : 'bg-red-500 text-white'
               }`}>
                 <div className="flex items-center gap-2">
                   {notification.type === 'success' ? (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="20,6 9,17 4,12"></polyline>
+                    </svg>
+                  ) : notification.type === 'warning' ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                      <path d="M12 9v4"/>
+                      <path d="m12 17 .01 0"/>
                     </svg>
                   ) : (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1066,6 +1074,13 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
 };
 
 const CollectionModal = ({ collection, isOpen, onClose }) => {
+  // Suporte a ambos: kits mockados (items) e coleções Shopify (products) - DEVE VIR PRIMEIRO
+  const items = Array.isArray(collection.items) && collection.items.length > 0
+    ? collection.items
+    : Array.isArray(collection.products) && collection.products.length > 0
+      ? collection.products
+      : [];
+
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedItems, setSelectedItems] = useState(new Map()); // Map<itemId, {item, selectedVariant}>
@@ -1074,6 +1089,15 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
   const [notification, setNotification] = useState(null); // {type: 'success'|'error', message: string}
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Estados para lógica de desconto
+  const [discountInfo, setDiscountInfo] = useState({
+    percentage: collection.discountPercentage || 20, // Pode vir dos metafields do Shopify
+    minItemsForDiscount: collection.minItemsForDiscount || Math.max(1, items.length - 1),
+    isActive: false,
+    originalTotal: 0,
+    discountedTotal: 0
+  });
 
   // Detectar mobile
   useEffect(() => {
@@ -1085,13 +1109,6 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Suporte a ambos: kits mockados (items) e coleções Shopify (products)
-  const items = Array.isArray(collection.items) && collection.items.length > 0
-    ? collection.items
-    : Array.isArray(collection.products) && collection.products.length > 0
-      ? collection.products
-      : [];
 
   // Inicializar com todos os itens selecionados (primeira variante disponível)
   useEffect(() => {
@@ -1132,8 +1149,23 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
   // Funções para gerenciar seleção
   const toggleItemSelection = (item) => {
     const newSelection = new Map(selectedItems);
-    if (newSelection.has(item.id)) {
+    const wasSelected = newSelection.has(item.id);
+    
+    if (wasSelected) {
       newSelection.delete(item.id);
+      
+      // Verificar se perdeu o desconto
+      const newCount = newSelection.size;
+      const minForDiscount = collection.minItemsForDiscount || (items?.length - 1) || 1;
+      const hadDiscount = selectedItems.size >= minForDiscount;
+      const willHaveDiscount = newCount >= minForDiscount;
+      
+      if (hadDiscount && !willHaveDiscount) {
+        setNotification({ 
+          type: 'warning', 
+          message: `Collection discount removed! Add more items to get ${collection.discountPercentage || 20}% off` 
+        });
+      }
     } else {
       // Buscar primeira variante disponível
       const availableVariant = item.variants?.find(variant => 
@@ -1146,6 +1178,19 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
         item,
         selectedVariant: firstVariant
       });
+      
+      // Verificar se ganhou o desconto
+      const newCount = newSelection.size;
+      const minForDiscount = collection.minItemsForDiscount || (items?.length - 1) || 1;
+      const hadDiscount = selectedItems.size >= minForDiscount;
+      const willHaveDiscount = newCount >= minForDiscount;
+      
+      if (!hadDiscount && willHaveDiscount) {
+        setNotification({ 
+          type: 'success', 
+          message: `Collection discount activated! ${collection.discountPercentage || 20}% off your bundle` 
+        });
+      }
     }
     setSelectedItems(newSelection);
   };
@@ -1163,8 +1208,10 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
     setShowVariantSelector(null);
   };
 
-  // Calcular totais
+  // Calcular totais e lógica de desconto
   const selectedItemsArray = Array.from(selectedItems.values());
+  
+  // Calcula preço total atual
   const totalPrice = selectedItemsArray.reduce((sum, selection) => {
     const price = selection.selectedVariant?.price?.amount 
       ? parseFloat(selection.selectedVariant.price.amount)
@@ -1172,8 +1219,8 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
     return sum + price;
   }, 0);
 
+  // Calcula preço original (compareAt)
   const totalOriginalPrice = selectedItemsArray.reduce((sum, selection) => {
-    // Se há variante, usa o compareAtPrice da variante, senão usa o originalPrice do item
     const comparePrice = selection.selectedVariant?.compareAtPrice?.amount 
       ? parseFloat(selection.selectedVariant.compareAtPrice.amount)
       : selection.item.originalPrice || 0;
@@ -1182,11 +1229,21 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
       ? parseFloat(selection.selectedVariant.price.amount)
       : selection.item.price || 0;
     
-    // Só considera se o preço comparativo é maior que o preço regular
     return sum + (comparePrice > regularPrice ? comparePrice : regularPrice);
   }, 0);
 
-  const savings = totalOriginalPrice > totalPrice ? totalOriginalPrice - totalPrice : 0;
+  // Lógica de desconto de coleção
+  const selectedCount = selectedItems.size;
+  const minItemsForDiscount = collection.minItemsForDiscount || (items?.length - 1) || 1;
+  const discountPercentage = collection.discountPercentage || 20;
+  
+  const isCollectionDiscountActive = selectedCount >= minItemsForDiscount;
+  const collectionDiscountAmount = isCollectionDiscountActive ? (totalPrice * discountPercentage / 100) : 0;
+  const finalTotalWithCollectionDiscount = totalPrice - collectionDiscountAmount;
+  
+  // Economia normal (compareAt vs price) + desconto de coleção
+  const regularSavings = totalOriginalPrice > totalPrice ? totalOriginalPrice - totalPrice : 0;
+  const totalSavings = regularSavings + collectionDiscountAmount;
 
   const navigateItem = (direction) => {
     if (isAnimating) return;
@@ -1225,19 +1282,25 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
           quantity: 1
         });
       } else {
+        // Preparar kit com informações de desconto
         const customKit = {
           ...collection,
           items: selectedItemsArray.map(selection => ({
             ...selection.item,
             variantId: selection.selectedVariant.id,
             selectedVariant: selection.selectedVariant
-          }))
+          })),
+          // Usar código de desconto fixo e simples
+          hasCollectionDiscount: isCollectionDiscountActive,
+          discountPercentage: discountPercentage,
+          discountCode: isCollectionDiscountActive ? 'COLLECTION20' : null, // Código fixo criado no Shopify
+          minItemsForDiscount: minItemsForDiscount
         };
         await addKitToCart(customKit);
       }
       setNotification({ 
         type: 'success', 
-        message: `${selectedItems.size} item(s) successfully added to cart!` 
+        message: `${selectedItems.size} item(s) successfully added to cart!${isCollectionDiscountActive ? ` Collection discount applied!` : ''}` 
       });
       setTimeout(() => onClose(), 1500);
     } catch (error) {
@@ -1332,12 +1395,20 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
           <div className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
             notification.type === 'success' 
               ? 'bg-green-500 text-white' 
+              : notification.type === 'warning'
+              ? 'bg-yellow-500 text-white'
               : 'bg-red-500 text-white'
           }`}>
             <div className="flex items-center gap-2">
               {notification.type === 'success' ? (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="20,6 9,17 4,12"></polyline>
+                </svg>
+              ) : notification.type === 'warning' ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                  <path d="M12 9v4"/>
+                  <path d="m12 17 .01 0"/>
                 </svg>
               ) : (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1355,17 +1426,48 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
         <div className={`flex justify-between items-center border-b border-gray-200 ${
           isMobile ? 'p-4' : 'p-6'
         }`}>
-          <div>
+          <div className="flex-1">
             <h2 className={`font-bold text-gray-900 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
               {collection.name}
             </h2>
             <p className={`text-gray-600 ${isMobile ? 'text-sm' : 'text-base'}`}>
               Select the items you want to add
             </p>
+            
+            {/* Collection Discount Info - SOMENTE NO DESKTOP */}
+            {!isMobile && selectedItems.size > 0 && (
+              <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                {isCollectionDiscountActive ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🎉</span>
+                    <div>
+                      <div className="text-sm font-medium text-purple-700">
+                        Collection Bundle Discount Active!
+                      </div>
+                      <div className="text-xs text-purple-600">
+                        {discountPercentage}% off when you buy {minItemsForDiscount}+ items
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">💰</span>
+                    <div>
+                      <div className="text-sm font-medium text-gray-600">
+                        Bundle Discount Available
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Add {minItemsForDiscount - selectedItems.size} more item{minItemsForDiscount - selectedItems.size > 1 ? 's' : ''} to get {discountPercentage}% off
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <button 
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110"
+            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110 ml-4"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1529,22 +1631,65 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
                   <span className="text-sm font-bold text-[#4B014E]">{selectedItems.size} of {items.length}</span>
                 </div>
                 
+                {/* Collection Discount Info */}
+                {selectedItems.size > 0 && (
+                  <div className="mb-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                    {isCollectionDiscountActive ? (
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-purple-700 mb-1">
+                          🎉 Collection Bundle Discount Active!
+                        </div>
+                        <div className="text-xs text-purple-600">
+                          {discountPercentage}% off when you buy {minItemsForDiscount}+ items
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <div className="text-sm font-medium text-gray-600 mb-1">
+                          Bundle Discount Available
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Add {minItemsForDiscount - selectedItems.size} more item{minItemsForDiscount - selectedItems.size > 1 ? 's' : ''} to get {discountPercentage}% off
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 {selectedItems.size > 0 && (
                   <>
-                    {savings > 0 && (
+                    {totalOriginalPrice > totalPrice && (
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-gray-600">Original price:</span>
                         <span className="line-through text-gray-400">$ {totalOriginalPrice.toFixed(2)}</span>
                       </div>
                     )}
+                    
+                    {/* Show collection discount line item */}
+                    {isCollectionDiscountActive && (
+                      <>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-600">Subtotal:</span>
+                          <span>$ {totalPrice.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-purple-600">Collection discount ({discountPercentage}% off):</span>
+                          <span className="text-purple-600">-$ {collectionDiscountAmount.toFixed(2)}</span>
+                        </div>
+                      </>
+                    )}
+                    
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total:</span>
-                      <span className="text-[#4B014E]">$ {totalPrice.toFixed(2)}</span>
+                      <span className="text-[#4B014E]">
+                        $ {isCollectionDiscountActive ? finalTotalWithCollectionDiscount.toFixed(2) : totalPrice.toFixed(2)}
+                      </span>
                     </div>
-                    {savings > 0 && (
+                    
+                    {totalSavings > 0 && (
                       <div className="flex justify-between text-sm text-green-600">
                         <span>You save:</span>
-                        <span>$ {savings.toFixed(2)}</span>
+                        <span>$ {totalSavings.toFixed(2)}</span>
                       </div>
                     )}
                   </>
@@ -1815,20 +1960,38 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
               <div className="p-6 border-t border-gray-200 bg-white">
                 {selectedItems.size > 0 && (
                   <div className="mb-4 space-y-2">
-                    {savings > 0 && (
+                    {totalOriginalPrice > totalPrice && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Original price:</span>
                         <span className="line-through text-gray-400">$ {totalOriginalPrice.toFixed(2)}</span>
                       </div>
                     )}
+                    
+                    {/* Show collection discount line item */}
+                    {isCollectionDiscountActive && (
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Subtotal:</span>
+                          <span>$ {totalPrice.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-purple-600">Collection discount ({discountPercentage}% off):</span>
+                          <span className="text-purple-600">-$ {collectionDiscountAmount.toFixed(2)}</span>
+                        </div>
+                      </>
+                    )}
+                    
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total:</span>
-                      <span className="text-[#4B014E]">$ {totalPrice.toFixed(2)}</span>
+                      <span className="text-[#4B014E]">
+                        $ {isCollectionDiscountActive ? finalTotalWithCollectionDiscount.toFixed(2) : totalPrice.toFixed(2)}
+                      </span>
                     </div>
-                    {savings > 0 && (
+                    
+                    {totalSavings > 0 && (
                       <div className="flex justify-between text-sm text-green-600">
                         <span>You save:</span>
-                        <span>$ {savings.toFixed(2)}</span>
+                        <span>$ {totalSavings.toFixed(2)}</span>
                       </div>
                     )}
                   </div>
