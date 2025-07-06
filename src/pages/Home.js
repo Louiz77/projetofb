@@ -262,8 +262,16 @@ const GET_HOME_PRODUCTS = gql`
                   edges {
                     node {
                       id
+                      title
+                      availableForSale
                       price {
                         amount
+                      }
+                      compareAtPrice {
+                        amount
+                      }
+                      image {
+                        url
                       }
                     }
                   }
@@ -282,35 +290,49 @@ const Home = () => {
 
   // Helper para transformar dados do produto SECTION
   const transformProduct = (product) => {
-    const variant = product.variants.edges[0]?.node;
-    const currentPrice = parseFloat(variant?.price.amount || 0);
+    // Preservar todas as informações das variantes
+    // Garante que cada variante preserve todos os campos essenciais
+    const variants = product.variants?.edges?.map(edge => {
+      const v = edge.node;
+      return {
+        id: v.id,
+        title: v.title,
+        availableForSale: typeof v.availableForSale === 'boolean' ? v.availableForSale : true,
+        image: v.image ? { ...v.image } : undefined,
+        price: v.price ? { ...v.price } : undefined,
+        compareAtPrice: v.compareAtPrice ? { ...v.compareAtPrice } : undefined
+      };
+    }) || [];
+
+    // Usar a primeira variante disponível para exibição principal
+    const variant = variants[0];
+    const currentPrice = parseFloat(variant?.price?.amount || 0);
     const originalPrice = parseFloat(variant?.compareAtPrice?.amount || 0);
-    
+
     // Calcular desconto apenas se compareAtPrice existir e for maior que o preço atual
     const hasDiscount = originalPrice > 0 && originalPrice > currentPrice;
-    
     const hasInvertedValues = originalPrice > 0 && originalPrice < currentPrice;
     const displayPrice = hasInvertedValues ? originalPrice : currentPrice;
     const displayOriginalPrice = hasInvertedValues ? currentPrice : originalPrice;
     const finalHasDiscount = hasDiscount || hasInvertedValues;
-    
+
     const discountPercentage = finalHasDiscount 
       ? Math.round(((displayOriginalPrice - displayPrice) / displayOriginalPrice) * 100)
       : 0;
-    
+
     return {
       id: product.id,
       name: product.title,
-      image: product.images.edges[0]?.node.url || "https://via.placeholder.com/400x500 ",
+      image: product.images?.edges?.[0]?.node?.url || "https://via.placeholder.com/400x500 ",
       price: displayPrice,
       originalPrice: finalHasDiscount ? displayOriginalPrice : undefined, // Só inclui se há desconto
       discount: discountPercentage > 0 ? discountPercentage : undefined, // Só inclui se há desconto
       tags: product.tags || [],
-      isPromotion: product.tags.includes("promoção"),
-      isLimitedStock: product.tags.includes("estoque-limitado"),
-      isNew: product.tags.includes("novo"),
-      availableForSale: variant?.availableForSale || false,
-      variants: product.variants,
+      isPromotion: product.tags?.includes("promoção"),
+      isLimitedStock: product.tags?.includes("estoque-limitado"),
+      isNew: product.tags?.includes("novo"),
+      availableForSale: variant?.availableForSale ?? true, // Se não vier, assume disponível
+      variants: variants, // Array de variantes preservando todos os campos
       stockCount: variant?.availableForSale ? 3 : 0,
       _debugNote: hasInvertedValues ? 'Valores invertidos temporariamente para demonstração' : 'Valores corretos'
     };
@@ -320,23 +342,35 @@ const Home = () => {
     // Extrair produtos da collection
     const products = collection.products.edges.map(productEdge => {
       const product = productEdge.node;
-      const variant = product.variants.edges[0]?.node;
-      const currentPrice = parseFloat(variant?.price.amount || 0);
+      // Garante que cada variante preserve todos os campos essenciais
+      const variants = product.variants?.edges?.map(edge => {
+        const v = edge.node;
+        return {
+          id: v.id,
+          title: v.title,
+          availableForSale: typeof v.availableForSale === 'boolean' ? v.availableForSale : true,
+          image: v.image ? { ...v.image } : undefined,
+          price: v.price ? { ...v.price } : undefined,
+          compareAtPrice: v.compareAtPrice ? { ...v.compareAtPrice } : undefined
+        };
+      }) || [];
+
+      // Usar a primeira variante disponível para exibição principal
+      const variant = variants[0];
+      const currentPrice = parseFloat(variant?.price?.amount || 0);
       const originalPrice = parseFloat(variant?.compareAtPrice?.amount || 0);
-      
+
       // Calcular desconto apenas se compareAtPrice existir e for maior que o preço atual
       const hasDiscount = originalPrice > 0 && originalPrice > currentPrice;
-      
-      // TEMPORÁRIO: Para demonstração, vamos inverter os valores se estiverem "errados"
       const hasInvertedValues = originalPrice > 0 && originalPrice < currentPrice;
       const displayPrice = hasInvertedValues ? originalPrice : currentPrice;
       const displayOriginalPrice = hasInvertedValues ? currentPrice : originalPrice;
       const finalHasDiscount = hasDiscount || hasInvertedValues;
-      
+
       const discountPercentage = finalHasDiscount 
         ? Math.round(((displayOriginalPrice - displayPrice) / displayOriginalPrice) * 100)
         : 0;
-      
+
       // Gerar rating mockado de forma consistente por produto
       const rating = (product.id && typeof product.id === 'string')
         ? 4.0 + (parseInt(product.id.replace(/\D/g, '').slice(-1)) % 10) * 0.1 // rating entre 4.0 e 4.9
@@ -344,14 +378,17 @@ const Home = () => {
       return {
         id: product.id,
         name: product.title,
-        image: product.images.edges[0]?.node.url || "https://via.placeholder.com/400x500 ",
+        image: product.images?.edges?.[0]?.node?.url || "https://via.placeholder.com/400x500 ",
         price: displayPrice,
         originalPrice: finalHasDiscount ? displayOriginalPrice : undefined, // Só inclui se há desconto
         discount: discountPercentage > 0 ? discountPercentage : undefined, // Só inclui se há desconto
         tags: product.tags || [],
-        availableForSale: variant?.availableForSale || false,
-        variants: product.variants,
-        rating
+        availableForSale: variant?.availableForSale ?? true, // Se não vier, assume disponível
+        variants: variants, // Array de variantes preservando todos os campos
+        rating,
+        // Para compatibilidade com o modal
+        variantId: variant?.id,
+        title: product.title // Alias para name
       };
     });
 
@@ -528,7 +565,7 @@ const Home = () => {
         </div>
         <div className="py-4">
           <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k text-center relative z-10">
-            <p className="text-white text-sm sm:text-base lg:text-lg font-semibold animate-pulse">
+            <p className="text-white text-xs sm:text-sm md:text-base lg:text-lg font-semibold animate-pulse tracking-wider uppercase">
               🔥 <span className="hidden sm:inline">FREE SHIPPING ($450) • INTEREST-FREE INSTALLMENTS IN UP TO 3X • </span>
               <span className="sm:hidden">FREE SHIPPING • INSTALLMENTS • </span>
               SILENCE IS JUST THE PRELUDE TO CHAOS 🔥
@@ -549,6 +586,7 @@ const Home = () => {
       <ProductSection 
           collections={collectionProducts} 
           sectionType="kits"
+          heroImage="20250705_1829_Revolução de Estilo_remix_01jze7raa0fhptk2kezgwqxkrd.png"
       />
 
       {/* Carrosseis de Destaques */}
@@ -556,6 +594,7 @@ const Home = () => {
         title="TOP" 
         products={topProducts} 
         id="parte-cima"
+        heroImage=''
         onAddToCart={addToCart}
       />
       <CarousselSection 

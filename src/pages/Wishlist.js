@@ -100,7 +100,6 @@ const Wishlist = () => {
         
         // Atualizar estado local imediatamente
         setWishlistItems(updatedItems);
-        alert("Removido da lista de desejos");
       } else {
         const guestWishlist = JSON.parse(localStorage.getItem('wishlistItems') || '[]');
         const updatedItems = guestWishlist.filter(item => item.id !== itemId);
@@ -108,7 +107,6 @@ const Wishlist = () => {
         
         // Atualizar estado local imediatamente
         setWishlistItems(updatedItems);
-        alert("Removido da lista de desejos");
       }
     } catch (error) {
       console.error("Erro ao remover da wishlist:", error);

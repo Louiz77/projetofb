@@ -147,6 +147,63 @@ export const showVariantSelector = (variants, productTitle) => {
 
 export const addToCart = async (product) => {
   try {
+    // Se variantId já foi fornecido, usar diretamente (vem do CollectionModal)
+    if (product.variantId) {
+      // Shopify add
+      let cartId = localStorage.getItem('shopifyCartId');
+      if (!cartId) {
+        const { data: cartData } = await client.mutate({
+          mutation: gql`
+            mutation { cartCreate(input: {}) { cart { id checkoutUrl } } }
+          `,
+        });
+        cartId = cartData.cartCreate.cart.id;
+        localStorage.setItem('shopifyCartId', cartId);
+      }
+
+      await client.mutate({
+        mutation: ADD_TO_CART,
+        variables: {
+          cartId,
+          lines: [{ merchandiseId: product.variantId, quantity: product.quantity || 1 }],
+        },
+      });
+
+      // Local/Firebase add
+      const cartItem = {
+        id: product.variantId,
+        name: product.name,
+        price: product.price,
+        image: product.image || 'https://via.placeholder.com/400x400',
+        quantity: product.quantity || 1,
+      };
+
+      const user = auth.currentUser;
+      if (user) {
+        const cartRef = doc(db, 'carts', user.uid);
+        const cartSnap = await getDoc(cartRef);
+        const existingItems = cartSnap.exists() ? cartSnap.data().items : [];
+        const existingItemIndex = existingItems.findIndex((i) => i.id === cartItem.id);
+        if (existingItemIndex !== -1) {
+          existingItems[existingItemIndex].quantity += cartItem.quantity;
+        } else {
+          existingItems.push(cartItem);
+        }
+        await setDoc(cartRef, { items: existingItems }, { merge: true });
+      } else {
+        const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+        const existingItemIndex = guestCart.findIndex((i) => i.id === cartItem.id);
+        if (existingItemIndex !== -1) {
+          guestCart[existingItemIndex].quantity += cartItem.quantity;
+        } else {
+          guestCart.push(cartItem);
+        }
+        localStorage.setItem('guestCart', JSON.stringify(guestCart));
+      }
+      return;
+    }
+
+    // Lógica original para produtos sem variante pré-selecionada
     // Buscar variantes do produto
     const { data } = await client.query({
       query: GET_PRODUCT_VARIANTS,
@@ -207,7 +264,6 @@ export const addToCart = async (product) => {
       }
       localStorage.setItem('guestCart', JSON.stringify(guestCart));
     }
-    alert('Produto adicionado ao carrinho!');
   } catch (error) {
     console.error('Erro ao adicionar ao carrinho:', error);
     alert('Falha ao adicionar ao carrinho. Verifique os dados do produto.');
@@ -232,7 +288,16 @@ export const addKitToCart = async (kit) => {
     }
     const selectedVariants = [];
     for (const product of kit.items) {
-      // Buscar variantes do produto
+      // Se já veio variantId e selectedVariant, usa direto
+      if (product.variantId && product.selectedVariant) {
+        selectedVariants.push({
+          variant: product.selectedVariant,
+          product: { title: product.name || product.title },
+          image: product.selectedVariant.image?.url || product.image
+        });
+        continue;
+      }
+      // Caso contrário, fluxo antigo (fallback)
       const { data } = await client.query({
         query: GET_PRODUCT_VARIANTS,
         variables: { productId: product.id },
@@ -293,7 +358,6 @@ export const addKitToCart = async (kit) => {
         localStorage.setItem('guestCart', JSON.stringify(guestCart));
       }
     }
-    alert('Kit adicionado ao carrinho!');
   } catch (error) {
     console.error('Erro ao adicionar kit ao carrinho:', error);
     alert('Falha ao adicionar o kit ao carrinho. Verifique os dados dos produtos.');

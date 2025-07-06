@@ -23,6 +23,7 @@ const CarouselSection = ({ title, products, id }) => {
   const [isMobile, setIsMobile] = useState(false);
   const carouselRef = useRef(null);
   const autoSlideRef = useRef(null);
+  const [notification, setNotification] = useState(null); // {type: 'success'|'error', message: string}
 
   // Touch handling states
   const [touchStart, setTouchStart] = useState(null);
@@ -67,6 +68,16 @@ const CarouselSection = ({ title, products, id }) => {
 
   // Cálculo dinâmico do maxIndex baseado no número real de produtos
   const maxIndex = Math.max(0, organizedProducts.length - itemsPerView);
+  
+  // Auto-remove notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
   
   // Touch handlers
   const minSwipeDistance = 50;
@@ -158,13 +169,24 @@ const CarouselSection = ({ title, products, id }) => {
     return () => window.removeEventListener('resize', updateItemsPerView);
   }, []);
 
+  // Auto-dismiss notification after 3 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   // Early return se não há produtos
   if (!products || products.length === 0) {
     return (
       <section className="py-12 md:py-20 bg-[#1C1C1C]">
         <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k text-center">
           <h2 className="text-3xl md:text-5xl font-bold text-[#F3ECE7] mb-4">{title}</h2>
-          <p className="text-[#F3ECE7]/60">Nenhum produto disponível no momento.</p>
+          <p className="text-[#F3ECE7]/60">No products available at the moment.</p>
         </div>
       </section>
     );
@@ -259,6 +281,30 @@ const CarouselSection = ({ title, products, id }) => {
 
   return (
     <section className="py-12 md:py-10 bg-[#1C1C1C] relative overflow-hidden">
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+          notification.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          <div className="flex items-center gap-2">
+            {notification.type === 'success' ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="20,6 9,17 4,12"></polyline>
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+            )}
+            <span className="font-medium">{notification.message}</span>
+          </div>
+        </div>
+      )}
+      
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
@@ -427,6 +473,7 @@ const CarouselSection = ({ title, products, id }) => {
                     product={product} 
                     isVisible={index >= currentIndex && index < currentIndex + itemsPerView}
                     isMobile={isMobile}
+                    setNotification={setNotification}
                   />
                 </div>
               ))}
@@ -475,11 +522,12 @@ const CarouselSection = ({ title, products, id }) => {
   );
 };
 
-const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
+const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNotification }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [showVariants, setShowVariants] = useState(isMobile); // No mobile sempre mostra
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   // Parse variant titles para trabalhar com Shopify - cores, tamanhos, etc.
   const parseVariantTitle = (title) => {
@@ -515,17 +563,18 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
   };
 
   const handleAddToCart = async () => {
-      if (!product.variants?.edges?.length) {
-        alert("Produto não tem variantes disponíveis.");
+      if (!Array.isArray(product.variants) || product.variants.length === 0) {
+        setNotification({ type: 'error', message: 'Product has no available variants.' });
         return;
       }
 
-      const selectedVariant = product.variants.edges[selectedVariantIndex]?.node;
+      const selectedVariant = product.variants[selectedVariantIndex];
       if (!selectedVariant) {
-        alert("Falha ao obter dados da variante.");
+        setNotification({ type: 'error', message: 'Failed to get variant data.' });
         return;
       }
 
+      setIsAddingToCart(true);
       try {
         const cartId = await getOrCreateCartId();
         
@@ -564,11 +613,13 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
           guestCart.push(cartItem);
           localStorage.setItem('guestCart', JSON.stringify(guestCart));
         }
-
-        alert("Produto adicionado ao carrinho!");
+        
+        setNotification({ type: 'success', message: `${product.name} successfully added to cart!` });
       } catch (error) {
-        console.error("Erro ao adicionar ao carrinho:", error);
-        alert("Falha ao adicionar ao carrinho. Verifique os dados do produto.");
+        console.error("Error adding to cart:", error);
+        setNotification({ type: 'error', message: 'Failed to add to cart. Please check product data.' });
+      } finally {
+        setIsAddingToCart(false);
       }
   };
 
@@ -592,8 +643,8 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
         cartId = data.cartCreate.cart.id;
         localStorage.setItem('shopifyCartId', cartId);
       } catch (error) {
-        console.error("Erro ao criar carrinho do Shopify:", error);
-        alert("Falha ao iniciar o carrinho. Tente recarregar a página.");
+        console.error("Error creating Shopify cart:", error);
+        setNotification({ type: 'error', message: 'Failed to initialize cart. Please try reloading the page.' });
         throw error;
       }
     }
@@ -672,7 +723,7 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
         
         <img
           src={getOptimizedImageUrl(
-            product.variants?.edges?.[selectedVariantIndex]?.node?.image?.url ||
+            product.variants?.[selectedVariantIndex]?.image?.url ||
             product.image || product.imageUrl || product.src || product.featured_image
           )}
           alt={product.name || product.title}
@@ -754,19 +805,19 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
         )}
 
         {/* Seletor de variantes - Desktop (hover) */}
-        {!isMobile && product.variants.edges.length > 1 && (
+        {!isMobile && Array.isArray(product.variants) && product.variants.length > 1 && (
           <div className={`absolute bottom-20 left-4 right-4 transition-all duration-500 ease-out z-30 ${
             isHovered ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'
           }`}>
             <div className="bg-[#1C1C1C]/95 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg p-3 shadow-xl">
               <div className="flex gap-1 justify-center flex-wrap">
-                {product.variants.edges.map((variant, index) => {
+                {product.variants.map((variant, index) => {
                   const selected = selectedVariantIndex === index;
-                  const displayText = parseVariantTitle(variant.node.title);
+                  const displayText = parseVariantTitle(variant.title);
                   
                   return displayText ? (
                     <button
-                      key={variant.node.id}
+                      key={variant.id}
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -777,7 +828,7 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
                           ? 'bg-[#8A0101] text-white shadow-lg scale-110' 
                           : 'bg-[#2A2A2A] text-[#F3ECE7]/80 hover:bg-[#4B014E]/50 hover:scale-105'
                       }`}
-                      title={variant.node.title} // Tooltip com título completo
+                      title={variant.title} // Tooltip com título completo
                     >
                       {displayText}
                     </button>
@@ -789,19 +840,19 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
         )}
 
         {/* Seletor de variantes - Mobile */}
-        {isMobile && product.variants.edges.length > 1 && (
+        {isMobile && Array.isArray(product.variants) && product.variants.length > 1 && (
           <div className={`absolute bottom-4 left-4 right-4 transition-all duration-300 ${
             showVariants ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
           }`}>
             <div className="bg-[#1C1C1C]/95 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg p-3">
               <div className="grid grid-cols-4 gap-2">
-                {product.variants.edges.map((variant, index) => {
+                {product.variants.map((variant, index) => {
                   const selected = selectedVariantIndex === index;
-                  const displayText = parseVariantTitle(variant.node.title);
+                  const displayText = parseVariantTitle(variant.title);
                   
                   return displayText ? (
                     <button
-                      key={variant.node.id}
+                      key={variant.id}
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -827,11 +878,21 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
           isHovered && !isMobile ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
         }`}>
           <button 
-            className="w-full bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] py-3 font-medium hover:shadow-lg hover:shadow-[#8A0101]/30 transition-all duration-300 transform hover:scale-105 rounded-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] py-3 font-medium hover:shadow-lg hover:shadow-[#8A0101]/30 transition-all duration-300 transform hover:scale-105 rounded-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             onClick={handleAddToCart}
-            disabled={!product.available && product.available !== undefined}
+            disabled={(!product.available && product.available !== undefined) || isAddingToCart}
           >
-            {product.available === false ? 'Sold Out' : 'Add to Cart'}
+            {isAddingToCart ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Adding...
+              </>
+            ) : (
+              product.available === false ? 'Sold Out' : 'Add to Cart'
+            )}
           </button>
         </div>
 
@@ -839,18 +900,28 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart }) => {
         {isMobile && (
           <div className="mt-3">
             <button 
-              className="w-full bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] py-3 font-medium hover:shadow-lg hover:shadow-[#8A0101]/30 transition-all duration-300 rounded-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => handleAddToCart(product)}
-              disabled={!product.available && product.available !== undefined}
+              className="w-full bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] py-3 font-medium hover:shadow-lg hover:shadow-[#8A0101]/30 transition-all duration-300 rounded-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              onClick={handleAddToCart}
+              disabled={(!product.available && product.available !== undefined) || isAddingToCart}
             >
-              {product.available === false ? 'Sold Out' : 'Add to Cart'}
+              {isAddingToCart ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Adding...
+                </>
+              ) : (
+                product.available === false ? 'Sold Out' : 'Add to Cart'
+              )}
             </button>
           </div>
         )}
       </div>
 
         {/* Mobile tap indicator para variantes */}
-        {isMobile && product.variants.edges.length > 1 && (
+        {isMobile && product.variants.length > 1 && (
           <div className="absolute top-4 right-4 z-20">
             <div className="bg-[#1C1C1C]/90 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg px-3 py-2 shadow-lg">
               <div className="flex items-center gap-2">

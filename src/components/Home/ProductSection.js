@@ -24,10 +24,21 @@ const ProductSection = ({
   const [addingCart, setAddingCart] = useState(false);
   const [addingWishlist, setAddingWishlist] = useState(false);
   const [variantCarouselIndex, setVariantCarouselIndex] = useState(0);
+  const [notification, setNotification] = useState(null); // {type: 'success'|'error', message: string}
 
   const [maleProductIndex, setMaleProductIndex] = useState(0);
   const [femaleProductIndex, setFemaleProductIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(4);
+
+  // Auto-remove notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   // Atualizar itemsPerView baseado no tamanho da tela - otimizado para 4K
   useEffect(() => {
@@ -53,10 +64,10 @@ const ProductSection = ({
 
   // Auto-selecionar primeira variante disponível quando modal abre
   useEffect(() => {
-    if (modalProduct && modalProduct.variants?.edges?.length > 0) {
-      const firstAvailableVariant = modalProduct.variants.edges.find(
-        variant => variant.node.availableForSale
-      )?.node;
+    if (modalProduct && Array.isArray(modalProduct.variants) && modalProduct.variants.length > 0) {
+      const firstAvailableVariant = modalProduct.variants.find(
+        variant => variant.availableForSale
+      );
       
       if (firstAvailableVariant && !modalVariant) {
         setModalVariant(firstAvailableVariant);
@@ -175,6 +186,31 @@ const ProductSection = ({
         {/* Modal global de produto individual */}
         {modalProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-fade-in">
+            
+            {/* Notification */}
+            {notification && (
+              <div className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+                notification.type === 'success' 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-red-500 text-white'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {notification.type === 'success' ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20,6 9,17 4,12"></polyline>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="15" y1="9" x2="9" y2="15"></line>
+                      <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                  )}
+                  <span className="font-medium">{notification.message}</span>
+                </div>
+              </div>
+            )}
+            
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300" onClick={() => setModalProduct(null)} />
             <div className="relative w-full max-w-xs sm:max-w-lg lg:max-w-5xl xl:max-w-6xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row animate-slide-up max-h-[95vh] lg:max-h-[90vh]">
               
@@ -250,7 +286,7 @@ const ProductSection = ({
                             ))}
                           </div>
                           <span className="text-sm text-gray-600">
-                            {modalProduct.rating.toFixed(1)} ({modalProduct.reviewCount || 0} avaliações)
+                            {modalProduct.rating.toFixed(1)} ({modalProduct.reviewCount || 0} reviews)
                           </span>
                         </div>
                       )}
@@ -269,21 +305,21 @@ const ProductSection = ({
                   </div>
 
                 {/* Seleção de Variantes */}
-                {modalProduct.variants?.edges?.length > 1 && (
+                {Array.isArray(modalProduct.variants) && modalProduct.variants.length > 1 && (
                   <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Escolha uma opção:</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Choose an option:</h4>
                     
                     {/* Layout Desktop - Carrossel para muitas variantes, Grid para poucas */}
                     <div className="hidden sm:block">
-                      {modalProduct.variants.edges.length <= 6 ? (
+                      {modalProduct.variants.length <= 6 ? (
                         /* Grid simples para até 6 variantes */
                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                          {modalProduct.variants.edges.map((variant, index) => (
+                          {modalProduct.variants.map((variant, index) => (
                             <VariantCard 
-                              key={variant.node.id}
-                              variant={variant.node}
-                              isSelected={modalVariant?.id === variant.node.id}
-                              onSelect={() => variant.node.availableForSale && setModalVariant(variant.node)}
+                              key={variant.id}
+                              variant={variant}
+                              isSelected={modalVariant?.id === variant.id}
+                              onSelect={() => variant.availableForSale && setModalVariant(variant)}
                               modalProduct={modalProduct}
                             />
                           ))}
@@ -307,10 +343,10 @@ const ProductSection = ({
                           </button>
                           
                           <button
-                            onClick={() => setVariantCarouselIndex(prev => Math.min(modalProduct.variants.edges.length - 3, prev + 3))}
-                            disabled={variantCarouselIndex >= modalProduct.variants.edges.length - 3}
+                            onClick={() => setVariantCarouselIndex(prev => Math.min(modalProduct.variants.length - 3, prev + 3))}
+                            disabled={variantCarouselIndex >= modalProduct.variants.length - 3}
                             className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${
-                              variantCarouselIndex >= modalProduct.variants.edges.length - 3
+                              variantCarouselIndex >= modalProduct.variants.length - 3
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                                 : 'bg-white text-gray-800 hover:bg-[#4B014E] hover:text-white hover:scale-110'
                             }`}
@@ -326,16 +362,16 @@ const ProductSection = ({
                               className="grid grid-cols-3 gap-3 transition-transform duration-300 ease-out"
                               style={{
                                 transform: `translateX(-${variantCarouselIndex * (100 / 3)}%)`,
-                                gridTemplateColumns: `repeat(${modalProduct.variants.edges.length}, minmax(0, 1fr))`,
-                                width: `${(modalProduct.variants.edges.length / 3) * 100}%`
+                                gridTemplateColumns: `repeat(${modalProduct.variants.length}, minmax(0, 1fr))`,
+                                width: `${(modalProduct.variants.length / 3) * 100}%`
                               }}
                             >
-                              {modalProduct.variants.edges.map((variant, index) => (
+                              {modalProduct.variants.map((variant, index) => (
                                 <VariantCard 
-                                  key={variant.node.id}
-                                  variant={variant.node}
-                                  isSelected={modalVariant?.id === variant.node.id}
-                                  onSelect={() => variant.node.availableForSale && setModalVariant(variant.node)}
+                                  key={variant.id}
+                                  variant={variant}
+                                  isSelected={modalVariant?.id === variant.id}
+                                  onSelect={() => variant.availableForSale && setModalVariant(variant)}
                                   modalProduct={modalProduct}
                                 />
                               ))}
@@ -344,7 +380,7 @@ const ProductSection = ({
 
                           {/* Indicadores */}
                           <div className="flex justify-center mt-4 gap-2">
-                            {Array.from({ length: Math.ceil(modalProduct.variants.edges.length / 3) }).map((_, i) => (
+                            {Array.from({ length: Math.ceil(modalProduct.variants.length / 3) }).map((_, i) => (
                               <button
                                 key={i}
                                 onClick={() => setVariantCarouselIndex(i * 3)}
@@ -362,16 +398,16 @@ const ProductSection = ({
 
                     {/* Layout Mobile - Lista Otimizada */}
                     <div className="sm:hidden space-y-3 max-h-60 overflow-y-auto">
-                      {modalProduct.variants.edges.map((variant, index) => {
-                        const isSelected = modalVariant?.id === variant.node.id;
-                        const isAvailable = variant.node.availableForSale;
+                      {modalProduct.variants.map((variant, index) => {
+                        const isSelected = modalVariant?.id === variant.id;
+                        const isAvailable = variant.availableForSale;
                         
                         return (
                           <button
-                            key={variant.node.id}
+                            key={variant.id}
                             onClick={() => {
                               if (isAvailable) {
-                                setModalVariant(variant.node);
+                                setModalVariant(variant);
                               }
                             }}
                             disabled={!isAvailable}
@@ -386,8 +422,8 @@ const ProductSection = ({
                             {/* Imagem Mobile - Tamanho Fixo Responsivo */}
                             <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50">
                               <img
-                                src={variant.node.image?.url || modalProduct.image}
-                                alt={variant.node.title}
+                                src={variant.image?.url || modalProduct.image}
+                                alt={variant.title}
                                 className={`w-full h-full object-cover object-center transition-transform duration-300 ${
                                   !isAvailable ? 'grayscale' : ''
                                 }`}
@@ -420,13 +456,13 @@ const ProductSection = ({
                             {/* Info da Variante Mobile */}
                             <div className="flex-1 text-left min-w-0">
                               <h5 className={`font-semibold text-base mb-1 line-clamp-1 ${isSelected ? 'text-[#4B014E]' : 'text-gray-900'}`}>
-                                {variant.node.title}
+                                {variant.title}
                               </h5>
                               <p className={`text-lg font-bold ${isSelected ? 'text-[#4B014E]' : 'text-gray-600'}`}>
-                                $ {parseFloat(variant.node.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                $ {parseFloat(variant.price.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </p>
                               {!isAvailable && (
-                                <span className="text-sm text-red-500 font-medium">Indisponível</span>
+                                <span className="text-sm text-red-500 font-medium">Unavailable</span>
                               )}
                             </div>
 
@@ -457,7 +493,7 @@ const ProductSection = ({
                     className="w-full py-4 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white font-bold rounded-2xl hover:scale-105 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg hover:shadow-xl relative overflow-hidden group"
                     onClick={async () => {
                       if (!modalVariant && !modalProduct.price) {
-                        alert('Selecione uma variante!');
+                        setNotification({ type: 'error', message: 'Please select a variant!' });
                         return;
                       }
                       setAddingCart(true);
@@ -530,7 +566,7 @@ const ProductSection = ({
                           localStorage.setItem('guestCart', JSON.stringify(guestCart));
                         }
 
-                        alert(`${modalProduct.name} adicionado ao carrinho!`);
+                        alert(`${modalProduct.name} added to cart!`);
                         setModalProduct(null);
                       } catch (error) {
                         console.error('Erro ao adicionar ao carrinho:', error);
@@ -542,8 +578,12 @@ const ProductSection = ({
                     disabled={addingCart}
                   >
                     <span className="relative z-10 flex items-center justify-center gap-3">
-                      <ShoppingCart size={20} />
-                      {addingCart ? 'Adicionando...' : 'Adicionar ao Carrinho'}
+                      {addingCart ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <ShoppingCart size={20} />
+                      )}
+                      {addingCart ? 'Adding to Cart...' : 'Add to Cart'}
                     </span>
                     {/* Efeito shimmer */}
                     <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -553,7 +593,7 @@ const ProductSection = ({
                     className="w-full py-4 border-2 border-[#4B014E] text-[#4B014E] font-bold rounded-2xl hover:bg-[#4B014E] hover:text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed hover:scale-105"
                     onClick={async () => {
                       if (!modalVariant && !modalProduct.price) {
-                        alert('Selecione uma variante!');
+                        setNotification({ type: 'error', message: 'Please select a variant!' });
                         return;
                       }
                       setAddingWishlist(true);
@@ -575,9 +615,9 @@ const ProductSection = ({
                           const isAlreadyInWishlist = existingItems.some(item => item.id === wishlistItem.id);
                           if (!isAlreadyInWishlist) {
                             await setDoc(wishlistRef, { items: [...existingItems, wishlistItem] }, { merge: true });
-                            alert(`${modalProduct.name} adicionado aos favoritos!`);
+                            alert(`${modalProduct.name} added to wishlist!`);
                           } else {
-                            alert(`${modalProduct.name} já está nos favoritos!`);
+                            alert(`${modalProduct.name} is already in wishlist!`);
                           }
                         } else {
                           const guestWishlist = JSON.parse(localStorage.getItem('wishlistItems') || '[]');
@@ -585,16 +625,16 @@ const ProductSection = ({
                           if (!isAlreadyInWishlist) {
                             guestWishlist.push(wishlistItem);
                             localStorage.setItem('wishlistItems', JSON.stringify(guestWishlist));
-                            alert(`${modalProduct.name} adicionado aos favoritos!`);
+                            alert(`${modalProduct.name} added to wishlist!`);
                           } else {
-                            alert(`${modalProduct.name} já está nos favoritos!`);
+                            alert(`${modalProduct.name} is already in wishlist!`);
                           }
                         }
 
                         setModalProduct(null);
                       } catch (error) {
                         console.error('Erro ao adicionar aos favoritos:', error);
-                        alert('Erro ao adicionar aos favoritos');
+                        alert('Error adding to wishlist');
                       } finally {
                         setAddingWishlist(false);
                       }
@@ -602,8 +642,12 @@ const ProductSection = ({
                     disabled={addingWishlist}
                   >
                     <span className="flex items-center justify-center gap-3">
-                      <Heart size={20} />
-                      {addingWishlist ? 'Adicionando...' : 'Adicionar aos Favoritos'}
+                      {addingWishlist ? (
+                        <div className="w-5 h-5 border-2 border-[#4B014E] border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Heart size={20} />
+                      )}
+                      {addingWishlist ? 'Adding to Wishlist...' : 'Add to Wishlist'}
                     </span>
                   </button>
                   </div>
@@ -909,7 +953,7 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                              h-full flex flex-col"
                     onClick={() => {
                       setModalProduct?.(product);
-                      setModalVariant?.(product.variants?.edges?.[0]?.node);
+                      setModalVariant?.(product.variants?.[0]);
                     }}
                   >
                     {/* ...existing code... */}
@@ -939,6 +983,12 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                                      line-clamp-2 leading-tight">
                           {product.name || 'Nome do produto'}
                         </h4>
+                        {/* Nome da variante padrão */}
+                        {product.variants?.[0]?.title && (
+                          <span className="text-xs text-[#4B014E] font-medium">
+                            {product.variants[0].title}
+                          </span>
+                        )}
                         
                         {product.category && (
                           <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">
@@ -1018,6 +1068,23 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
 const CollectionModal = ({ collection, isOpen, onClose }) => {
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [selectedItems, setSelectedItems] = useState(new Map()); // Map<itemId, {item, selectedVariant}>
+  const [showVariantSelector, setShowVariantSelector] = useState(null); // ID do item para mostrar seletor
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
+  const [notification, setNotification] = useState(null); // {type: 'success'|'error', message: string}
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detectar mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Suporte a ambos: kits mockados (items) e coleções Shopify (products)
   const items = Array.isArray(collection.items) && collection.items.length > 0
@@ -1026,16 +1093,100 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
       ? collection.products
       : [];
 
+  // Inicializar com todos os itens selecionados (primeira variante disponível)
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+    if (isOpen && items.length > 0) {
+      const initialSelection = new Map();
+      items.forEach(item => {
+        // Buscar primeira variante disponível
+        const availableVariant = item.variants?.find(variant => 
+          variant.availableForSale !== false
+        );
+        
+        const firstVariant = availableVariant || item.variants?.[0] || null;
+        
+        if (firstVariant) {
+          initialSelection.set(item.id, {
+            item,
+            selectedVariant: firstVariant
+          });
+        }
+      });
+      setSelectedItems(initialSelection);
+      // Reset outros estados quando modal abre
+      setShowVariantSelector(null);
+      setCurrentItemIndex(0);
     }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
+  }, [isOpen, items]);
+
+  // Auto-remove notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Funções para gerenciar seleção
+  const toggleItemSelection = (item) => {
+    const newSelection = new Map(selectedItems);
+    if (newSelection.has(item.id)) {
+      newSelection.delete(item.id);
+    } else {
+      // Buscar primeira variante disponível
+      const availableVariant = item.variants?.find(variant => 
+        variant.availableForSale !== false
+      );
+      
+      const firstVariant = availableVariant || item.variants?.[0] || null;
+      
+      newSelection.set(item.id, {
+        item,
+        selectedVariant: firstVariant
+      });
+    }
+    setSelectedItems(newSelection);
+  };
+
+  const updateVariantSelection = (itemId, variant) => {
+    const newSelection = new Map(selectedItems);
+    const existingSelection = newSelection.get(itemId);
+    if (existingSelection) {
+      newSelection.set(itemId, {
+        ...existingSelection,
+        selectedVariant: variant
+      });
+      setSelectedItems(newSelection);
+    }
+    setShowVariantSelector(null);
+  };
+
+  // Calcular totais
+  const selectedItemsArray = Array.from(selectedItems.values());
+  const totalPrice = selectedItemsArray.reduce((sum, selection) => {
+    const price = selection.selectedVariant?.price?.amount 
+      ? parseFloat(selection.selectedVariant.price.amount)
+      : selection.item.price || 0;
+    return sum + price;
+  }, 0);
+
+  const totalOriginalPrice = selectedItemsArray.reduce((sum, selection) => {
+    // Se há variante, usa o compareAtPrice da variante, senão usa o originalPrice do item
+    const comparePrice = selection.selectedVariant?.compareAtPrice?.amount 
+      ? parseFloat(selection.selectedVariant.compareAtPrice.amount)
+      : selection.item.originalPrice || 0;
+    
+    const regularPrice = selection.selectedVariant?.price?.amount 
+      ? parseFloat(selection.selectedVariant.price.amount)
+      : selection.item.price || 0;
+    
+    // Só considera se o preço comparativo é maior que o preço regular
+    return sum + (comparePrice > regularPrice ? comparePrice : regularPrice);
+  }, 0);
+
+  const savings = totalOriginalPrice > totalPrice ? totalOriginalPrice - totalPrice : 0;
 
   const navigateItem = (direction) => {
     if (isAnimating) return;
@@ -1054,49 +1205,109 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
 
   // Funções para adicionar ao carrinho e wishlist
   const handleAddToCart = async () => {
-    if (items.length > 1) {
-      await addKitToCart({ ...collection, items });
-    } else if (currentItem && currentItem.variants && currentItem.variants.edges && currentItem.variants.edges.length > 0) {
-      // Produto individual com variantes
-      const variant = currentItem.variants.edges[0].node;
-      await addToCart({
-        variantId: variant.id,
-        name: currentItem.name,
-        price: parseFloat(variant.price.amount),
-        image: currentItem.image,
-        quantity: 1
+    if (selectedItems.size === 0) {
+      setNotification({ type: 'error', message: 'Please select at least one item to add to cart' });
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      if (selectedItems.size === 1) {
+        const selection = Array.from(selectedItems.values())[0];
+        const item = selection.item;
+        const variant = selection.selectedVariant;
+        // Sempre envia o variantId selecionado!
+        await addToCart({
+          variantId: variant.id,
+          name: item.name || item.title,
+          price: parseFloat(variant.price.amount),
+          image: variant.image?.url || item.image,
+          quantity: 1
+        });
+      } else {
+        const customKit = {
+          ...collection,
+          items: selectedItemsArray.map(selection => ({
+            ...selection.item,
+            variantId: selection.selectedVariant.id,
+            selectedVariant: selection.selectedVariant
+          }))
+        };
+        await addKitToCart(customKit);
+      }
+      setNotification({ 
+        type: 'success', 
+        message: `${selectedItems.size} item(s) successfully added to cart!` 
       });
-    } else if (currentItem) {
-      // Produto individual sem variantes
-      await addToCart({
-        variantId: currentItem.variantId || currentItem.id,
-        name: currentItem.name,
-        price: parseFloat(currentItem.price),
-        image: currentItem.image,
-        quantity: 1
-      });
+      setTimeout(() => onClose(), 1500);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      setNotification({ type: 'error', message: 'Error adding to cart. Please try again.' });
+    } finally {
+      setIsAddingToCart(false);
     }
   };
+
   const handleAddToWishlist = async () => {
-    if (items.length > 1) {
-      await addKitToWishlist({ ...collection, items });
-    } else if (currentItem && currentItem.variants && currentItem.variants.edges && currentItem.variants.edges.length > 0) {
-      const variant = currentItem.variants.edges[0].node;
-      await addToWishlist({
-        variantId: variant.id,
-        name: currentItem.name,
-        price: parseFloat(variant.price.amount),
-        image: currentItem.image,
-        quantity: 1
+    if (selectedItems.size === 0) {
+      setNotification({ type: 'error', message: 'Please select at least one item to add to wishlist' });
+      return;
+    }
+
+    setIsAddingToWishlist(true);
+    try {
+      // Para cada item selecionado, adicionar diretamente à wishlist com a variante já escolhida
+      for (const [itemId, selection] of selectedItems) {
+        const item = selection.item;
+        const variant = selection.selectedVariant;
+        
+        // Criar item da wishlist com dados completos
+        const wishlistItem = {
+          id: `wishlist_${Date.now()}_${Math.random()}`, // ID único para wishlist
+          productId: item.id,
+          variantId: variant.id,
+          name: item.name || item.title,
+          variantTitle: variant.title,
+          price: parseFloat(variant.price.amount),
+          image: variant.image?.url || item.image || "https://via.placeholder.com/400x400",
+          selectedOptions: variant.selectedOptions || [],
+          addedAt: new Date().toISOString(),
+        };
+
+        const user = auth.currentUser;
+        if (user) {
+          const wishlistRef = doc(db, 'wishlists', user.uid);
+          const wishlistSnap = await getDoc(wishlistRef);
+          const existingItems = wishlistSnap.exists() ? wishlistSnap.data().items || [] : [];
+
+          // Verificar se já existe (baseado no variantId)
+          const isAlreadyInWishlist = existingItems.some(existingItem => existingItem.variantId === variant.id);
+
+          if (!isAlreadyInWishlist) {
+            await setDoc(wishlistRef, { items: [...existingItems, wishlistItem] }, { merge: true });
+          }
+        } else {
+          // Para visitantes, usar localStorage
+          const guestWishlist = JSON.parse(localStorage.getItem('wishlistItems') || '[]');
+          const isAlreadyInWishlist = guestWishlist.some(existingItem => existingItem.variantId === variant.id);
+
+          if (!isAlreadyInWishlist) {
+            guestWishlist.push(wishlistItem);
+            localStorage.setItem('wishlistItems', JSON.stringify(guestWishlist));
+          }
+        }
+      }
+      
+      setNotification({ 
+        type: 'success', 
+        message: `${selectedItems.size} item(s) successfully added to wishlist!` 
       });
-    } else if (currentItem) {
-      await addToWishlist({
-        variantId: currentItem.variantId || currentItem.id,
-        name: currentItem.name,
-        price: parseFloat(currentItem.price),
-        image: currentItem.image,
-        quantity: 1
-      });
+      setTimeout(() => onClose(), 1500);
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
+      setNotification({ type: 'error', message: 'Error adding to wishlist. Please try again.' });
+    } finally {
+      setIsAddingToWishlist(false);
     }
   };
 
@@ -1108,110 +1319,556 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
         onClick={onClose}
         style={{ background: 'radial-gradient(circle at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.9) 100%)' }}
       />
-      {/* Modal */}
-      <div className="relative w-full max-w-2xl xl:max-w-4xl max-h-[95vh] bg-white shadow-2xl overflow-hidden rounded-lg flex flex-col md:flex-row">
-        {/* Main Item Display */}
-        <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 min-w-0">
-          {/* Navigation Arrows */}
-          {items.length > 1 && (
-            <>
-              <button
-                onClick={() => navigateItem('prev')}
-                className="absolute left-2 md:left-6 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 md:w-12 md:h-12 rounded-full bg-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
-                style={{ color: '#4B014E' }}
-              >
-                <ArrowLeft size={18} />
-              </button>
-              <button
-                onClick={() => navigateItem('next')}
-                className="absolute right-2 md:right-6 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 md:w-12 md:h-12 rounded-full bg-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
-                style={{ color: '#4B014E' }}
-              >
-                <ArrowRight size={18} />
-              </button>
-            </>
-          )}
-          {/* Current Item */}
-          <div className="flex flex-col items-center w-full">
-            <div className="relative mb-4 w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80">
-              <img
-                src={currentItem.image}
-                alt={currentItem.name}
-                className="w-full h-full object-cover rounded-2xl shadow-2xl"
-              />
-              <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-lg" style={{ backgroundColor: '#4B014E' }}>{currentItemIndex + 1}</div>
+      
+      {/* Modal - Layout responsivo */}
+      <div className={`relative w-full bg-white shadow-2xl overflow-hidden rounded-2xl flex flex-col ${
+        isMobile 
+          ? 'max-w-sm h-[95vh]' 
+          : 'max-w-6xl max-h-[95vh]'
+      }`}>
+        
+        {/* Notification */}
+        {notification && (
+          <div className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+            notification.type === 'success' 
+              ? 'bg-green-500 text-white' 
+              : 'bg-red-500 text-white'
+          }`}>
+            <div className="flex items-center gap-2">
+              {notification.type === 'success' ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20,6 9,17 4,12"></polyline>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              )}
+              <span className="font-medium">{notification.message}</span>
             </div>
-            <div className="text-center px-2 md:px-4">
-              <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-2 line-clamp-2" style={{ color: '#1C1C1C' }}>{currentItem.name}</h3>
-              <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
-                <div className="flex items-center gap-1">
-                  <Star size={16} className="fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs md:text-sm font-medium" style={{ color: '#1C1C1C' }}>{typeof currentItem.rating === 'number' ? currentItem.rating.toFixed(1) : (parseFloat(currentItem.rating) || '--')}</span>
-                </div>
-                <span className="text-gray-400 hidden sm:inline">•</span>
-                <span className="text-xs md:text-sm font-medium" style={{ color: '#1C1C1C' }}>
-                  {currentItem.price !== undefined ? `$ ${Number(currentItem.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '--'}
+          </div>
+        )}
+        
+        {/* Header */}
+        <div className={`flex justify-between items-center border-b border-gray-200 ${
+          isMobile ? 'p-4' : 'p-6'
+        }`}>
+          <div>
+            <h2 className={`font-bold text-gray-900 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+              {collection.name}
+            </h2>
+            <p className={`text-gray-600 ${isMobile ? 'text-sm' : 'text-base'}`}>
+              Select the items you want to add
+            </p>
+          </div>
+          <button 
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        {/* Main Content - Layout adaptativo */}
+        {isMobile ? (
+          /* Layout Mobile - Vertical */
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Item Navigation */}
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Item {currentItemIndex + 1} of {items.length}
                 </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigateItem('prev')}
+                    className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="15,18 9,12 15,6"></polyline>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => navigateItem('next')}
+                    className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="9,18 15,12 9,6"></polyline>
+                    </svg>
+                  </button>
+                </div>
               </div>
-              <span className="text-xs text-gray-500">Item {currentItemIndex + 1} de {items.length}</span>
+              
+              {/* Progress Dots */}
+              <div className="flex justify-center gap-1">
+                {items.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentItemIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === currentItemIndex 
+                        ? 'bg-[#4B014E] w-6' 
+                        : 'bg-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
-        {/* Sidebar: Lista de Itens */}
-        <div className="w-full md:w-80 xl:w-96 bg-white border-t md:border-t-0 md:border-l border-gray-100 flex flex-col max-h-80 md:max-h-none">
-          <div className="flex-1 p-3 sm:p-4 overflow-y-auto">
-            <h4 className="text-base sm:text-lg font-bold mb-3 sm:mb-4" style={{ color: '#1C1C1C' }}>Todos os Itens</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-              {items.map((item, index) => (
+
+            {/* Current Item Display */}
+            <div className="flex-1 overflow-y-auto">
+              {currentItem && (
+                <div className="p-4">
+                  {/* Item Card */}
+                  <div className="bg-white border-2 rounded-xl overflow-hidden mb-4 transition-all duration-300" 
+                       style={{
+                         borderColor: selectedItems.has(currentItem.id) ? '#4B014E' : '#e5e7eb'
+                       }}>
+                    {/* Item Image */}
+                    <div className="aspect-square relative overflow-hidden bg-gray-50">
+                      <img
+                        src={selectedItems.get(currentItem.id)?.selectedVariant?.image?.url || 
+                             currentItem.variants?.[0]?.image?.url || 
+                             currentItem.image}
+                        alt={currentItem.name}
+                        className="w-full h-full object-cover transition-all duration-300"
+                        loading="lazy"
+                      />
+                      
+                      {/* Selection Checkbox */}
+                      <div className="absolute top-3 left-3">
+                        <button
+                          onClick={() => toggleItemSelection(currentItem)}
+                          className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                            selectedItems.has(currentItem.id)
+                              ? 'bg-[#4B014E] border-[#4B014E] text-white'
+                              : 'bg-white border-gray-300 hover:border-[#4B014E]'
+                          }`}
+                        >
+                          {selectedItems.has(currentItem.id) && (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                              <polyline points="20,6 9,17 4,12"></polyline>
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Item Info */}
+                    <div className="p-4">
+                      <h4 className="font-semibold text-lg mb-2 text-gray-900">
+                        {currentItem.name}
+                      </h4>
+                      
+                      {/* Variant Selection */}
+                      {currentItem.variants?.length > 1 && selectedItems.has(currentItem.id) && (
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Choose an option:
+                          </label>
+                          <select
+                            value={selectedItems.get(currentItem.id)?.selectedVariant?.id || ''}
+                            onChange={(e) => {
+                              const variant = currentItem.variants.find(v => v.id === e.target.value);
+                              if (variant) updateVariantSelection(currentItem.id, variant);
+                            }}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4B014E] focus:border-[#4B014E]"
+                          >
+                            {currentItem.variants.map(variant => (
+                              <option 
+                                key={variant.id} 
+                                value={variant.id}
+                                disabled={variant.availableForSale === false}
+                              >
+                                {variant.title} - ${parseFloat(variant.price.amount).toFixed(2)}
+                                {variant.availableForSale === false && ' (Unavailable)'}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      
+                      {/* Price */}
+                      <div className="text-right">
+                        {selectedItems.has(currentItem.id) ? (
+                          <>
+                            <span className="text-xl font-bold text-[#4B014E]">
+                              $ {selectedItems.get(currentItem.id)?.selectedVariant ? 
+                                parseFloat(selectedItems.get(currentItem.id).selectedVariant.price.amount).toFixed(2) :
+                                (currentItem.price || 0).toFixed(2)
+                              }
+                            </span>
+                            {selectedItems.get(currentItem.id)?.selectedVariant?.compareAtPrice?.amount && (
+                              <span className="text-sm text-gray-400 line-through ml-2">
+                                $ {parseFloat(selectedItems.get(currentItem.id).selectedVariant.compareAtPrice.amount).toFixed(2)}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xl font-bold text-gray-400">
+                            $ {(currentItem.price || 0).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Summary & Actions */}
+            <div className="border-t border-gray-200 bg-gray-50 p-4">
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">Selected Items:</span>
+                  <span className="text-sm font-bold text-[#4B014E]">{selectedItems.size} of {items.length}</span>
+                </div>
+                
+                {selectedItems.size > 0 && (
+                  <>
+                    {savings > 0 && (
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600">Original price:</span>
+                        <span className="line-through text-gray-400">$ {totalOriginalPrice.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total:</span>
+                      <span className="text-[#4B014E]">$ {totalPrice.toFixed(2)}</span>
+                    </div>
+                    {savings > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>You save:</span>
+                        <span>$ {savings.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <button
-                  key={item.id || index}
-                  onClick={() => setCurrentItemIndex(index)}
-                  className={`relative group aspect-square rounded-lg sm:rounded-xl overflow-hidden transition-all duration-200 ${index === currentItemIndex ? 'ring-2 ring-[#4B014E] scale-105 shadow-lg' : 'hover:scale-105 hover:shadow-md'}`}
+                  onClick={handleAddToCart}
+                  disabled={selectedItems.size === 0 || isAddingToCart}
+                  className="w-full py-3 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white font-bold rounded-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
-                  {/* Overlay */}
-                  <div className={`absolute inset-0 transition-opacity duration-200 ${index === currentItemIndex ? 'bg-purple-900/20' : 'bg-black/0 group-hover:bg-black/20'}`} />
-                  {/* Item number */}
-                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: '#4B014E' }}>{index + 1}</div>
-                  {/* Name overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1">
-                    <p className="text-white text-xs font-medium truncate">{item.name}</p>
-                  </div>
-                  {/* Price & Rating */}
-                  <div className="absolute bottom-1 left-1 bg-white/80 rounded px-1 py-0.5 flex items-center gap-1">
-                    <Star size={10} className="fill-yellow-400 text-yellow-400" />
-                    <span className="text-[10px] font-bold text-[#4B014E]">{typeof item.rating === 'number' ? item.rating.toFixed(1) : (parseFloat(item.rating) || '--')}</span>
-                    <span className="text-[10px] text-[#1C1C1C]">$ {item.price !== undefined ? Number(item.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '--'}</span>
-                  </div>
+                  <span className="flex items-center justify-center gap-2">
+                    {isAddingToCart ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <ShoppingCart size={18} />
+                    )}
+                    {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                  </span>
                 </button>
-              ))}
+
+                <button
+                  onClick={handleAddToWishlist}
+                  disabled={selectedItems.size === 0 || isAddingToWishlist}
+                  className="w-full py-3 border-2 border-[#4B014E] text-[#4B014E] font-bold rounded-xl hover:bg-[#4B014E] hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    {isAddingToWishlist ? (
+                      <div className="w-5 h-5 border-2 border-[#4B014E] border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Heart size={18} />
+                    )}
+                    {isAddingToWishlist ? 'Adding...' : 'Add to Wishlist'}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-          {/* Action Buttons */}
-          <div className="p-3 sm:p-4 border-t border-gray-100 space-y-2 sm:space-y-3">
-            <button
-              className="w-full py-3 sm:py-4 text-sm sm:text-base font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden group rounded-lg sm:rounded-xl"
-              style={{ background: 'linear-gradient(135deg, #4B014E 0%, #6B0261 50%, #4B014E 100%)', boxShadow: '0 4px 20px rgba(75, 1, 78, 0.3)' }}
-              onClick={handleAddToCart}
-            >
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
-                ADICIONAR COLEÇÃO
-              </span>
-              <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            </button>
-            <button
-              className="w-full py-3 sm:py-4 text-sm sm:text-base font-bold rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-105 border-2 hover:shadow-lg"
-              style={{ color: '#4B014E', borderColor: '#4B014E', backgroundColor: 'transparent' }}
-              onClick={handleAddToWishlist}
-            >
-              <span className="flex items-center justify-center gap-2">
-                <Heart size={16} className="sm:w-[18px] sm:h-[18px]" />
-                ADICIONAR AOS FAVORITOS
-              </span>
-            </button>
+        ) : (
+          /* Layout Desktop - Horizontal */
+          <div className="flex-1 flex overflow-hidden">
+            
+            {/* Left Side - Item Selection Grid */}
+            <div className="flex-1 p-6 overflow-y-auto">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                {items.map((item, index) => {
+                  const isSelected = selectedItems.has(item.id);
+                  const selection = selectedItems.get(item.id);
+                  const hasVariants = item.variants?.length > 1;
+                  
+                  return (
+                    <div
+                      key={item.id || index}
+                      className={`relative border-2 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer ${
+                        isSelected 
+                          ? 'border-[#4B014E] ring-2 ring-[#4B014E] ring-opacity-30 shadow-lg' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {/* Item Image */}
+                      <div className="aspect-square relative overflow-hidden bg-gray-50">
+                        <img
+                          src={selection?.selectedVariant?.image?.url || 
+                               item.variants?.[0]?.image?.url || 
+                               item.image}
+                          alt={item.name}
+                          className="w-full h-full object-cover transition-all duration-300"
+                          loading="lazy"
+                        />
+                        
+                        {/* Selection Checkbox */}
+                        <div className="absolute top-3 left-3">
+                          <button
+                            onClick={() => toggleItemSelection(item)}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                              isSelected
+                                ? 'bg-[#4B014E] border-[#4B014E] text-white'
+                                : 'bg-white border-gray-300 hover:border-[#4B014E]'
+                            }`}
+                          >
+                            {isSelected && (
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                                <polyline points="20,6 9,17 4,12"></polyline>
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Variant Selector Button */}
+                        {hasVariants && isSelected && (
+                          <div className="absolute top-3 right-3">
+                            <button
+                              onClick={() => setShowVariantSelector(showVariantSelector === item.id ? null : item.id)}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 ${
+                                showVariantSelector === item.id 
+                                  ? 'bg-[#4B014E] text-white' 
+                                  : 'bg-white/90 text-gray-700 hover:bg-[#4B014E] hover:text-white'
+                              }`}
+                            >
+                              <svg 
+                                width="16" 
+                                height="16" 
+                                viewBox="0 0 24 24" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                strokeWidth="2"
+                                className={`transition-transform duration-200 ${
+                                  showVariantSelector === item.id ? 'rotate-45' : ''
+                                }`}
+                              >
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Item Info */}
+                      <div className="p-3">
+                        <h4 className="font-semibold text-sm mb-1 line-clamp-2 min-h-[1.25rem]" style={{ color: '#1C1C1C' }}>
+                          {item.name}
+                        </h4>
+                        
+                        {/* Nome da variante selecionada */}
+                        {selection?.selectedVariant && hasVariants && (
+                          <p className="text-xs text-[#4B014E] font-medium mb-1 bg-purple-50 px-2 py-1 rounded-full inline-block">
+                            {selection.selectedVariant.title}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm">
+                            {selection?.selectedVariant ? (
+                              <>
+                                <span className="font-bold text-[#4B014E]">
+                                  $ {parseFloat(selection.selectedVariant.price.amount).toFixed(2)}
+                                </span>
+                                {selection.selectedVariant.compareAtPrice?.amount && (
+                                  <span className="text-xs text-gray-400 line-through ml-2">
+                                    $ {parseFloat(selection.selectedVariant.compareAtPrice.amount).toFixed(2)}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="font-bold text-[#4B014E]">
+                                $ {(item.price || 0).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+                          {hasVariants && isSelected && (
+                            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+                              {item.variants.length} options
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Indicador de múltiplas variantes */}
+                      {hasVariants && !isSelected && (
+                        <div className="absolute bottom-3 right-3">
+                          <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm border">
+                            {item.variants.length} options
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Variant Selector Dropdown */}
+                      {showVariantSelector === item.id && hasVariants && (
+                        <div className="absolute inset-x-0 bottom-0 bg-white border-t border-gray-200 p-3 max-h-40 overflow-y-auto shadow-lg z-10">
+                          <h5 className="text-xs font-semibold text-gray-700 mb-2">Choose an option:</h5>
+                          <div className="space-y-1">
+                            {item.variants.map((variant) => {
+                              const isAvailable = variant.availableForSale !== false;
+                              return (
+                                <button
+                                  key={variant.id}
+                                  onClick={() => updateVariantSelection(item.id, variant)}
+                                  disabled={!isAvailable}
+                                  className={`w-full text-left text-xs p-2 rounded border transition-all duration-200 ${
+                                    selection?.selectedVariant?.id === variant.id
+                                      ? 'bg-[#4B014E] text-white border-[#4B014E]'
+                                      : isAvailable
+                                        ? 'bg-gray-50 hover:bg-gray-100 border-gray-200 hover:border-[#4B014E]'
+                                        : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-medium">{variant.title}</span>
+                                    <span className="font-bold">
+                                      $ {parseFloat(variant.price.amount).toFixed(2)}
+                                    </span>
+                                  </div>
+                                  {!isAvailable && (
+                                    <span className="text-xs text-red-400">Unavailable</span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right Side - Selection Summary */}
+            <div className="w-80 bg-gray-50 border-l border-gray-200 flex flex-col">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Selected Items</h3>
+                <p className="text-sm text-gray-600">{selectedItems.size} of {items.length} items</p>
+              </div>
+
+              {/* Selected Items List */}
+              <div className="flex-1 p-6 overflow-y-auto">
+                {selectedItemsArray.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No items selected</p>
+                ) : (
+                  <div className="space-y-4">
+                    {selectedItemsArray.map((selection) => (
+                      <div key={selection.item.id} className="flex gap-3 bg-white p-3 rounded-lg border">
+                        <img
+                          src={selection.selectedVariant?.image?.url || 
+                               selection.item.variants?.[0]?.image?.url ||
+                               selection.item.image}
+                          alt={selection.item.name}
+                          className="w-16 h-16 object-cover rounded transition-all duration-300"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm line-clamp-2 mb-1">{selection.item.name}</h4>
+                          {selection.selectedVariant && selection.selectedVariant.title && (
+                            <p className="text-xs text-[#4B014E] font-medium mb-1 bg-purple-50 px-2 py-1 rounded-full inline-block">
+                              {selection.selectedVariant.title}
+                            </p>
+                          )}
+                          <p className="text-sm font-bold text-[#4B014E]">
+                            $ {selection.selectedVariant 
+                              ? parseFloat(selection.selectedVariant.price.amount).toFixed(2)
+                              : (selection.item.price || 0).toFixed(2)
+                            }
+                          </p>
+                          {selection.selectedVariant?.compareAtPrice?.amount && 
+                           parseFloat(selection.selectedVariant.compareAtPrice.amount) > parseFloat(selection.selectedVariant.price.amount) && (
+                            <p className="text-xs text-gray-400 line-through">
+                              $ {parseFloat(selection.selectedVariant.compareAtPrice.amount).toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => toggleItemSelection(selection.item)}
+                          className="w-6 h-6 text-gray-400 hover:text-red-500 transition-colors duration-200"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Price Summary & Actions */}
+              <div className="p-6 border-t border-gray-200 bg-white">
+                {selectedItems.size > 0 && (
+                  <div className="mb-4 space-y-2">
+                    {savings > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Original price:</span>
+                        <span className="line-through text-gray-400">$ {totalOriginalPrice.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total:</span>
+                      <span className="text-[#4B014E]">$ {totalPrice.toFixed(2)}</span>
+                    </div>
+                    {savings > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>You save:</span>
+                        <span>$ {savings.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={selectedItems.size === 0 || isAddingToCart}
+                    className="w-full py-3 bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white font-bold rounded-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      {isAddingToCart ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <ShoppingCart size={18} />
+                      )}
+                      {isAddingToCart ? 'Adding to Cart...' : 'Add to Cart'}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={handleAddToWishlist}
+                    disabled={selectedItems.size === 0 || isAddingToWishlist}
+                    className="w-full py-3 border-2 border-[#4B014E] text-[#4B014E] font-bold rounded-xl hover:bg-[#4B014E] hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      {isAddingToWishlist ? (
+                        <div className="w-5 h-5 border-2 border-[#4B014E] border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Heart size={18} />
+                      )}
+                      {isAddingToWishlist ? 'Adding to Wishlist...' : 'Add to Wishlist'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -1219,7 +1876,7 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
 
 const VariantCard = ({ variant, isSelected, onSelect, modalProduct }) => {
   const isAvailable = variant.availableForSale;
-  
+
   return (
     <button
       onClick={onSelect}
@@ -1251,7 +1908,7 @@ const VariantCard = ({ variant, isSelected, onSelect, modalProduct }) => {
         {isSelected && (
           <div className="absolute inset-0 bg-[#4B014E] bg-opacity-10 flex items-center justify-center">
             <div className="w-8 h-8 bg-[#4B014E] rounded-full flex items-center justify-center shadow-lg animate-pulse">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
                 <polyline points="20,6 9,17 4,12"></polyline>
               </svg>
             </div>
@@ -1261,7 +1918,7 @@ const VariantCard = ({ variant, isSelected, onSelect, modalProduct }) => {
         {/* Indicador de indisponível */}
         {!isAvailable && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <span className="text-white text-sm font-semibold">Indisponível</span>
+            <span className="text-white text-sm font-semibold">Unavailable</span>
           </div>
         )}
         
@@ -1324,6 +1981,7 @@ const CollectionCard = ({ collection, sectionType }) => {
   // Calcular média dos ratings dos produtos da coleção
   const ratings = items
     .map(item => typeof item.rating === 'number' ? item.rating : parseFloat(item.rating))
+   
     .filter(r => !isNaN(r));
   const avgRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : null;
 
@@ -1366,7 +2024,7 @@ const CollectionCard = ({ collection, sectionType }) => {
                   className="px-2 py-1 rounded-full text-white text-xs font-bold shadow-sm"
                   style={{ backgroundColor: '#4B014E' }}
                 >
-                  {items.length} itens
+                  {items.length} items
                 </div>
               </div>
             )}
