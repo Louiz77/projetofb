@@ -1088,6 +1088,11 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
   const [notification, setNotification] = useState(null); // {type: 'success'|'error', message: string}
   const [isMobile, setIsMobile] = useState(false);
   
+  // Estados para seleção de variantes
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [activeItemForVariants, setActiveItemForVariants] = useState(null);
+  
   // Estados para lógica de desconto
   const [discountInfo, setDiscountInfo] = useState({
     percentage: collection.discountPercentage || 20, // Pode vir dos metafields do Shopify
@@ -2152,82 +2157,124 @@ const CollectionCard = ({ collection, sectionType }) => {
     .filter(p => !isNaN(p))
     .reduce((a, b) => a + b, 0);
 
+  // Lógica da promoção de 20%
+  const hasPromotion = hasItems && totalPrice > 0;
+  const discountPercent = 20;
+  const discountedPrice = hasPromotion ? totalPrice * (1 - discountPercent / 100) : totalPrice;
+  const savings = hasPromotion ? totalPrice - discountedPrice : 0;
+
   return (
     <>
-      <div className="relative">
+      <div className="relative group">
         <div
-          className="bg-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
+          className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100"
           onMouseEnter={() => !isMobile && setIsHovered(true)}
           onMouseLeave={() => !isMobile && setIsHovered(false)}
-          style={{ backgroundColor: '#F3ECE7' }}
+          onClick={handleItemView}
         >
-          {/* Ícones no topo */}
+          {/* Header da imagem */}
           <div className="relative">
-
-            {/* Ícone visualizar itens */}
-            {hasItems && (
-              <div className="absolute top-2 left-2 z-10">
-                <button
-                  onClick={handleItemView}
-                  className="w-7 h-7 bg-white/90 rounded-full flex items-center justify-center hover:text-white transition-all duration-200 hover:scale-110 shadow-sm"
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#4B014E'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.9)'}
-                >
-                  <Eye size={12} />
-                </button>
-              </div>
-            )}
-
-            {/* Badge de quantidade de itens */}
-            {hasItems && (
-              <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
-                <div 
-                  className="px-2 py-1 rounded-full text-white text-xs font-bold shadow-sm"
-                  style={{ backgroundColor: '#4B014E' }}
-                >
-                  {items.length} items
+            {/* Badge de promoção minimalista */}
+            {hasPromotion && (
+              <div className="absolute top-3 right-3 z-10">
+                <div className="bg-red-500 text-white px-2 py-1 rounded-md text-xs font-medium shadow-sm">
+                  -{discountPercent}%
                 </div>
               </div>
             )}
 
+            {/* Ícone visualizar - mais discreto */}
+            {hasItems && (
+              <div className="absolute top-3 left-3 z-10">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleItemView();
+                  }}
+                  className="w-7 h-7 bg-black/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-white/80 hover:bg-black/40 hover:text-white transition-all duration-200"
+                >
+                  <Eye size={14} />
+                </button>
+              </div>
+            )}
+
             {/* Imagem da coleção */}
-            <div className="aspect-[3/4] overflow-hidden">
+            <div className="aspect-[4/5] overflow-hidden bg-gray-100">
               <img
                 src={collection.image}
                 alt={collection.name}
-                className={`w-full h-full object-cover transition-transform duration-300 ${isHovered ? 'scale-105' : 'scale-100'}`}
+                className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'}`}
               />
             </div>
+
+            {/* Badge de quantidade - mais sutil */}
+            {hasItems && (
+              <div className="absolute bottom-3 left-3">
+                <div className="bg-white/90 backdrop-blur-sm text-gray-700 px-2 py-1 rounded-md text-xs font-medium shadow-sm">
+                  {items.length} {items.length === 1 ? 'item' : 'itens'}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Conteúdo principal */}
-          <div className="p-3">
-            <h4 className="font-semibold text-sm mb-2 line-clamp-1 min-h-[1.25rem]" style={{ color: '#1C1C1C' }}>
+          {/* Conteúdo */}
+          <div className="p-4 space-y-3">
+            {/* Nome da coleção */}
+            <h4 className="font-semibold text-sm text-gray-900 line-clamp-2 leading-relaxed min-h-[2.5rem]">
               {collection.name}
             </h4>
 
-            {/* Rating */}
-            <div className="flex items-center gap-1 mb-1">
-              <Star size={12} className="fill-yellow-400 text-yellow-400" />
-              <span className="text-xs font-medium" style={{ color: '#1C1C1C' }}>
+            {/* Rating minimalista */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star 
+                    key={i} 
+                    size={12} 
+                    className={`${i < Math.floor(avgRating || 0) ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}`} 
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500">
                 {avgRating !== null ? avgRating.toFixed(1) : '--'}
               </span>
             </div>
 
-            {/* Valor total da coleção */}
+            {/* Preços */}
             {hasItems && (
-              <div className="text-xs text-gray-600 mb-1">
-                Total: $ {totalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <div className="space-y-1">
+                {hasPromotion ? (
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-400 line-through">
+                      $ {totalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="font-bold text-red-600">
+                      $ {discountedPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-xs text-green-600">
+                      Saving $ {savings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="font-semibold text-gray-900">
+                    $ {totalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Faixa de preço (mantido caso queira usar) */}
+            {/* Faixa de preço (se existir) */}
             {collection.priceRange && (
-              <div className="text-sm font-bold" style={{ color: '#1C1C1C' }}>
+              <div className="text-sm font-medium text-gray-700">
                 {collection.priceRange}
               </div>
             )}
           </div>
+
+          {/* Overlay de hover */}
+          {!isMobile && (
+            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
+          )}
         </div>
       </div>
 
