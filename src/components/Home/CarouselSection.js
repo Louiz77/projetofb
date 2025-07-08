@@ -337,7 +337,7 @@ const CarouselSection = ({ title, products, id }) => {
                 } ${isMobile ? 'w-full justify-center text-base mb-2' : ''}`}
               >
                 <Eye size={18} className="group-hover:scale-110 transition-transform duration-300" />
-                <span className="font-medium">Ver Todos</span>
+                <span className="font-medium">View All</span>
               </button>
             </div>
             {/* Filters */}
@@ -708,7 +708,7 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
         )}
         {isNew && !isPromotion && !isLimitedStock && (
           <span className="bg-[#4B014E] text-[#F3ECE7] px-3 py-1 text-xs font-bold shadow-lg rounded-md">
-            NOVO
+            NEW
           </span>
         )}
       </div>
@@ -807,7 +807,7 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
         {/* Seletor de variantes - Desktop (hover) */}
         {!isMobile && Array.isArray(product.variants) && product.variants.length > 1 && (
           <div className={`absolute bottom-20 left-4 right-4 transition-all duration-500 ease-out z-30 ${
-            isHovered ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'
+            isHovered ? 'translate-y-0 opacity-60' : 'translate-y-8 opacity-0 pointer-events-none'
           }`}>
             <div className="bg-[#1C1C1C]/95 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg p-3 shadow-xl">
               <div className="flex gap-1 justify-center flex-wrap">
@@ -842,7 +842,7 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
         {/* Seletor de variantes - Mobile */}
         {isMobile && Array.isArray(product.variants) && product.variants.length > 1 && (
           <div className={`absolute bottom-4 left-4 right-4 transition-all duration-300 ${
-            showVariants ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+            showVariants ? 'translate-y-0 opacity-60' : 'translate-y-full opacity-0'
           }`}>
             <div className="bg-[#1C1C1C]/95 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg p-3">
               <div className="grid grid-cols-4 gap-2">

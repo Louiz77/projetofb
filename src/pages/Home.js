@@ -605,7 +605,7 @@ const Home = () => {
       {/* Kits Section */}
       <ProductSection 
           collections={collectionProducts} 
-          sectionType="kits"
+          sectionType="collections"
           heroImage="20250705_1829_Revolução de Estilo_remix_01jze7raa0fhptk2kezgwqxkrd.png"
       />
 

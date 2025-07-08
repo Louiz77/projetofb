@@ -10,13 +10,13 @@ const { addToWishlist } = wishlistHooks;
 const ProductSection = ({ 
   collections, 
   products, // Novo: para acessórios/bolsas
-  sectionType = 'kits',
+  sectionType = 'collections',
   heroImage,
-  heroTitle,
+  heroTitle,  
   heroSubtitle,
   heroButton = 'SHOP NOW',
-  maleLabel = 'MASCULINOS',
-  femaleLabel = 'FEMININOS'
+  maleLabel = 'MALE',
+  femaleLabel = 'FEMALE',
 }) => {
   // Estados do modal global de produto individual (devem estar dentro do componente)
   const [modalProduct, setModalProduct] = useState(null);
@@ -680,7 +680,7 @@ const ProductSection = ({
             <div className="relative overflow-hidden w-full h-full min-h-[600px] lg:min-h-[700px] group cursor-pointer">
               <img
                 src={heroImage || collections.image || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&h=600&fit=crop"}
-                alt={`${sectionType} promocionais`}
+                alt={`${sectionType} promo`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(168, 1, 1, 0.3), rgba(75, 1, 78, 0.4))' }} />
@@ -759,7 +759,6 @@ const ProductSection = ({
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {maleCollections.slice(maleProductIndex, maleProductIndex + itemsPerView).map(collection => (
                     <div key={collection.id}>
-                      <h4 className="text-sm lg:text-lg font-semibold text-white mb-2 line-clamp-1 min-h-[1.2rem] lg:min-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
                       <CollectionCard collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
                     </div>
                   ))}
@@ -809,7 +808,6 @@ const ProductSection = ({
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {femaleCollections.slice(femaleProductIndex, femaleProductIndex + itemsPerView).map(collection => (
                     <div key={collection.id}>
-                      <h4 className="text-sm lg:text-lg font-semibold text-white mb-2 line-clamp-1 min-h-[1.2rem] lg:min-h-[1.5rem]" title={collection.name}>{collection.name}</h4>
                       <CollectionCard collection={collection} setModalProduct={setModalProduct} setModalVariant={setModalVariant} />
                     </div>
                   ))}
