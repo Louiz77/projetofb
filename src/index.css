@@ -110,6 +110,37 @@
   transition: opacity 0.3s ease-in-out;
 }
 
+/* Transição suave para troca de imagem de variantes */
+.image-fade-transition {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Animação para mudança de variante */
+@keyframes imageVariantChange {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.variant-image-change {
+  animation: imageVariantChange 0.4s ease-out;
+}
+
+/* Melhoria geral para carregamento de imagens */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: optimize-contrast;
+}
+
 /* Melhor centralização de objetos */
 .object-center {
   object-position: center center;

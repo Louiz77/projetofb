@@ -226,9 +226,10 @@ const ProductSection = ({
               <div className="lg:w-1/2 relative bg-gradient-to-br from-gray-50 to-gray-100 flex">
                 <div className="w-full relative overflow-hidden flex">
                   <img 
+                    key={`product-${modalProduct.id}-variant-${modalVariant?.id || 'default'}`}
                     src={modalVariant?.image?.url || modalProduct.image} 
                     alt={modalProduct.name} 
-                    className="w-full h-full object-cover object-center transition-all duration-500 ease-out transform hover:scale-105 image-fade-transition" 
+                    className="w-full h-full object-cover object-center transition-all duration-500 ease-out transform hover:scale-105 image-fade-transition variant-image-change" 
                     style={{
                       objectPosition: 'center center',
                       imageRendering: 'auto',
@@ -1088,19 +1089,100 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
   const [notification, setNotification] = useState(null); // {type: 'success'|'error', message: string}
   const [isMobile, setIsMobile] = useState(false);
   
-  // Estados para seleção de variantes
-  const [selectedColor, setSelectedColor] = useState(null);
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [activeItemForVariants, setActiveItemForVariants] = useState(null);
+  // Estados para seleção de variantes por produto
+  const [productVariants, setProductVariants] = useState(new Map()); // Map<itemId, {selectedColor, selectedSize, availableVariants}>
   
   // Estados para lógica de desconto
   const [discountInfo, setDiscountInfo] = useState({
-    percentage: collection.discountPercentage || 20, // Pode vir dos metafields do Shopify
+    percentage: collection.discountPercentage || 20,
     minItemsForDiscount: collection.minItemsForDiscount || Math.max(1, items.length - 1),
     isActive: false,
     originalTotal: 0,
     discountedTotal: 0
   });
+
+  // Helper para extrair cores únicas das variantes de um produto
+  const getProductColors = (item) => {
+    if (!item.variants) return [];
+    
+    const colors = new Set();
+    item.variants.forEach(variant => {
+      // Tentar extrair cor do título da variante (ex: "Black / S", "Red / M")
+      const colorMatch = variant.title?.split(' / ')[0] || variant.title;
+      if (colorMatch) {
+        colors.add(colorMatch.trim());
+      }
+    });
+    
+    return Array.from(colors);
+  };
+
+  // Helper para extrair tamanhos únicos das variantes de um produto
+  const getProductSizes = (item) => {
+    if (!item.variants) return [];
+    
+    const sizes = new Set();
+    item.variants.forEach(variant => {
+      // Tentar extrair tamanho do título da variante (ex: "Black / S", "Red / M")
+      const parts = variant.title?.split(' / ');
+      if (parts && parts.length > 1) {
+        sizes.add(parts[1].trim());
+      }
+    });
+    
+    return Array.from(sizes);
+  };
+
+  // Helper para verificar se uma combinação cor/tamanho está disponível
+  const isVariantAvailable = (item, color, size) => {
+    if (!item.variants) return false;
+    
+    const variant = item.variants.find(v => {
+      const parts = v.title?.split(' / ') || [];
+      const variantColor = parts[0]?.trim();
+      const variantSize = parts[1]?.trim();
+      
+      return variantColor === color && variantSize === size && v.availableForSale;
+    });
+    
+    return !!variant;
+  };
+
+  // Helper para encontrar variante específica
+  const findVariant = (item, color, size) => {
+    if (!item.variants) return null;
+    
+    return item.variants.find(v => {
+      const parts = v.title?.split(' / ') || [];
+      const variantColor = parts[0]?.trim();
+      const variantSize = parts[1]?.trim();
+      
+      return variantColor === color && variantSize === size;
+    });
+  };
+
+  // Helper para mapear cor para código de cor (fallback básico)
+  const getColorCode = (colorName) => {
+    const colorMap = {
+      'Black': '#000000',
+      'White': '#FFFFFF',
+      'Red': '#FF0000',
+      'Blue': '#0000FF',
+      'Green': '#008000',
+      'Yellow': '#FFFF00',
+      'Pink': '#FFC0CB',
+      'Purple': '#800080',
+      'Orange': '#FFA500',
+      'Brown': '#A52A2A',
+      'Gray': '#808080',
+      'Grey': '#808080',
+      'Navy': '#000080',
+      'Beige': '#F5F5DC',
+      'Cream': '#FFFDD0'
+    };
+    
+    return colorMap[colorName] || '#CCCCCC'; // Cor padrão se não encontrar
+  };
 
   // Detectar mobile
   useEffect(() => {
@@ -1117,6 +1199,8 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
   useEffect(() => {
     if (isOpen && items.length > 0) {
       const initialSelection = new Map();
+      const initialVariants = new Map();
+      
       items.forEach(item => {
         // Buscar primeira variante disponível
         const availableVariant = item.variants?.find(variant => 
@@ -1126,14 +1210,28 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
         const firstVariant = availableVariant || item.variants?.[0] || null;
         
         if (firstVariant) {
+          // Adicionar à seleção
           initialSelection.set(item.id, {
             item,
             selectedVariant: firstVariant
           });
+          
+          // Inicializar estado de variantes para este produto
+          const parts = firstVariant.title?.split(' / ') || [];
+          const initialColor = parts[0]?.trim() || null;
+          const initialSize = parts[1]?.trim() || null;
+          
+          initialVariants.set(item.id, {
+            selectedColor: initialColor,
+            selectedSize: initialSize,
+            colors: getProductColors(item),
+            sizes: getProductSizes(item)
+          });
         }
       });
+      
       setSelectedItems(initialSelection);
-      // Reset outros estados quando modal abre
+      setProductVariants(initialVariants);
       setShowVariantSelector(null);
       setCurrentItemIndex(0);
     }
@@ -1149,7 +1247,74 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
     }
   }, [notification]);
 
-  // Funções para gerenciar seleção
+  // Função para selecionar cor
+  const selectColor = (itemId, color) => {
+    const currentVariantState = productVariants.get(itemId);
+    if (!currentVariantState) return;
+    
+    const item = items.find(i => i.id === itemId);
+    const currentSize = currentVariantState.selectedSize;
+    
+    // Verificar se a combinação cor + tamanho atual está disponível
+    let newSize = currentSize;
+    if (currentSize && !isVariantAvailable(item, color, currentSize)) {
+      // Se o tamanho atual não está disponível para esta cor, encontrar o primeiro disponível
+      const availableSizes = currentVariantState.sizes.filter(size => 
+        isVariantAvailable(item, color, size)
+      );
+      newSize = availableSizes.length > 0 ? availableSizes[0] : currentSize;
+    }
+    
+    // Atualizar estado de variantes
+    const newVariantState = {
+      ...currentVariantState,
+      selectedColor: color,
+      selectedSize: newSize
+    };
+    
+    const newProductVariants = new Map(productVariants);
+    newProductVariants.set(itemId, newVariantState);
+    setProductVariants(newProductVariants);
+    
+    // Encontrar e atualizar a variante selecionada
+    const newVariant = findVariant(item, color, newSize);
+    if (newVariant) {
+      updateVariantSelection(itemId, newVariant);
+    }
+  };
+
+  // Função para selecionar tamanho
+  const selectSize = (itemId, size) => {
+    const currentVariantState = productVariants.get(itemId);
+    if (!currentVariantState) return;
+    
+    const item = items.find(i => i.id === itemId);
+    const currentColor = currentVariantState.selectedColor;
+    
+    // Verificar se a combinação cor atual + tamanho está disponível
+    if (currentColor && !isVariantAvailable(item, currentColor, size)) {
+      // Se não está disponível, não permitir a seleção
+      return;
+    }
+    
+    // Atualizar estado de variantes
+    const newVariantState = {
+      ...currentVariantState,
+      selectedSize: size
+    };
+    
+    const newProductVariants = new Map(productVariants);
+    newProductVariants.set(itemId, newVariantState);
+    setProductVariants(newProductVariants);
+    
+    // Encontrar e atualizar a variante selecionada
+    const newVariant = findVariant(item, currentColor, size);
+    if (newVariant) {
+      updateVariantSelection(itemId, newVariant);
+    }
+  };
+
+  // Funções para gerenciar seleção - REFATORADAS
   const toggleItemSelection = (item) => {
     const newSelection = new Map(selectedItems);
     const wasSelected = newSelection.has(item.id);
@@ -1170,29 +1335,37 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
         });
       }
     } else {
-      // Buscar primeira variante disponível
-      const availableVariant = item.variants?.find(variant => 
-        variant.availableForSale !== false
-      );
+      // Buscar variante atual do estado de variantes ou a primeira disponível
+      const currentVariantState = productVariants.get(item.id);
+      let selectedVariant = null;
       
-      const firstVariant = availableVariant || item.variants?.[0] || null;
+      if (currentVariantState && currentVariantState.selectedColor && currentVariantState.selectedSize) {
+        selectedVariant = findVariant(item, currentVariantState.selectedColor, currentVariantState.selectedSize);
+      }
       
-      newSelection.set(item.id, {
-        item,
-        selectedVariant: firstVariant
-      });
+      if (!selectedVariant) {
+        // Fallback para primeira variante disponível
+        selectedVariant = item.variants?.find(variant => variant.availableForSale !== false) || item.variants?.[0] || null;
+      }
       
-      // Verificar se ganhou o desconto
-      const newCount = newSelection.size;
-      const minForDiscount = collection.minItemsForDiscount || (items?.length - 1) || 1;
-      const hadDiscount = selectedItems.size >= minForDiscount;
-      const willHaveDiscount = newCount >= minForDiscount;
-      
-      if (!hadDiscount && willHaveDiscount) {
-        setNotification({ 
-          type: 'success', 
-          message: `Collection discount activated! ${collection.discountPercentage || 20}% off your bundle` 
+      if (selectedVariant) {
+        newSelection.set(item.id, {
+          item,
+          selectedVariant: selectedVariant
         });
+        
+        // Verificar se ganhou o desconto
+        const newCount = newSelection.size;
+        const minForDiscount = collection.minItemsForDiscount || (items?.length - 1) || 1;
+        const hadDiscount = selectedItems.size >= minForDiscount;
+        const willHaveDiscount = newCount >= minForDiscount;
+        
+        if (!hadDiscount && willHaveDiscount) {
+          setNotification({ 
+            type: 'success', 
+            message: `Collection discount activated! ${collection.discountPercentage || 20}% off your bundle` 
+          });
+        }
       }
     }
     setSelectedItems(newSelection);
@@ -1537,11 +1710,12 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
                     {/* Item Image */}
                     <div className="aspect-square relative overflow-hidden bg-gray-50">
                       <img
+                        key={`collection-${collection.id}-item-${currentItem.id}-variant-${selectedItems.get(currentItem.id)?.selectedVariant?.id || 'default'}`}
                         src={selectedItems.get(currentItem.id)?.selectedVariant?.image?.url || 
                              currentItem.variants?.[0]?.image?.url || 
                              currentItem.image}
                         alt={currentItem.name}
-                        className="w-full h-full object-cover transition-all duration-300"
+                        className="w-full h-full object-cover transition-all duration-300 image-fade-transition variant-image-change"
                         loading="lazy"
                       />
                       
@@ -1743,6 +1917,9 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
                   const isSelected = selectedItems.has(item.id);
                   const selection = selectedItems.get(item.id);
                   const hasVariants = item.variants?.length > 1;
+                  const variantState = productVariants.get(item.id);
+                  const colors = getProductColors(item);
+                  const sizes = getProductSizes(item);
                   
                   return (
                     <div
@@ -1752,26 +1929,27 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
                           ? 'border-[#4B014E] ring-2 ring-[#4B014E] ring-opacity-30 shadow-lg' 
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
+                      onClick={() => toggleItemSelection(item)}
                     >
                       {/* Item Image */}
                       <div className="aspect-square relative overflow-hidden bg-gray-50">
                         <img
+                          key={`grid-item-${item.id}-variant-${selection?.selectedVariant?.id || 'default'}`}
                           src={selection?.selectedVariant?.image?.url || 
                                item.variants?.[0]?.image?.url || 
                                item.image}
                           alt={item.name}
-                          className="w-full h-full object-cover transition-all duration-300"
+                          className="w-full h-full object-cover transition-all duration-300 image-fade-transition variant-image-change"
                           loading="lazy"
                         />
                         
-                        {/* Selection Checkbox */}
+                        {/* Selection Indicator */}
                         <div className="absolute top-3 left-3">
-                          <button
-                            onClick={() => toggleItemSelection(item)}
+                          <div
                             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
                               isSelected
                                 ? 'bg-[#4B014E] border-[#4B014E] text-white'
-                                : 'bg-white border-gray-300 hover:border-[#4B014E]'
+                                : 'bg-white border-gray-300'
                             }`}
                           >
                             {isSelected && (
@@ -1779,48 +1957,83 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
                                 <polyline points="20,6 9,17 4,12"></polyline>
                               </svg>
                             )}
-                          </button>
+                          </div>
                         </div>
 
-                        {/* Variant Selector Button */}
-                        {hasVariants && isSelected && (
+                        {/* Número de variantes indicator */}
+                        {hasVariants && (
                           <div className="absolute top-3 right-3">
-                            <button
-                              onClick={() => setShowVariantSelector(showVariantSelector === item.id ? null : item.id)}
-                              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 ${
-                                showVariantSelector === item.id 
-                                  ? 'bg-[#4B014E] text-white' 
-                                  : 'bg-white/90 text-gray-700 hover:bg-[#4B014E] hover:text-white'
-                              }`}
-                            >
-                              <svg 
-                                width="16" 
-                                height="16" 
-                                viewBox="0 0 24 24" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                strokeWidth="2"
-                                className={`transition-transform duration-200 ${
-                                  showVariantSelector === item.id ? 'rotate-45' : ''
-                                }`}
-                              >
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
-                              </svg>
-                            </button>
+                            <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm border">
+                              {item.variants.length} options
+                            </div>
                           </div>
                         )}
                       </div>
 
                       {/* Item Info */}
                       <div className="p-3">
-                        <h4 className="font-semibold text-sm mb-1 line-clamp-2 min-h-[1.25rem]" style={{ color: '#1C1C1C' }}>
+                        <h4 className="font-semibold text-sm mb-2 line-clamp-2 min-h-[1.25rem]" style={{ color: '#1C1C1C' }}>
                           {item.name}
                         </h4>
                         
+                        {/* Color Selection - Apenas se selecionado e tem cores */}
+                        {isSelected && colors.length > 0 && (
+                          <div className="mb-3" onClick={(e) => e.stopPropagation()}>
+                            <label className="text-xs font-medium text-gray-700 block mb-2">Color:</label>
+                            <div className="flex flex-wrap gap-1">
+                              {colors.map((color) => (
+                                <button
+                                  key={color}
+                                  onClick={() => selectColor(item.id, color)}
+                                  className={`w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+                                    variantState?.selectedColor === color
+                                      ? 'border-[#4B014E] shadow-md scale-110'
+                                      : 'border-gray-300 hover:border-gray-400'
+                                  }`}
+                                  style={{ backgroundColor: getColorCode(color) }}
+                                  title={color}
+                                />
+                              ))}
+                            </div>
+                            {variantState?.selectedColor && (
+                              <span className="text-xs text-gray-600 mt-1 block">
+                                {variantState.selectedColor}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Size Selection - Apenas se selecionado e tem tamanhos */}
+                        {isSelected && sizes.length > 0 && (
+                          <div className="mb-3" onClick={(e) => e.stopPropagation()}>
+                            <label className="text-xs font-medium text-gray-700 block mb-2">Size:</label>
+                            <select
+                              value={variantState?.selectedSize || ''}
+                              onChange={(e) => selectSize(item.id, e.target.value)}
+                              className="w-full text-xs border border-gray-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-[#4B014E] focus:border-transparent"
+                            >
+                              {sizes.map((size) => {
+                                const isAvailable = variantState?.selectedColor 
+                                  ? isVariantAvailable(item, variantState.selectedColor, size)
+                                  : true;
+                                
+                                return (
+                                  <option 
+                                    key={size} 
+                                    value={size}
+                                    disabled={!isAvailable}
+                                  >
+                                    {size} {!isAvailable ? '(Out of stock)' : ''}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                        )}
+                        
                         {/* Nome da variante selecionada */}
                         {selection?.selectedVariant && hasVariants && (
-                          <p className="text-xs text-[#4B014E] font-medium mb-1 bg-purple-50 px-2 py-1 rounded-full inline-block">
+                          <p className="text-xs text-[#4B014E] font-medium mb-2 bg-purple-50 px-2 py-1 rounded-full inline-block">
                             {selection.selectedVariant.title}
                           </p>
                         )}
@@ -1844,58 +2057,8 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
                               </span>
                             )}
                           </div>
-                          {hasVariants && isSelected && (
-                            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
-                              {item.variants.length} options
-                            </span>
-                          )}
                         </div>
                       </div>
-
-                      {/* Indicador de múltiplas variantes */}
-                      {hasVariants && !isSelected && (
-                        <div className="absolute bottom-3 right-3">
-                          <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm border">
-                            {item.variants.length} options
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Variant Selector Dropdown */}
-                      {showVariantSelector === item.id && hasVariants && (
-                        <div className="absolute inset-x-0 bottom-0 bg-white border-t border-gray-200 p-3 max-h-40 overflow-y-auto shadow-lg z-10">
-                          <h5 className="text-xs font-semibold text-gray-700 mb-2">Choose an option:</h5>
-                          <div className="space-y-1">
-                            {item.variants.map((variant) => {
-                              const isAvailable = variant.availableForSale !== false;
-                              return (
-                                <button
-                                  key={variant.id}
-                                  onClick={() => updateVariantSelection(item.id, variant)}
-                                  disabled={!isAvailable}
-                                  className={`w-full text-left text-xs p-2 rounded border transition-all duration-200 ${
-                                    selection?.selectedVariant?.id === variant.id
-                                      ? 'bg-[#4B014E] text-white border-[#4B014E]'
-                                      : isAvailable
-                                        ? 'bg-gray-50 hover:bg-gray-100 border-gray-200 hover:border-[#4B014E]'
-                                        : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                  }`}
-                                >
-                                  <div className="flex justify-between items-center">
-                                    <span className="font-medium">{variant.title}</span>
-                                    <span className="font-bold">
-                                      $ {parseFloat(variant.price.amount).toFixed(2)}
-                                    </span>
-                                  </div>
-                                  {!isAvailable && (
-                                    <span className="text-xs text-red-400">Unavailable</span>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -1918,11 +2081,12 @@ const CollectionModal = ({ collection, isOpen, onClose }) => {
                     {selectedItemsArray.map((selection) => (
                       <div key={selection.item.id} className="flex gap-3 bg-white p-3 rounded-lg border">
                         <img
+                          key={`summary-${selection.item.id}-variant-${selection.selectedVariant?.id || 'default'}`}
                           src={selection.selectedVariant?.image?.url || 
                                selection.item.variants?.[0]?.image?.url ||
                                selection.item.image}
                           alt={selection.item.name}
-                          className="w-16 h-16 object-cover rounded transition-all duration-300"
+                          className="w-16 h-16 object-cover rounded transition-all duration-300 image-fade-transition"
                         />
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm line-clamp-2 mb-1">{selection.item.name}</h4>
