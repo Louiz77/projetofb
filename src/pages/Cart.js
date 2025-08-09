@@ -167,6 +167,12 @@ const CartModal = () => {
         variables: { cartId },
       });
 
+      // Verificar se o cart existe e tem lines
+      if (!data.cart || !data.cart.lines || !data.cart.lines.edges) {
+        console.warn("Cart não encontrado ou vazio no Shopify");
+        return;
+      }
+
       const lineToRemove = data.cart.lines.edges.find(
         ({ node }) => node.merchandise?.id === item.id
       );

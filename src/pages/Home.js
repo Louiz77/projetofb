@@ -13,6 +13,19 @@ import { auth, db, doc, getDoc, setDoc, onSnapshot } from '../client/firebaseCon
 import client from '../client/ShopifyClient';
 import { useQuery, gql } from '@apollo/client';
 
+// Query para buscar metaobjeto por ID
+const GET_METAOBJECT = gql`
+  query GetMetaobject($id: ID!) {
+    metaobject(id: $id) {
+      id
+      type
+      field(key: "label") {
+        value
+      }
+    }
+  }
+`;
+
 const GET_HOME_PRODUCTS = gql`
   query {
     # Produtos com tag "Hot-Topics"
@@ -22,6 +35,33 @@ const GET_HOME_PRODUCTS = gql`
           id
           title
           tags
+          # Metacampos para gênero alvo - metaobjeto Shopify
+          metafields(identifiers: [
+            {namespace: "shopify", key: "target-gender"}
+          ]) {
+            key
+            value
+            namespace
+            reference {
+              ... on Metaobject {
+                id
+                type
+                field(key: "label") {
+                  value
+                }
+              }
+            }
+          }
+          # Fallback para metafields customizados
+          customMetafields: metafields(identifiers: [
+            {namespace: "custom", key: "genero_alvo"},
+            {namespace: "custom", key: "target_gender"},
+            {namespace: "custom", key: "gender"}
+          ]) {
+            key
+            value
+            namespace
+          }
           images(first: 1) {
             edges {
               node {
@@ -54,6 +94,33 @@ const GET_HOME_PRODUCTS = gql`
           id
           title
           tags
+          # Metacampos para gênero alvo - metaobjeto Shopify
+          metafields(identifiers: [
+            {namespace: "shopify", key: "target-gender"}
+          ]) {
+            key
+            value
+            namespace
+            reference {
+              ... on Metaobject {
+                id
+                type
+                field(key: "label") {
+                  value
+                }
+              }
+            }
+          }
+          # Fallback para metafields customizados
+          customMetafields: metafields(identifiers: [
+            {namespace: "custom", key: "genero_alvo"},
+            {namespace: "custom", key: "target_gender"},
+            {namespace: "custom", key: "gender"}
+          ]) {
+            key
+            value
+            namespace
+          }
           images(first: 1) {
             edges {
               node {
@@ -86,6 +153,33 @@ const GET_HOME_PRODUCTS = gql`
           id
           title
           tags
+          # Metacampos para gênero alvo - metaobjeto Shopify
+          metafields(identifiers: [
+            {namespace: "shopify", key: "target-gender"}
+          ]) {
+            key
+            value
+            namespace
+            reference {
+              ... on Metaobject {
+                id
+                type
+                field(key: "label") {
+                  value
+                }
+              }
+            }
+          }
+          # Fallback para metafields customizados
+          customMetafields: metafields(identifiers: [
+            {namespace: "custom", key: "genero_alvo"},
+            {namespace: "custom", key: "target_gender"},
+            {namespace: "custom", key: "gender"}
+          ]) {
+            key
+            value
+            namespace
+          }
           images(first: 1) {
             edges {
               node {
@@ -118,6 +212,30 @@ const GET_HOME_PRODUCTS = gql`
           id
           title
           tags
+          # Metacampos para gênero alvo - metaobjeto Shopify
+          metafields(identifiers: [
+            {namespace: "shopify", key: "target-gender"}
+          ]) {
+            key
+            value
+            namespace
+            reference {
+              ... on Metaobject {
+                id
+                type
+                field(key: "label") {
+                  value
+                }
+              }
+            }
+          }
+          customMetafields: metafields(identifiers: [
+            {namespace: "custom", key: "genero_alvo"}
+          ]) {
+            key
+            value
+            namespace
+          }
           images(first: 1) {
             edges {
               node {
@@ -150,6 +268,30 @@ const GET_HOME_PRODUCTS = gql`
           id
           title
           tags
+          # Metacampos para gênero alvo - metaobjeto Shopify
+          metafields(identifiers: [
+            {namespace: "shopify", key: "target-gender"}
+          ]) {
+            key
+            value
+            namespace
+            reference {
+              ... on Metaobject {
+                id
+                type
+                field(key: "label") {
+                  value
+                }
+              }
+            }
+          }
+          customMetafields: metafields(identifiers: [
+            {namespace: "custom", key: "genero_alvo"}
+          ]) {
+            key
+            value
+            namespace
+          }
           images(first: 1) {
             edges {
               node {
@@ -181,6 +323,30 @@ const GET_HOME_PRODUCTS = gql`
           id
           title
           tags
+          # Metacampos para gênero alvo - metaobjeto Shopify
+          metafields(identifiers: [
+            {namespace: "shopify", key: "target-gender"}
+          ]) {
+            key
+            value
+            namespace
+            reference {
+              ... on Metaobject {
+                id
+                type
+                field(key: "label") {
+                  value
+                }
+              }
+            }
+          }
+          customMetafields: metafields(identifiers: [
+            {namespace: "custom", key: "genero_alvo"}
+          ]) {
+            key
+            value
+            namespace
+          }
           images(first: 1) {
             edges {
               node {
@@ -212,6 +378,30 @@ const GET_HOME_PRODUCTS = gql`
           id
           title
           tags
+          # Metacampos para gênero alvo - metaobjeto Shopify
+          metafields(identifiers: [
+            {namespace: "shopify", key: "target-gender"}
+          ]) {
+            key
+            value
+            namespace
+            reference {
+              ... on Metaobject {
+                id
+                type
+                field(key: "label") {
+                  value
+                }
+              }
+            }
+          }
+          customMetafields: metafields(identifiers: [
+            {namespace: "custom", key: "genero_alvo"}
+          ]) {
+            key
+            value
+            namespace
+          }
           images(first: 1) {
             edges {
               node {
@@ -295,8 +485,22 @@ const GET_HOME_PRODUCTS = gql`
 const Home = () => {
   const { loading, error, data } = useQuery(GET_HOME_PRODUCTS);
 
+  // Log para verificar dados da query
+  if (data) {
+    console.log('📊 Dados completos da query:', data);
+    if (data.hotTopicsProducts?.edges?.length > 0) {
+      console.log('🔥 Primeiro produto Hot Topics:', data.hotTopicsProducts.edges[0].node);
+    }
+    if (data.topProducts?.edges?.length > 0) {
+      console.log('⭐ Primeiro produto Top:', data.topProducts.edges[0].node);
+    }
+  }
+
   // Helper para transformar dados do produto SECTION
   const transformProduct = (product) => {
+    // Log para verificar estrutura completa do produto
+    console.log('📦 Produto completo recebido:', JSON.stringify(product, null, 2));
+    
     // Preservar todas as informações das variantes
     // Garante que cada variante preserve todos os campos essenciais
     const variants = product.variants?.edges?.map(edge => {
@@ -310,6 +514,185 @@ const Home = () => {
         compareAtPrice: v.compareAtPrice ? { ...v.compareAtPrice } : undefined
       };
     }) || [];
+
+    // Processar metacampos (especialmente genero_alvo)
+    const metafields = {};
+    
+    // Processar metafields principais (incluindo metaobjeto target-gender do Shopify)
+    if (product.metafields && Array.isArray(product.metafields)) {
+      console.log('🔍 Metacampos principais encontrados para produto:', product.title, product.metafields);
+      
+      product.metafields.forEach(metafield => {
+        if (metafield && metafield.key && metafield.value !== null) {
+          // Para metaobjeto target-gender, processar valor JSON
+          if (metafield.key === 'target-gender' && metafield.namespace === 'shopify') {
+            try {
+              // O valor vem como string JSON de array de IDs
+              const metaobjectIds = JSON.parse(metafield.value);
+              if (Array.isArray(metaobjectIds) && metaobjectIds.length > 0) {
+                const metaobjectId = metaobjectIds[0];
+                
+                // Analisar o título e tags do produto para inferir o gênero
+                const productTitle = product.title?.toLowerCase() || '';
+                const productTags = product.tags || [];
+                
+                // Indicadores femininos - expandidos
+                const femaleIndicators = [
+                  'female', 'women', 'girl', 'feminino', 'mulher', 'garota', 
+                  'spicy girl', 'y2k', 'lady', 'ladies', 'womens', 'girlfriend',
+                  'she', 'her', 'feminine', 'girly', 'princess', 'queen',
+                  // Termos de moda feminina
+                  'heels', 'stiletto', 'pumps', 'ballet', 'flats',
+                  'dress', 'skirt', 'blouse', 'bra', 'panties', 'lingerie',
+                  'makeup', 'lipstick', 'nail', 'beauty'
+                ];
+                
+                // Indicadores masculinos - expandidos  
+                const maleIndicators = [
+                  'male', 'men', 'boy', 'masculino', 'homem', 'garoto',
+                  'gentleman', 'guy', 'dude', 'bro', 'mans', 'mens',
+                  'he', 'him', 'masculine', 'manly', 'king', 'sir',
+                  // Termos de moda masculina
+                  'beard', 'mustache', 'tie', 'suit', 'tuxedo', 'blazer',
+                  'boxer', 'briefs', 'cologne', 'shaving'
+                ];
+                
+                // Indicadores neutros/unissex
+                const unisexIndicators = [
+                  'unisex', 'neutral', 'both', 'everyone', 'all', 'universal',
+                  'androgynous', 'gender neutral', 'genderless'
+                ];
+                
+                const hasFemaleIndicators = femaleIndicators.some(indicator => 
+                  productTitle.includes(indicator) || 
+                  productTags.some(tag => tag.toLowerCase().includes(indicator))
+                );
+                
+                const hasMaleIndicators = maleIndicators.some(indicator => 
+                  productTitle.includes(indicator) || 
+                  productTags.some(tag => tag.toLowerCase().includes(indicator))
+                );
+                
+                const hasUnisexIndicators = unisexIndicators.some(indicator => 
+                  productTitle.includes(indicator) || 
+                  productTags.some(tag => tag.toLowerCase().includes(indicator))
+                );
+                
+                // Mapeamento baseado no ID conhecido do metaobjeto
+                let genderFromId = null;
+                
+                // IDs conhecidos do Shopify Admin (você pode expandir conforme necessário)
+                const genderIdMap = {
+                  '157432053980': 'WOMEN',  // ID encontrado nos logs
+                  // Adicione outros IDs conforme descobrir
+                };
+                
+                if (metaobjectId && Object.keys(genderIdMap).some(id => metaobjectId.includes(id))) {
+                  const foundId = Object.keys(genderIdMap).find(id => metaobjectId.includes(id));
+                  genderFromId = genderIdMap[foundId];
+                  console.log('🆔 Gênero identificado por ID do metaobjeto:', genderFromId, 'ID:', foundId);
+                }
+                
+                // Decisão final do gênero (prioridade: ID > indicadores textuais)
+                let genderValue;
+                let inferredFrom;
+                
+                if (genderFromId) {
+                  // Se temos mapeamento por ID, usar com prioridade
+                  genderValue = genderFromId;
+                  inferredFrom = 'metaobject_id';
+                } else if (hasUnisexIndicators) {
+                  genderValue = 'UNISEX';
+                  inferredFrom = 'unisex_indicators';
+                } else if (hasFemaleIndicators && !hasMaleIndicators) {
+                  genderValue = 'WOMEN';
+                  inferredFrom = 'female_indicators';
+                } else if (hasMaleIndicators && !hasFemaleIndicators) {
+                  genderValue = 'MEN';
+                  inferredFrom = 'male_indicators';
+                } else if (hasFemaleIndicators && hasMaleIndicators) {
+                  // Só se tiver ambos os indicadores
+                  genderValue = 'UNISEX';
+                  inferredFrom = 'both_indicators';
+                } else {
+                  // Se não tiver nenhum indicador e nem ID conhecido, não especificar gênero
+                  genderValue = null;
+                  inferredFrom = 'no_indicators';
+                }
+                
+                // Só adicionar metafield se houver gênero identificado
+                if (genderValue) {
+                  metafields['genero_alvo'] = {
+                    key: 'genero_alvo',
+                    value: genderValue,
+                    namespace: 'shopify',
+                    source: 'metaobject',
+                    originalValue: metafield.value,
+                    inferredFrom: inferredFrom
+                  };
+                  
+                  console.log('🤖 Gênero identificado para', product.title, ':', genderValue, 
+                             '(Método:', inferredFrom, 'Fem:', hasFemaleIndicators, 'Masc:', hasMaleIndicators, 'ID:', metaobjectId, ')');
+                } else {
+                  console.log('🚫 Nenhum gênero identificado para', product.title, '- aparecerá apenas em ALL');
+                }
+                console.log('🎯 Metaobjeto target-gender processado:', genderValue, 'ID original:', metaobjectId, 'para produto:', product.title);
+              }
+            } catch (error) {
+              console.warn('⚠️ Erro ao processar metaobjeto target-gender:', error, 'Valor:', metafield.value);
+            }
+          } 
+          // Fallback: tentar extrair do references se disponível
+          else if (metafield.key === 'target-gender' && metafield.references?.edges?.length > 0) {
+            const genderLabel = metafield.references.edges[0].node.field?.value;
+            if (genderLabel) {
+              metafields['genero_alvo'] = {
+                key: 'genero_alvo',
+                value: genderLabel.toUpperCase(),
+                namespace: metafield.namespace || 'shopify',
+                source: 'metaobject'
+              };
+              console.log('🎯 Metaobjeto target-gender encontrado via references:', genderLabel, 'para produto:', product.title);
+            }
+          } else {
+            // Outros metafields normais
+            metafields[metafield.key] = {
+              key: metafield.key,
+              value: metafield.value,
+              namespace: metafield.namespace || 'shopify'
+            };
+          }
+        }
+      });
+    }
+    
+    // Processar metafields customizados como fallback
+    if (product.customMetafields && Array.isArray(product.customMetafields)) {
+      console.log('🔍 Metacampos customizados encontrados para produto:', product.title, product.customMetafields);
+      
+      product.customMetafields.forEach(metafield => {
+        if (metafield && metafield.key && metafield.value !== null) {
+          // Só adicionar se não existir já dos metafields principais
+          if (!metafields[metafield.key]) {
+            metafields[metafield.key] = {
+              key: metafield.key,
+              value: metafield.value,
+              namespace: metafield.namespace || 'custom',
+              source: 'custom'
+            };
+            
+            // Log específico para genero_alvo
+            if (metafield.key === 'genero_alvo') {
+              console.log('🎯 Metacampo custom genero_alvo encontrado:', metafield.value, 'para produto:', product.title);
+            }
+          }
+        }
+      });
+    }
+    
+    if (Object.keys(metafields).length === 0) {
+      console.log('⚠️ Nenhum metacampo encontrado para produto:', product.title);
+    }
 
     // Usar a primeira variante disponível para exibição principal
     const variant = variants[0];
@@ -327,7 +710,7 @@ const Home = () => {
       ? Math.round(((displayOriginalPrice - displayPrice) / displayOriginalPrice) * 100)
       : 0;
 
-    return {
+    const finalProduct = {
       id: product.id,
       name: product.title,
       image: product.images?.edges?.[0]?.node?.url || "https://via.placeholder.com/400x500 ",
@@ -335,6 +718,7 @@ const Home = () => {
       originalPrice: finalHasDiscount ? displayOriginalPrice : undefined, // Só inclui se há desconto
       discount: discountPercentage > 0 ? discountPercentage : undefined, // Só inclui se há desconto
       tags: product.tags || [],
+      metafields: metafields, // Adicionar metacampos processados
       isPromotion: product.tags?.includes("promoção"),
       isLimitedStock: product.tags?.includes("estoque-limitado"),
       isNew: product.tags?.includes("novo"),
@@ -343,6 +727,11 @@ const Home = () => {
       stockCount: variant?.availableForSale ? 3 : 0,
       _debugNote: hasInvertedValues ? 'Valores invertidos temporariamente para demonstração' : 'Valores corretos'
     };
+
+    // Log do produto final transformado
+    console.log('✅ Produto transformado:', finalProduct.name, 'Metacampos:', finalProduct.metafields);
+    
+    return finalProduct;
   };
 
   const transformCollection = (collection) => {

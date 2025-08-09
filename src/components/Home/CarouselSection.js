@@ -19,7 +19,7 @@ const ADD_TO_CART = gql`
 
 const CarouselSection = ({ title, products, id }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedFilter, setSelectedFilter] = useState('TODOS');
+  const [selectedFilter, setSelectedFilter] = useState('ALL');
   const [isMobile, setIsMobile] = useState(false);
   const carouselRef = useRef(null);
   const autoSlideRef = useRef(null);
@@ -49,8 +49,79 @@ const CarouselSection = ({ title, products, id }) => {
 
   // Filter products based on selection
   const filteredProducts = products.filter(product => {
-    if (selectedFilter === 'TODOS') return true;
-    return product.category?.toUpperCase() === selectedFilter;
+    if (selectedFilter === 'ALL') return true;
+    
+    // Log para debug dos metacampos
+    console.log('🔍 Filtrando produto:', product.name || product.title, 'Metacampos:', product.metafields, 'Filtro atual:', selectedFilter);
+    
+    // Check by Shopify metafield 'genero_alvo' (priority)
+    if (product.metafields && product.metafields.genero_alvo) {
+      const genderValue = product.metafields.genero_alvo.value?.toUpperCase();
+      console.log('🎯 Usando metacampo genero_alvo:', genderValue, 'para produto:', product.name || product.title);
+      
+      // UNISEX aparece em ambos os filtros MEN e WOMEN
+      if (genderValue === 'UNISEX') {
+        console.log('🔄 Produto UNISEX incluído em filtro:', selectedFilter);
+        return selectedFilter === 'MEN' || selectedFilter === 'WOMEN';
+      }
+      
+      if (selectedFilter === 'MEN') {
+        return genderValue === 'MEN' || genderValue === 'MALE' || 
+               genderValue === 'HOMEM' || genderValue === 'MASCULINO';
+      }
+      if (selectedFilter === 'WOMEN') {
+        return genderValue === 'WOMEN' || genderValue === 'FEMALE' || 
+               genderValue === 'MULHER' || genderValue === 'FEMININO';
+      }
+      
+      // Se chegou até aqui, o produto tem gênero mas não corresponde ao filtro atual
+      return false;
+    }
+    
+    // Fallback: Check by metafield with namespace (alternative format)
+    if (product.metafields && typeof product.metafields === 'object') {
+      // Procurar pelo metafield genero_alvo diretamente
+      const genderMetafield = product.metafields.genero_alvo || 
+                              product.metafields.gender || 
+                              product.metafields.target_gender;
+      
+      if (genderMetafield && genderMetafield.value) {
+        const genderValue = genderMetafield.value.toUpperCase();
+        
+        // UNISEX aparece em ambos os filtros MEN e WOMEN
+        if (genderValue === 'UNISEX') {
+          console.log('🔄 Produto UNISEX (fallback) incluído em filtro:', selectedFilter);
+          return selectedFilter === 'MEN' || selectedFilter === 'WOMEN';
+        }
+        
+        if (selectedFilter === 'MEN') {
+          return genderValue === 'MEN' || genderValue === 'MALE' || 
+                 genderValue === 'HOMEM' || genderValue === 'MASCULINO';
+        }
+        if (selectedFilter === 'WOMEN') {
+          return genderValue === 'WOMEN' || genderValue === 'FEMALE' || 
+                 genderValue === 'MULHER' || genderValue === 'FEMININO';
+        }
+        
+        // Se chegou até aqui, o produto tem gênero mas não corresponde ao filtro atual
+        return false;
+      }
+    }
+    
+    // Fallback: Check by productType (Shopify field) only if metafield not found
+    if (product.productType) {
+      const typeUpper = product.productType.toUpperCase();
+      if (selectedFilter === 'MEN') {
+        return typeUpper.includes('MEN') || typeUpper.includes('MALE') || 
+               typeUpper.includes('HOMEM') || typeUpper.includes('MASCULINO');
+      }
+      if (selectedFilter === 'WOMEN') {
+        return typeUpper.includes('WOMEN') || typeUpper.includes('FEMALE') || 
+               typeUpper.includes('MULHER') || typeUpper.includes('FEMININO');
+      }
+    }
+    
+    return false;
   });
 
   // Organize products by priority
@@ -66,8 +137,12 @@ const CarouselSection = ({ title, products, id }) => {
 
   const hasMultipleSlides = organizedProducts.length > itemsPerView;
 
-  // Cálculo dinâmico do maxIndex baseado no número real de produtos
-  const maxIndex = Math.max(0, organizedProducts.length - itemsPerView);
+  // Ajustar itemsPerView se há poucos produtos para evitar quebra visual
+  const adjustedItemsPerView = Math.min(itemsPerView, organizedProducts.length);
+  const shouldCenterItems = organizedProducts.length < itemsPerView;
+
+  // Cálculo dinâmico do maxIndex baseado no número real de produtos e ajustado
+  const maxIndex = Math.max(0, organizedProducts.length - adjustedItemsPerView);
   
   // Auto-remove notification after 5 seconds
   useEffect(() => {
@@ -232,12 +307,77 @@ const CarouselSection = ({ title, products, id }) => {
     // Aguarda a atualização dos produtos filtrados antes de reiniciar auto-slide
     setTimeout(() => {
       const newFilteredProducts = products.filter(product => {
-        if (filter === 'TODOS') return true;
-        return product.category?.toUpperCase() === filter;
+        if (filter === 'ALL') return true;
+        
+        // Check by Shopify metafield 'genero_alvo' (priority)
+        if (product.metafields && product.metafields.genero_alvo) {
+          const genderValue = product.metafields.genero_alvo.value?.toUpperCase();
+          
+          // UNISEX aparece em ambos os filtros MEN e WOMEN
+          if (genderValue === 'UNISEX') {
+            return filter === 'MEN' || filter === 'WOMEN';
+          }
+          
+          if (filter === 'MEN') {
+            return genderValue === 'MEN' || genderValue === 'MALE' || 
+                   genderValue === 'HOMEM' || genderValue === 'MASCULINO';
+          }
+          if (filter === 'WOMEN') {
+            return genderValue === 'WOMEN' || genderValue === 'FEMALE' || 
+                   genderValue === 'MULHER' || genderValue === 'FEMININO';
+          }
+          
+          // Se chegou até aqui, o produto tem gênero mas não corresponde ao filtro atual
+          return false;
+        }
+        
+        // Fallback: Check by metafield with namespace (alternative format)
+        if (product.metafields && typeof product.metafields === 'object') {
+          // Procurar pelo metafield genero_alvo diretamente
+          const genderMetafield = product.metafields.genero_alvo || 
+                                  product.metafields.gender || 
+                                  product.metafields.target_gender;
+          
+          if (genderMetafield && genderMetafield.value) {
+            const genderValue = genderMetafield.value.toUpperCase();
+            
+            // UNISEX aparece em ambos os filtros MEN e WOMEN
+            if (genderValue === 'UNISEX') {
+              return filter === 'MEN' || filter === 'WOMEN';
+            }
+            
+            if (filter === 'MEN') {
+              return genderValue === 'MEN' || genderValue === 'MALE' || 
+                     genderValue === 'HOMEM' || genderValue === 'MASCULINO';
+            }
+            if (filter === 'WOMEN') {
+              return genderValue === 'WOMEN' || genderValue === 'FEMALE' || 
+                     genderValue === 'MULHER' || genderValue === 'FEMININO';
+            }
+            
+            // Se chegou até aqui, o produto tem gênero mas não corresponde ao filtro atual
+            return false;
+          }
+        }
+        
+        // Fallback: Check by productType (Shopify field) only if metafield not found
+        if (product.productType) {
+          const typeUpper = product.productType.toUpperCase();
+          if (filter === 'MEN') {
+            return typeUpper.includes('MEN') || typeUpper.includes('MALE') || 
+                   typeUpper.includes('HOMEM') || typeUpper.includes('MASCULINO');
+          }
+          if (filter === 'WOMEN') {
+            return typeUpper.includes('WOMEN') || typeUpper.includes('FEMALE') || 
+                   typeUpper.includes('MULHER') || typeUpper.includes('FEMININO');
+          }
+        }
+        
+        return false;
       });
       
       // Só reinicia auto-slide se há produtos suficientes
-      if (newFilteredProducts.length > itemsPerView) {
+      if (newFilteredProducts.length > adjustedItemsPerView) {
         startAutoSlide();
       }
     }, 1000);
@@ -246,21 +386,21 @@ const CarouselSection = ({ title, products, id }) => {
   // Função para obter as cores do tema baseado no filtro selecionado
   const getThemeColors = () => {
     switch (selectedFilter) {
-      case 'TODOS':
+      case 'ALL':
         return {
           primary: '#F3ECE7', // Branco
           secondary: '#1C1C1C', // Preto
           border: '#F3ECE7',
           gradient: 'from-[#F3ECE7] to-[#F3ECE7]'
         };
-      case 'MULHER':
+      case 'WOMEN':
         return {
           primary: '#8A0101', // Vermelho
           secondary: '#8A0101',
           border: '#8A0101',
           gradient: 'from-[#8A0101] to-[#8A0101]'
         };
-      case 'HOMEM':
+      case 'MEN':
         return {
           primary: '#4B014E', // Roxo
           secondary: '#4B014E',
@@ -327,11 +467,11 @@ const CarouselSection = ({ title, products, id }) => {
               {/* Botão "Ver Todos" no canto direito */}
               <button 
                 className={`flex items-center gap-2 mt-3 px-4 py-2 transition-all duration-300 group self-start md:self-center border-2 ${
-                  selectedFilter === 'TODOS' 
+                  selectedFilter === 'ALL' 
                     ? 'bg-[#F3ECE7] text-[#1C1C1C] border-[#F3ECE7]'
-                    : selectedFilter === 'MULHER'
+                    : selectedFilter === 'WOMEN'
                     ? 'bg-[#8A0101] text-[#F3ECE7] border-[#8A0101] hover:bg-[#8A0101]/80'
-                    : selectedFilter === 'HOMEM'
+                    : selectedFilter === 'MEN'
                     ? 'bg-[#4B014E] text-[#F3ECE7] border-[#4B014E] hover:bg-[#4B014E]/80'
                     : 'bg-transparent text-[#F3ECE7] border-[#4B014E] hover:bg-[#4B014E]'
                 } ${isMobile ? 'w-full justify-center text-base mb-2' : ''}`}
@@ -342,15 +482,15 @@ const CarouselSection = ({ title, products, id }) => {
             </div>
             {/* Filters */}
             <div className={`flex ${isMobile ? 'flex-row w-full gap-2 justify-between' : 'flex-wrap gap-3'}`}>
-              {['TODOS', 'HOMEM', 'MULHER'].map((filter) => (
+              {['ALL', 'MEN', 'WOMEN'].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => handleFilterChange(filter)}
                   className={`px-4 py-2 md:px-6 md:py-3 text-sm font-medium transition-all duration-300 relative overflow-hidden group border-2 ${
                     selectedFilter === filter
-                      ? filter === 'TODOS'
+                      ? filter === 'ALL'
                         ? 'bg-[#F3ECE7] text-[#1C1C1C] border-[#F3ECE7] shadow-lg shadow-[#F3ECE7]/25'
-                        : filter === 'MULHER'
+                        : filter === 'WOMEN'
                         ? 'bg-[#8A0101] text-[#F3ECE7] border-[#8A0101] shadow-lg shadow-[#8A0101]/25'
                         : 'bg-[#4B014E] text-[#F3ECE7] border-[#4B014E] shadow-lg shadow-[#4B014E]/25'
                       : 'bg-transparent text-[#F3ECE7] border-[#4B014E] hover:bg-[#4B014E]/20'
@@ -369,7 +509,7 @@ const CarouselSection = ({ title, products, id }) => {
         {/* Carousel Container */}
         <div className="relative group">
           {/* Desktop Navigation Arrows */}
-          {!isMobile && hasMultipleSlides && (
+          {!isMobile && hasMultipleSlides && !shouldCenterItems && (
             <>
               <button
                 onClick={() => navigateCarousel('left')}
@@ -420,9 +560,11 @@ const CarouselSection = ({ title, products, id }) => {
             onTouchEnd={isMobile ? onTouchEnd : undefined}
           >
             <div
-              className={`flex transition-transform duration-700 ease-in-out gap-4 md:gap-6 ${isDragging ? 'transition-none' : ''}`}
+              className={`flex transition-transform duration-700 ease-in-out gap-4 md:gap-6 ${isDragging ? 'transition-none' : ''} ${
+                shouldCenterItems && !isMobile ? 'justify-center' : ''
+              }`}
               style={
-                isMobile && itemsPerView === 1
+                isMobile && adjustedItemsPerView === 1
                   ? (() => {
                       // Largura do card: 85vw
                       const cardWidth = 85;
@@ -454,24 +596,34 @@ const CarouselSection = ({ title, products, id }) => {
                         transform: `translateX(-${translateX}vw)`
                       };
                     })()
+                  : shouldCenterItems
+                  ? {
+                      // Para poucos itens no desktop, centraliza sem transform
+                      width: 'auto'
+                    }
                   : {
-                      transform: `translateX(-${(currentIndex * 100) / organizedProducts.length}%)`,
-                      width: `${organizedProducts.length * (100 / itemsPerView)}%`
+                      transform: `translateX(-${(currentIndex * 100) / Math.max(organizedProducts.length, adjustedItemsPerView)}%)`,
+                      width: `${Math.max(organizedProducts.length, adjustedItemsPerView) * (100 / adjustedItemsPerView)}%`
                     }
               }
             >
               {organizedProducts.map((product, index) => (
                 <div
                   key={`${product.id}-${index}`}
-                  className={isMobile && itemsPerView === 1 ? 'flex-shrink-0' : 'flex-shrink-0'}
+                  className={isMobile && adjustedItemsPerView === 1 ? 'flex-shrink-0' : 'flex-shrink-0'}
                   style={{
-                    width: isMobile && itemsPerView === 1 ? '85vw' : `${100 / itemsPerView}%`,
-                    maxWidth: isMobile ? '360px' : '300px',
+                    width: isMobile && adjustedItemsPerView === 1 
+                      ? '85vw' 
+                      : shouldCenterItems 
+                      ? `${Math.min(300, (100 / Math.max(organizedProducts.length, 1)))}px`
+                      : `${100 / adjustedItemsPerView}%`,
+                    maxWidth: isMobile ? '360px' : shouldCenterItems ? '300px' : '300px',
+                    minWidth: shouldCenterItems ? '250px' : 'auto'
                   }}
                 >
                   <EnhancedProductCard 
                     product={product} 
-                    isVisible={index >= currentIndex && index < currentIndex + itemsPerView}
+                    isVisible={index >= currentIndex && index < currentIndex + adjustedItemsPerView}
                     isMobile={isMobile}
                     setNotification={setNotification}
                   />
@@ -480,11 +632,11 @@ const CarouselSection = ({ title, products, id }) => {
             </div>
           </div>
 
-          {/* Gradient Overlays */}
+          {/* Gradient Overlays - Reduced width to prevent first card blur */}
           {!isMobile && (
             <>
-              <div className="absolute top-0 left-0 w-20 h-full bg-gradient-to-r from-[#1C1C1C] via-[#1C1C1C]/80 to-transparent z-10 pointer-events-none" />
-              <div className="absolute top-0 right-0 w-20 h-full bg-gradient-to-l from-[#1C1C1C] via-[#1C1C1C]/80 to-transparent z-10 pointer-events-none" />
+              <div className="absolute top-0 left-0 w-8 h-full bg-gradient-to-r from-[#1C1C1C] to-transparent z-10 pointer-events-none" />
+              <div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-[#1C1C1C] to-transparent z-10 pointer-events-none" />
             </>
           )}
 
@@ -497,8 +649,8 @@ const CarouselSection = ({ title, products, id }) => {
           )}
         </div>
 
-        {/* Progress Indicators - só mostra se há múltiplos slides */}
-        {hasMultipleSlides && maxIndex > 0 && !isMobile && (
+        {/* Progress Indicators - só mostra se há múltiplos slides e não está centralizado */}
+        {hasMultipleSlides && maxIndex > 0 && !isMobile && !shouldCenterItems && (
           <div className="flex justify-center mt-8 gap-2">
             {Array.from({ length: maxIndex + 1 }).map((_, index) => (
               <button
@@ -528,6 +680,150 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [showVariants, setShowVariants] = useState(isMobile); // No mobile sempre mostra
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+
+  // Estados para seleção de variantes (similar ao ProductSection)
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null);
+
+  // Helper functions para extrair informações das variantes (similar ao ProductSection)
+  const getProductColors = (product) => {
+    if (!product.variants) return [];
+    
+    const colors = new Set();
+    product.variants.forEach(variant => {
+      const colorMatch = variant.title?.split(' / ')[0] || variant.title;
+      if (colorMatch && colorMatch !== 'Default Title') {
+        colors.add(colorMatch.trim());
+      }
+    });
+    
+    return Array.from(colors);
+  };
+
+  const getProductSizes = (product) => {
+    if (!product.variants) return [];
+    
+    const sizes = new Set();
+    product.variants.forEach(variant => {
+      const parts = variant.title?.split(' / ');
+      if (parts && parts.length > 1) {
+        sizes.add(parts[1].trim());
+      }
+    });
+    
+    return Array.from(sizes);
+  };
+
+  const isVariantAvailable = (product, color, size) => {
+    if (!product.variants) return false;
+    
+    const variant = product.variants.find(v => {
+      const parts = v.title?.split(' / ') || [];
+      const variantColor = parts[0]?.trim();
+      const variantSize = parts[1]?.trim();
+      
+      return variantColor === color && variantSize === size && v.availableForSale;
+    });
+    
+    return !!variant;
+  };
+
+  const findVariant = (product, color, size) => {
+    if (!product.variants) return null;
+    
+    return product.variants.find(v => {
+      const parts = v.title?.split(' / ') || [];
+      const variantColor = parts[0]?.trim();
+      const variantSize = parts[1]?.trim();
+      
+      return variantColor === color && variantSize === size;
+    });
+  };
+
+  const getColorCode = (colorName) => {
+    const colorMap = {
+      'Black': '#000000',
+      'White': '#FFFFFF', 
+      'Red': '#FF0000',
+      'Blue': '#0000FF',
+      'Green': '#008000',
+      'Yellow': '#FFFF00',
+      'Pink': '#FFC0CB',
+      'Purple': '#800080',
+      'Orange': '#FFA500',
+      'Brown': '#A52A2A',
+      'Gray': '#808080',
+      'Grey': '#808080',
+      'Navy': '#000080',
+      'Beige': '#F5F5DC',
+      'Cream': '#FFFDD0'
+    };
+    
+    return colorMap[colorName] || '#CCCCCC';
+  };
+
+  // Inicializar seleção de variantes quando produto carregar
+  useEffect(() => {
+    if (product.variants && product.variants.length > 0) {
+      const colors = getProductColors(product);
+      const sizes = getProductSizes(product);
+      
+      // Encontrar primeira variante disponível
+      const availableVariant = product.variants.find(v => v.availableForSale);
+      
+      if (availableVariant) {
+        const parts = availableVariant.title?.split(' / ') || [];
+        const defaultColor = parts[0]?.trim() || colors[0];
+        const defaultSize = parts[1]?.trim() || sizes[0];
+        
+        setSelectedColor(defaultColor);
+        setSelectedSize(defaultSize);
+        setSelectedVariant(availableVariant);
+      }
+    }
+  }, [product]);
+
+  // Funções para selecionar cor e tamanho
+  const selectColor = (color) => {
+    setSelectedColor(color);
+    
+    // Encontrar tamanho válido para essa cor
+    const sizes = getProductSizes(product);
+    let validSize = selectedSize;
+    
+    if (!sizes.includes(selectedSize) || !isVariantAvailable(product, color, selectedSize)) {
+      validSize = sizes.find(size => isVariantAvailable(product, color, size)) || sizes[0];
+    }
+    
+    setSelectedSize(validSize);
+    
+    if (validSize) {
+      const variant = findVariant(product, color, validSize);
+      setSelectedVariant(variant);
+      
+      // Atualizar índice da variante para a imagem
+      if (variant) {
+        const index = product.variants.findIndex(v => v.id === variant.id);
+        setSelectedVariantIndex(index >= 0 ? index : 0);
+      }
+    }
+  };
+
+  const selectSize = (size) => {
+    setSelectedSize(size);
+    
+    if (selectedColor) {
+      const variant = findVariant(product, selectedColor, size);
+      setSelectedVariant(variant);
+      
+      // Atualizar índice da variante para a imagem
+      if (variant) {
+        const index = product.variants.findIndex(v => v.id === variant.id);
+        setSelectedVariantIndex(index >= 0 ? index : 0);
+      }
+    }
+  };
 
   // Parse variant titles para trabalhar com Shopify - cores, tamanhos, etc.
   const parseVariantTitle = (title) => {
@@ -563,14 +859,13 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
   };
 
   const handleAddToCart = async () => {
-      if (!Array.isArray(product.variants) || product.variants.length === 0) {
-        setNotification({ type: 'error', message: 'Product has no available variants.' });
+      if (!selectedVariant) {
+        setNotification({ type: 'error', message: 'Please select color and size first.' });
         return;
       }
 
-      const selectedVariant = product.variants[selectedVariantIndex];
-      if (!selectedVariant) {
-        setNotification({ type: 'error', message: 'Failed to get variant data.' });
+      if (!selectedVariant.availableForSale) {
+        setNotification({ type: 'error', message: 'Selected variant is not available.' });
         return;
       }
 
@@ -593,10 +888,11 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
         // Estrutura do item para Firebase/localStorage
         const cartItem = {
           id: selectedVariant.id,
-          name: product.name,
+          name: product.name || product.title,
           price: parseFloat(selectedVariant.price.amount),
-          image: product.image,
-          quantity: 1
+          image: selectedVariant.image?.url || product.image,
+          quantity: 1,
+          variantTitle: selectedVariant.title
         };
 
         // Atualizar carrinho local
@@ -606,18 +902,33 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
           const cartSnap = await getDoc(cartRef);
           const existingItems = cartSnap.exists() ? cartSnap.data().items : [];
 
-          existingItems.push(cartItem);
+          // Verificar se o item já existe no carrinho
+          const existingItemIndex = existingItems.findIndex(item => item.id === cartItem.id);
+          if (existingItemIndex >= 0) {
+            existingItems[existingItemIndex].quantity += 1;
+          } else {
+            existingItems.push(cartItem);
+          }
+          
           await setDoc(cartRef, { items: existingItems }, { merge: true });
         } else {
           const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-          guestCart.push(cartItem);
+          const existingItemIndex = guestCart.findIndex(item => item.id === cartItem.id);
+          if (existingItemIndex >= 0) {
+            guestCart[existingItemIndex].quantity += 1;
+          } else {
+            guestCart.push(cartItem);
+          }
           localStorage.setItem('guestCart', JSON.stringify(guestCart));
         }
         
-        setNotification({ type: 'success', message: `${product.name} successfully added to cart!` });
+        setNotification({ 
+          type: 'success', 
+          message: `${product.name || product.title} (${selectedVariant.title}) added to cart!` 
+        });
       } catch (error) {
         console.error("Error adding to cart:", error);
-        setNotification({ type: 'error', message: 'Failed to add to cart. Please check product data.' });
+        setNotification({ type: 'error', message: 'Failed to add to cart. Please try again.' });
       } finally {
         setIsAddingToCart(false);
       }
@@ -722,12 +1033,14 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
         )}
         
         <img
+          key={`product-${product.id}-variant-${selectedVariant?.id || 'default'}`}
           src={getOptimizedImageUrl(
+            selectedVariant?.image?.url ||
             product.variants?.[selectedVariantIndex]?.image?.url ||
             product.image || product.imageUrl || product.src || product.featured_image
           )}
           alt={product.name || product.title}
-          className={`w-full h-full object-cover object-center transition-all duration-700 ${
+          className={`w-full h-full object-cover object-center transition-all duration-700 image-fade-transition variant-image-change ${
             isHovered ? 'scale-110' : 'scale-100'
           } ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setImageLoaded(true)}
@@ -752,25 +1065,35 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
           {product.name || product.title}
         </h3>
         
-        {/* Pricing */}
+        {/* Pricing - use selected variant price if available */}
         <div className="flex items-center gap-3 mb-4 min-h-[2rem]">
-          {hasOriginalPrice ? (
-            <>
-              <span className="text-[#F3ECE7]/60 line-through text-sm">
-                $ {parseFloat(product.originalPrice).toFixed(2)}
-              </span>
-              <span className="text-[#8A0101] font-bold text-lg">
-                $ {parseFloat(product.price).toFixed(2)}
-              </span>
-              <span className="bg-[#8A0101]/20 text-[#8A0101] px-2 py-1 text-xs font-bold rounded-full">
-                -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
-              </span>
-            </>
-          ) : (
-            <span className="text-[#F3ECE7] font-bold text-lg">
-              $ {parseFloat(product.price || 0).toFixed(2)}
-            </span>
-          )}
+          {(() => {
+            const currentPrice = selectedVariant ? parseFloat(selectedVariant.price.amount) : parseFloat(product.price || 0);
+            const comparePrice = selectedVariant?.compareAtPrice ? parseFloat(selectedVariant.compareAtPrice.amount) : (product.originalPrice || null);
+            const hasDiscount = comparePrice && comparePrice > currentPrice;
+            
+            return (
+              <>
+                {hasDiscount ? (
+                  <>
+                    <span className="text-[#F3ECE7]/60 line-through text-sm">
+                      $ {comparePrice.toFixed(2)}
+                    </span>
+                    <span className="text-[#8A0101] font-bold text-lg">
+                      $ {currentPrice.toFixed(2)}
+                    </span>
+                    <span className="bg-[#8A0101]/20 text-[#8A0101] px-2 py-1 text-xs font-bold rounded-full">
+                      -{Math.round(((comparePrice - currentPrice) / comparePrice) * 100)}%
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[#F3ECE7] font-bold text-lg">
+                    $ {currentPrice.toFixed(2)}
+                  </span>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Stock Alert */}
@@ -804,71 +1127,154 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
           </div>
         )}
 
-        {/* Seletor de variantes - Desktop (hover) */}
-        {!isMobile && Array.isArray(product.variants) && product.variants.length > 1 && (
+        {/* Color and Size Selection - Desktop (hover) */}
+        {!isMobile && product.variants && product.variants.length > 1 && (
           <div className={`absolute bottom-20 left-4 right-4 transition-all duration-500 ease-out z-30 ${
-            isHovered ? 'translate-y-0 opacity-60' : 'translate-y-8 opacity-0 pointer-events-none'
+            isHovered ? 'translate-y-0 opacity-75' : 'translate-y-8 opacity-0 pointer-events-none'
           }`}>
             <div className="bg-[#1C1C1C]/95 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg p-3 shadow-xl">
-              <div className="flex gap-1 justify-center flex-wrap">
-                {product.variants.map((variant, index) => {
-                  const selected = selectedVariantIndex === index;
-                  const displayText = parseVariantTitle(variant.title);
-                  
-                  return displayText ? (
-                    <button
-                      key={variant.id}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedVariantIndex(index);
-                      }}
-                      className={`min-w-[32px] h-8 px-2 rounded-full text-xs font-medium transition-all duration-200 flex items-center justify-center ${
-                        selected 
-                          ? 'bg-[#8A0101] text-white shadow-lg scale-110' 
-                          : 'bg-[#2A2A2A] text-[#F3ECE7]/80 hover:bg-[#4B014E]/50 hover:scale-105'
-                      }`}
-                      title={variant.title} // Tooltip com título completo
-                    >
-                      {displayText}
-                    </button>
-                  ) : null;
-                })}
-              </div>
+              
+              {/* Color Selection */}
+              {getProductColors(product).length > 0 && (
+                <div className="mb-3">
+                  <div className="flex gap-2 justify-center flex-wrap">
+                    {getProductColors(product).map((color) => (
+                      <button
+                        key={color}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectColor(color);
+                        }}
+                        className={`w-6 h-6 rounded-full border-2 transition-all duration-200 relative ${
+                          selectedColor === color 
+                            ? 'border-[#F3ECE7] scale-110 shadow-lg' 
+                            : 'border-[#4B014E]/40 hover:border-[#F3ECE7]/60 hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: getColorCode(color) }}
+                        title={color}
+                        disabled={!getProductSizes(product).some(size => isVariantAvailable(product, color, size))}
+                      >
+                        {selectedColor === color && (
+                          <div className="absolute inset-0 rounded-full bg-white/20 flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Size Selection */}
+              {getProductSizes(product).length > 0 && (
+                <div>
+                  <div className="flex gap-1 justify-center flex-wrap">
+                    {getProductSizes(product).map((size) => {
+                      const isAvailable = selectedColor ? isVariantAvailable(product, selectedColor, size) : false;
+                      const isSelected = selectedSize === size;
+                      
+                      return (
+                        <button
+                          key={size}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isAvailable) selectSize(size);
+                          }}
+                          disabled={!isAvailable}
+                          className={`min-w-[32px] h-8 px-2 rounded-full text-xs font-medium transition-all duration-200 flex items-center justify-center ${
+                            isSelected
+                              ? 'bg-[#8A0101] text-white shadow-lg scale-110' 
+                              : isAvailable
+                              ? 'bg-[#2A2A2A] text-[#F3ECE7]/80 hover:bg-[#4B014E]/50 hover:scale-105'
+                              : 'bg-[#1A1A1A] text-[#F3ECE7]/30 cursor-not-allowed opacity-50'
+                          }`}
+                          title={isAvailable ? size : `${size} (Unavailable)`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
             </div>
           </div>
         )}
 
-        {/* Seletor de variantes - Mobile */}
-        {isMobile && Array.isArray(product.variants) && product.variants.length > 1 && (
+        {/* Color and Size Selection - Mobile */}
+        {isMobile && product.variants && product.variants.length > 1 && (
           <div className={`absolute bottom-4 left-4 right-4 transition-all duration-300 ${
-            showVariants ? 'translate-y-0 opacity-60' : 'translate-y-full opacity-0'
+            showVariants ? 'translate-y-0 opacity-75' : 'translate-y-full opacity-0'
           }`}>
             <div className="bg-[#1C1C1C]/95 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg p-3">
-              <div className="grid grid-cols-4 gap-2">
-                {product.variants.map((variant, index) => {
-                  const selected = selectedVariantIndex === index;
-                  const displayText = parseVariantTitle(variant.title);
-                  
-                  return displayText ? (
-                    <button
-                      key={variant.id}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedVariantIndex(index);
-                      }}
-                      className={`h-10 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center ${
-                        selected 
-                          ? 'bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white shadow-lg' 
-                          : 'bg-[#2A2A2A] text-[#F3ECE7]/80 border border-[#4B014E]/30'
-                      }`}
-                    >
-                      {displayText}
-                    </button>
-                  ) : null;
-                })}
-              </div>
+              
+              {/* Color Selection */}
+              {getProductColors(product).length > 0 && (
+                <div className="mb-3">
+                  <p className="text-[#F3ECE7] text-xs font-medium mb-2 text-center">Color</p>
+                  <div className="flex gap-2 justify-center flex-wrap">
+                    {getProductColors(product).map((color) => (
+                      <button
+                        key={color}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectColor(color);
+                        }}
+                        className={`w-8 h-8 rounded-full border-2 transition-all duration-200 relative ${
+                          selectedColor === color 
+                            ? 'border-[#F3ECE7] scale-110 shadow-lg' 
+                            : 'border-[#4B014E]/40 hover:border-[#F3ECE7]/60 hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: getColorCode(color) }}
+                        title={color}
+                        disabled={!getProductSizes(product).some(size => isVariantAvailable(product, color, size))}
+                      >
+                        {selectedColor === color && (
+                          <div className="absolute inset-0 rounded-full bg-white/20 flex items-center justify-center">
+                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Size Selection */}
+              {getProductSizes(product).length > 0 && (
+                <div>
+                  <p className="text-[#F3ECE7] text-xs font-medium mb-2 text-center">Size</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {getProductSizes(product).map((size) => {
+                      const isAvailable = selectedColor ? isVariantAvailable(product, selectedColor, size) : false;
+                      const isSelected = selectedSize === size;
+                      
+                      return (
+                        <button
+                          key={size}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isAvailable) selectSize(size);
+                          }}
+                          disabled={!isAvailable}
+                          className={`h-10 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-white shadow-lg' 
+                              : isAvailable
+                              ? 'bg-[#2A2A2A] text-[#F3ECE7]/80 border border-[#4B014E]/30 hover:bg-[#4B014E]/30'
+                              : 'bg-[#1A1A1A] text-[#F3ECE7]/30 cursor-not-allowed opacity-50 border border-[#333]/30'
+                          }`}
+                          title={isAvailable ? size : `${size} (Unavailable)`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
             </div>
           </div>
         )}
@@ -880,7 +1286,7 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
           <button 
             className="w-full bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] py-3 font-medium hover:shadow-lg hover:shadow-[#8A0101]/30 transition-all duration-300 transform hover:scale-105 rounded-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             onClick={handleAddToCart}
-            disabled={(!product.available && product.available !== undefined) || isAddingToCart}
+            disabled={!selectedVariant || !selectedVariant.availableForSale || isAddingToCart}
           >
             {isAddingToCart ? (
               <>
@@ -890,8 +1296,12 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
                 </svg>
                 Adding...
               </>
+            ) : !selectedVariant ? (
+              'Select Options'
+            ) : !selectedVariant.availableForSale ? (
+              'Sold Out'
             ) : (
-              product.available === false ? 'Sold Out' : 'Add to Cart'
+              'Add to Cart'
             )}
           </button>
         </div>
@@ -902,7 +1312,7 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
             <button 
               className="w-full bg-gradient-to-r from-[#8A0101] to-[#4B014E] text-[#F3ECE7] py-3 font-medium hover:shadow-lg hover:shadow-[#8A0101]/30 transition-all duration-300 rounded-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               onClick={handleAddToCart}
-              disabled={(!product.available && product.available !== undefined) || isAddingToCart}
+              disabled={!selectedVariant || !selectedVariant.availableForSale || isAddingToCart}
             >
               {isAddingToCart ? (
                 <>
@@ -912,8 +1322,12 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
                   </svg>
                   Adding...
                 </>
+              ) : !selectedVariant ? (
+                'Select Options'
+              ) : !selectedVariant.availableForSale ? (
+                'Sold Out'
               ) : (
-                product.available === false ? 'Sold Out' : 'Add to Cart'
+                'Add to Cart'
               )}
             </button>
           </div>
@@ -921,12 +1335,14 @@ const EnhancedProductCard = ({ product, isVisible, isMobile, onAddToCart, setNot
       </div>
 
         {/* Mobile tap indicator para variantes */}
-        {isMobile && product.variants.length > 1 && (
+        {isMobile && product.variants && product.variants.length > 1 && (
           <div className="absolute top-4 right-4 z-20">
             <div className="bg-[#1C1C1C]/90 backdrop-blur-sm border border-[#4B014E]/30 rounded-lg px-3 py-2 shadow-lg">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-[#8A0101] rounded-full animate-pulse"></div>
-                <span className="text-[#F3ECE7] text-xs font-medium">Tap for options</span>
+                <span className="text-[#F3ECE7] text-xs font-medium">
+                  {selectedColor && selectedSize ? `${selectedColor}/${selectedSize}` : 'Tap to select'}
+                </span>
               </div>
             </div>
           </div>

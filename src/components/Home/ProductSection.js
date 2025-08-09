@@ -9,7 +9,7 @@ const { addToWishlist } = wishlistHooks;
 
 const ProductSection = ({ 
   collections, 
-  products, // Novo: para acessórios/bolsas
+  products,
   sectionType = 'collections',
   heroImage,
   heroTitle,  
@@ -825,6 +825,36 @@ const ProductSection = ({
 const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(3);
+  const [autoSlideInterval, setAutoSlideInterval] = useState(null);
+  const [isHovered, setIsHovered] = useState(false);
+  
+  // Touch handling states
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Touch handlers
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && currentIndex < maxIndex) {
+      goTo('right');
+    }
+    if (isRightSwipe && currentIndex > 0) {
+      goTo('left');
+    }
+  };
 
   // Detectar tamanho da tela e ajustar itemsPerView
   useEffect(() => {
@@ -858,9 +888,9 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
     });
   };
 
-  // Auto-play
-  useEffect(() => {
-    if (products.length <= itemsPerView) return;
+  // Funções para controlar auto-slide
+  const startAutoSlide = () => {
+    if (products.length <= itemsPerView || isHovered) return;
     
     const interval = setInterval(() => {
       setCurrentIndex(prev => {
@@ -870,9 +900,27 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
         return prev + 1;
       });
     }, 8000);
+    
+    setAutoSlideInterval(interval);
+  };
 
-    return () => clearInterval(interval);
-  }, [products.length, itemsPerView, maxIndex]);
+  const stopAutoSlide = () => {
+    if (autoSlideInterval) {
+      clearInterval(autoSlideInterval);
+      setAutoSlideInterval(null);
+    }
+  };
+
+  // Auto-play com controle de hover
+  useEffect(() => {
+    if (isHovered) {
+      stopAutoSlide();
+    } else {
+      startAutoSlide();
+    }
+
+    return () => stopAutoSlide();
+  }, [products.length, itemsPerView, maxIndex, isHovered]);
 
   // Reset index quando produtos mudam
   useEffect(() => {
@@ -888,7 +936,11 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
   }
 
   return (
-    <div className="relative group">
+    <div 
+      className="relative group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* Setas de navegação */}
       {products.length > itemsPerView && (
         <>
@@ -928,7 +980,12 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
       )}
 
       {/* Container do carrossel */}
-      <div className="overflow-hidden rounded-xl">
+      <div 
+        className="overflow-hidden rounded-xl"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <div
           className="flex transition-transform duration-500 ease-out"
           style={{
@@ -974,12 +1031,20 @@ const ProductCarousel = ({ products = [], setModalProduct, setModalVariant }) =>
                       />
                       {product.tags?.includes('novo') && (
                         <div className="absolute top-2 left-2 bg-[#8A0101] text-white text-xs px-2 py-1 rounded-full font-medium">
-                          Novo
+                          New
                         </div>
                       )}
                       {product.discount && (
                         <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                           -{product.discount}%
+                        </div>
+                      )}
+                      
+                      {/* Indicator for variants/options */}
+                      {product.variants && product.variants.length > 1 && (
+                        <div className="absolute bottom-2 left-2 bg-[#4B014E]/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                          <span>{product.variants.length} options</span>
                         </div>
                       )}
                     </div>
