@@ -52,16 +52,13 @@ const CarouselSection = ({ title, products, id }) => {
     if (selectedFilter === 'ALL') return true;
     
     // Log para debug dos metacampos
-    console.log('🔍 Filtrando produto:', product.name || product.title, 'Metacampos:', product.metafields, 'Filtro atual:', selectedFilter);
     
     // Check by Shopify metafield 'genero_alvo' (priority)
     if (product.metafields && product.metafields.genero_alvo) {
       const genderValue = product.metafields.genero_alvo.value?.toUpperCase();
-      console.log('🎯 Usando metacampo genero_alvo:', genderValue, 'para produto:', product.name || product.title);
       
       // UNISEX aparece em ambos os filtros MEN e WOMEN
       if (genderValue === 'UNISEX') {
-        console.log('🔄 Produto UNISEX incluído em filtro:', selectedFilter);
         return selectedFilter === 'MEN' || selectedFilter === 'WOMEN';
       }
       
@@ -90,7 +87,6 @@ const CarouselSection = ({ title, products, id }) => {
         
         // UNISEX aparece em ambos os filtros MEN e WOMEN
         if (genderValue === 'UNISEX') {
-          console.log('🔄 Produto UNISEX (fallback) incluído em filtro:', selectedFilter);
           return selectedFilter === 'MEN' || selectedFilter === 'WOMEN';
         }
         
