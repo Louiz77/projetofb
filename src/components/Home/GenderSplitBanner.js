@@ -26,7 +26,7 @@ const GenderSplitBanner = () => {
       buttonText: 'SHOP ACCESSORIES',
       image: '/PosBanner-1-Goth.jpg',
       gradient: 'from-[#4B014E]/80 via-black/60 to-transparent',
-      accent: 'from-[#4B014E] to-transparent/40'
+      accent: 'from-[#4B014E] to-white/20'
     },
     {
       id: 'streetwear',

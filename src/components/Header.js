@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { auth, db, doc, onSnapshot, getDoc } from '../client/firebaseConfig';
@@ -15,10 +15,12 @@ const Header = ({ }) => {
   const [currentUser, setCurrentUser] = useState(null);
   
   // Estados para controle do scroll
-  const [scrollY, setScrollY] = useState(0);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollYRef = useRef(0);
   const [headerVisible, setHeaderVisible] = useState(true);
-  const [headerOpacity, setHeaderOpacity] = useState(1);
+  const menuOpenRef = useRef(false);
+  const isInteractingRef = useRef(false);
+  const HIDE_SCROLL_MIN_Y = 200; // só permite esconder após 200px
+  const DELTA_THRESHOLD = 18; // ignora movimentos pequenos
 
   const handleNavigation = (page) => {
     navigate(`/${page}`);
@@ -64,55 +66,57 @@ const Header = ({ }) => {
     }
   };
 
+  // Mantém referência se algum menu está aberto
+  useEffect(() => {
+    menuOpenRef.current = mobileMenuOpen || Boolean(megaMenuOpen);
+  }, [mobileMenuOpen, megaMenuOpen]);
+
+  // Evita scroll do body quando menu mobile está aberto
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
   // Effect para controlar o comportamento do scroll
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollDifference = Math.abs(currentScrollY - lastScrollY);
-      
-      // Atualiza o scroll atual
-      setScrollY(currentScrollY);
-      
-      // Define se o header deve ser visível baseado na direção do scroll
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling para baixo e passou de 100px
-        setHeaderVisible(false);
-      } else if (currentScrollY < lastScrollY || currentScrollY <= 100) {
-        // Scrolling para cima ou no topo
+    const onScroll = () => {
+      const currentY = window.scrollY || window.pageYOffset;
+      const delta = currentY - lastScrollYRef.current;
+
+      // Não esconder enquanto estiver interagindo na header
+      if (isInteractingRef.current) {
         setHeaderVisible(true);
+        lastScrollYRef.current = currentY;
+        return;
       }
-      
-      // Calcula a opacidade baseada no scroll
-      let opacity = 1;
-      if (currentScrollY > 50) {
-        // Quando scrolling para baixo, diminui a opacidade
-        if (currentScrollY > lastScrollY) {
-          opacity = Math.max(0.3, 1 - (currentScrollY - 50) / 200);
-        } else {
-          // Quando scrolling para cima, aumenta a opacidade gradualmente
-          opacity = Math.min(1, 0.5 + (scrollDifference / 100));
+
+      // Não esconder header enquanto um menu (mobile ou mega) estiver aberto
+      if (menuOpenRef.current) {
+        setHeaderVisible(true);
+        lastScrollYRef.current = currentY;
+        return;
+      }
+
+      // Sempre mostrar próximo ao topo
+      if (currentY < HIDE_SCROLL_MIN_Y) {
+        setHeaderVisible(true);
+      } else {
+        // Só reage a mudanças significativas para evitar "tremedeira"
+        if (delta > DELTA_THRESHOLD) {
+          // Scroll para baixo
+          setHeaderVisible(false);
+        } else if (delta < -DELTA_THRESHOLD) {
+          // Scroll para cima
+          setHeaderVisible(true);
         }
       }
-      
-      setHeaderOpacity(opacity);
-      setLastScrollY(currentScrollY);
+
+      lastScrollYRef.current = currentY;
     };
 
-    // Throttle para melhor performance
-    let ticking = false;
-    const throttledHandleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener('scroll', throttledHandleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', throttledHandleScroll);
-  }, [lastScrollY]);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Effect para monitorar mudanças de autenticação
   useEffect(() => {
@@ -224,33 +228,25 @@ const Header = ({ }) => {
 
   // Calcula classes CSS dinâmicas baseadas no scroll
   const getHeaderClasses = () => {
-    const baseClasses = "bg-black text-white fixed top-0 left-0 right-0 z-50 border-b border-gray-800 transition-all duration-300 ease-in-out";
-    
-    // Aplica transform baseado na visibilidade
+    const baseClasses = "bg-black text-white fixed top-0 left-0 right-0 z-50 border-b border-gray-800 transition-transform duration-300 ease-in-out";
     const transformClass = headerVisible ? "translate-y-0" : "-translate-y-full";
-    
     return `${baseClasses} ${transformClass}`;
-  };
-
-  // Calcula o estilo inline para opacidade e backdrop
-  const getHeaderStyle = () => {
-    return {
-      fontFamily: 'Helvetica Neue, sans-serif',
-      backgroundColor: `rgba(0, 0, 0, ${Math.max(0.3, headerOpacity)})`,
-      backdropFilter: headerOpacity < 0.9 ? 'blur(8px)' : 'none',
-      WebkitBackdropFilter: headerOpacity < 0.9 ? 'blur(8px)' : 'none',
-    };
   };
 
   return (
     <>
-      <header className={getHeaderClasses()} style={getHeaderStyle()}>
+      <header
+        className={getHeaderClasses()}
+        style={{ fontFamily: 'Helvetica Neue, sans-serif' }}
+        onMouseEnter={() => { isInteractingRef.current = true; }}
+        onMouseLeave={() => { isInteractingRef.current = false; }}
+        onTouchStart={() => { isInteractingRef.current = true; }}
+        onTouchEnd={() => { isInteractingRef.current = false; }}
+        onTouchCancel={() => { isInteractingRef.current = false; }}
+      >
         <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k">
           {/* Top announcement bar */}
-          <div 
-            className="text-center py-1 text-sm tracking-wider text-gray-300 border-b border-gray-800 transition-opacity duration-300"
-            style={{ opacity: Math.max(0.5, headerOpacity) }}
-          >
+          <div className="text-center py-1 text-sm tracking-wider text-gray-300 border-b border-gray-800">
             FREE SHIPPING OVER $150 • NEW COLLECTION AVAILABLE
           </div>
 
