@@ -485,17 +485,6 @@ const GET_HOME_PRODUCTS = gql`
 const Home = () => {
   const { loading, error, data } = useQuery(GET_HOME_PRODUCTS);
 
-  // Log para verificar dados da query
-  if (data) {
-    console.log('📊 Dados completos da query:', data);
-    if (data.hotTopicsProducts?.edges?.length > 0) {
-      console.log('🔥 Primeiro produto Hot Topics:', data.hotTopicsProducts.edges[0].node);
-    }
-    if (data.topProducts?.edges?.length > 0) {
-      console.log('⭐ Primeiro produto Top:', data.topProducts.edges[0].node);
-    }
-  }
-
   // Helper para transformar dados do produto SECTION
   const transformProduct = (product) => {
     // Log para verificar estrutura completa do produto
@@ -995,7 +984,7 @@ const Home = () => {
       <ProductSection 
           collections={collectionProducts} 
           sectionType="collections"
-          heroImage="20250705_1829_Revolução de Estilo_remix_01jze7raa0fhptk2kezgwqxkrd.png"
+          heroImage="/Collections-1.jpg"
       />
 
       {/* Carrosseis de Destaques */}
@@ -1018,7 +1007,7 @@ const Home = () => {
       <ProductSection 
         products={{ accessories: accessoriesProducts, bags: bagsProducts }} 
         sectionType="acessorios"
-        heroImage="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=600&fit=crop"
+        heroImage="Acessories-1.jpg"
         heroTitle="STYLE ESSENTIALS"
         heroSubtitle="COMPLETE YOUR LOOK"
         heroButton="DISCOVER NOW"

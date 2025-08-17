@@ -291,22 +291,28 @@ const Header = ({ }) => {
                 {megaMenuOpen === "men" && (
                   <div className="fixed left-0 w-full bg-black border-t border-gray-800 shadow-xl z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.95)', backdropFilter: 'blur(10px)' }}>
                     <div className="container mx-auto px-4 py-8">
-                      <div className="grid grid-cols-6 gap-8">
+                      <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
                         {/* Imagem */}
-                        <div className="col-span-2">
-                          <div className="bg-gray-900 h-64 flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="text-6xl mb-4">🖤</div>
-                              <div className="text-xl font-bold tracking-wider">
-                                {menuCategories["men"]?.title}
+                        <div className="lg:col-span-2">
+                          <div className="relative h-48 lg:h-64 overflow-hidden rounded-lg">
+                            <img 
+                              src="/Header-1-Men.jpg" 
+                              alt="Men's Collection"
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="text-lg lg:text-xl font-bold tracking-wider text-white">
+                                  {menuCategories["men"]?.title}
+                                </div>
+                                <div className="text-sm lg:text-base text-gray-200 mt-2">Nova Coleção</div>
                               </div>
-                              <div className="text-base text-gray-400 mt-2">Nova Coleção</div>
                             </div>
                           </div>
                         </div>
 
                         {/* Itens */}
-                        <div className="col-span-4 grid grid-cols-3 gap-6">
+                        <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                           {menuCategories["men"]?.items.map((category, index) => (
                             <div key={index} className="space-y-3">
                               <h3 className="font-bold text-base tracking-wider text-red-400 border-b border-gray-700 pb-2">
@@ -354,22 +360,28 @@ const Header = ({ }) => {
                 {megaMenuOpen === "women" && (
                   <div className="fixed left-0 w-full bg-black border-t border-gray-800 shadow-xl z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.95)', backdropFilter: 'blur(10px)' }}>
                     <div className="container mx-auto px-4 py-8">
-                      <div className="grid grid-cols-6 gap-8">
+                      <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
                         {/* Imagem */}
-                        <div className="col-span-2">
-                          <div className="bg-gray-900 h-64 flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="text-6xl mb-4">🖤</div>
-                              <div className="text-xl font-bold tracking-wider">
-                                {menuCategories["women"]?.title}
+                        <div className="lg:col-span-2">
+                          <div className="relative h-48 lg:h-64 overflow-hidden rounded-lg">
+                            <img 
+                              src="/Header-1-Women.jpg" 
+                              alt="Women's Collection"
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="text-lg lg:text-xl font-bold tracking-wider text-white">
+                                  {menuCategories["women"]?.title}
+                                </div>
+                                <div className="text-sm lg:text-base text-gray-200 mt-2">Nova Coleção</div>
                               </div>
-                              <div className="text-base text-gray-400 mt-2">Nova Coleção</div>
                             </div>
                           </div>
                         </div>
 
                         {/* Itens */}
-                        <div className="col-span-4 grid grid-cols-3 gap-6">
+                        <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                           {menuCategories["women"]?.items.map((category, index) => (
                             <div key={index} className="space-y-3">
                               <h3 className="font-bold text-base tracking-wider text-red-400 border-b border-gray-700 pb-2">

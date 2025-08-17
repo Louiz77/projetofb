@@ -3,9 +3,9 @@ const AccountBanner = ({  }) => {
   return(
         <section className="relative h-64 sm:h-80 md:h-96 flex items-center justify-center text-white text-center overflow-hidden">
         <img
-            src="/garota-de-cabelo-rosa-em-danca-de-estilo-vanguardista.jpg"
-            alt="GIF de fundo"
-            className="absolute inset-0 w-full h-full object-cover opacity-70"
+            src="/Footer-1.jpg"
+            alt="fundo"
+            className="absolute inset-0 w-full h-full object-cover"
         />
         {/* Overlay para melhor contraste */}
         <div className="absolute inset-0 bg-black/30"></div>

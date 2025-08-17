@@ -16,7 +16,7 @@ const HeroBanner = () => {
   const heroSlides = useMemo(() => [
     {
       id: 1,
-      image: "/retrato-de-jovem-no-estilo-de-moda-dos-anos-2000-com-jeans-e-oculos-de-sol.jpg",
+      image: "/Banner-1-Goth.jpg",
       title: "NEW COLLECTION",
       subtitle: "DARKNESS AWAITS",
       cta: "SEE ALL COLLECTIONS",
@@ -26,7 +26,7 @@ const HeroBanner = () => {
     },
     {
       id: 2,
-      image: "/medium-shot-man-talking-phone.jpg",
+      image: "/Banner-1-Streetwear.jpg",
       title: "EXCLUSIVE ACCESSORIES",
       subtitle: "FOR REBEL SOULS",
       cta: "EXPLORE ACCESSORIES",
@@ -250,7 +250,7 @@ const HeroBanner = () => {
   return (
     <section 
       id="hero-banner"
-      className="relative h-[calc(100vh-100px)] min-h-[500px] overflow-hidden"
+      className="relative h-[calc(100vh-100px)] min-h-[500px] overflow-hidden bg-gray-900"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -268,32 +268,26 @@ const HeroBanner = () => {
           }}
         >
           {/* Background Image with optimized loading */}
-          <div 
-            className={`absolute inset-0 bg-cover bg-center transform transition-transform duration-[6000ms] ease-out ${
-              !isLoaded[index] ? 'bg-gray-900' : ''
-            } ${isPreloading && index === currentSlide ? 'blur-[1px]' : ''}`}
-            style={{
-              backgroundImage: isLoaded[index] ? `url('${slide.image}')` : 'none',
-              transform: index === currentSlide ? 'scale(1.1)' : 'scale(1.2)',
-              willChange: index === currentSlide ? 'transform' : 'auto'
-            }}
-          />
+          {isLoaded[index] ? (
+            <img
+              src={slide.image}
+              alt={`Hero slide ${index + 1}`}
+              className={`absolute inset-0 w-full h-full object-cover object-center transform transition-transform duration-[6000ms] ease-out ${
+                isPreloading && index === currentSlide ? 'blur-[1px]' : ''
+              }`}
+              style={{
+                transform: index === currentSlide ? 'scale(1.02)' : 'scale(1.05)',
+                willChange: index === currentSlide ? 'transform' : 'auto'
+              }}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gray-900" />
+          )}
           
           {/* Loading indicator for current slide */}
           {isPreloading && index === currentSlide && !isLoaded[index] && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
               <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            </div>
-          )}
-          
-          {/* Enhanced Gradient Overlay */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${slide.gradient}`} />
-          
-          {/* Simplified Mesh Overlay for better performance */}
-          {index === currentSlide && (
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.05)_0%,transparent_50%)]" />
             </div>
           )}
         </div>

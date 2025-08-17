@@ -159,7 +159,7 @@ const ProductSection = ({
                     minHeight: '400px'
                   }}
                 />
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(168, 1, 1, 0.3), rgba(75, 1, 78, 0.4))' }} />
+                <div className="absolute inset-0" />
                 <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-6 lg:p-8">
                   <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2" style={{ color: '#F3ECE7' }}>{heroTitle}</h2>
                   <p className="text-sm sm:text-base lg:text-lg mb-4 lg:mb-6" style={{ color: '#F3ECE7' }}>{heroSubtitle}</p>
@@ -684,7 +684,7 @@ const ProductSection = ({
                 alt={`${sectionType} promo`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(168, 1, 1, 0.3), rgba(75, 1, 78, 0.4))' }} />
+              <div className="absolute inset-0" />
               
               {/* Badge 30% OFF */}
               <div className="absolute top-6 left-6">

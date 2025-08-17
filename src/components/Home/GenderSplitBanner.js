@@ -24,7 +24,7 @@ const GenderSplitBanner = () => {
       title: 'GOTHIC',
       subtitle: 'Darkness & Elegance',
       buttonText: 'SHOP ACCESSORIES',
-      image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=800&h=600&fit=crop',
+      image: '/PosBanner-1-Goth.jpg',
       gradient: 'from-[#4B014E]/80 via-black/60 to-transparent',
       accent: 'from-[#4B014E] to-transparent/40'
     },
@@ -33,7 +33,7 @@ const GenderSplitBanner = () => {
       title: 'STREETWEAR',
       subtitle: 'Urban & Rebellious',
       buttonText: 'SHOP GRAPHIC PRINTS',
-      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop',
+      image: '/PosBanner-1-Streetwear.jpg',
       gradient: 'from-[#8A0101]/80 via-gray/60 to-transparent',
       accent: 'from-[#8A0101] via-[#1C1C1C]/120 to-transparent/60'
     }
