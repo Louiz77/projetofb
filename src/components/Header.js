@@ -380,7 +380,13 @@ const Header = ({ }) => {
                             </div>
                           </div>
                           <div className="mt-8 pt-6 border-t border-gray-800 text-center">
-                            <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base">
+                            <button 
+                              className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base"
+                              onClick={() => {
+                                handleNavigation("tag/men");
+                                setMegaMenuOpen(null);
+                              }}
+                            >
                               VER TODAS AS PEÇAS {menuCategories["men"]?.title}
                             </button>
                           </div>
@@ -395,6 +401,7 @@ const Header = ({ }) => {
                                   className="hover:text-white transition-colors duration-200"
                                   onClick={() => {
                                     handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                    setMegaMenuOpen(null);
                                   }}
                                 >
                                   {category.name}
@@ -407,6 +414,7 @@ const Header = ({ }) => {
                                     className="text-base text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block w-full text-left"
                                     onClick={() => {
                                     handleNavigation(`tag/${category.name.toLowerCase()}/${item.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
+                                    setMegaMenuOpen(null);
                                     }}
                                     >
                                       {item}
@@ -455,7 +463,13 @@ const Header = ({ }) => {
                             </div>
                           </div>
                           <div className="mt-8 pt-6 border-t border-gray-800 text-center">
-                            <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base">
+                            <button 
+                              className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base"
+                              onClick={() => {
+                                handleNavigation("tag/women");
+                                setMegaMenuOpen(null);
+                              }}
+                            >
                               VER TODAS AS PEÇAS {menuCategories["women"]?.title}
                             </button>
                           </div>
@@ -470,6 +484,7 @@ const Header = ({ }) => {
                                   className="hover:text-white transition-colors duration-200"
                                   onClick={() => {
                                     handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                    setMegaMenuOpen(null);
                                   }}
                                 >
                                   {category.name}
@@ -482,6 +497,7 @@ const Header = ({ }) => {
                                     className="text-base text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block w-full text-left"
                                     onClick={() => {
                                     handleNavigation(`tag/${category.name.toLowerCase()}/${item.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
+                                    setMegaMenuOpen(null);
                                     }}
                                     >
                                       {item}
@@ -530,7 +546,13 @@ const Header = ({ }) => {
                             </div>
                           </div>
                           <div className="mt-8 pt-6 border-t border-gray-800 text-center">
-                            <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base">
+                            <button 
+                              className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base"
+                              onClick={() => {
+                                handleNavigation("tag/style");
+                                setMegaMenuOpen(null);
+                              }}
+                            >
                               VER TODOS OS ESTILOS
                             </button>
                           </div>
@@ -545,6 +567,7 @@ const Header = ({ }) => {
                                   className="hover:text-white transition-colors duration-200"
                                   onClick={() => {
                                     handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                    setMegaMenuOpen(null);
                                   }}
                                 >
                                   {category.name}
@@ -569,14 +592,20 @@ const Header = ({ }) => {
 
               {/* Links fixos */}
               <button
-                onClick={() => handleNavigation("collections")}
+                onClick={() => {
+                  handleNavigation("collections");
+                  setMegaMenuOpen(null);
+                }}
                 className="text-base font-bold tracking-wider hover:text-red-500 transition-colors duration-300"
               >
                 COLLECTIONS
               </button>
 
               <button
-                onClick={() => handleNavigation("sale")}
+                onClick={() => {
+                  handleNavigation("sale");
+                  setMegaMenuOpen(null);
+                }}
                 className="text-base font-bold tracking-wider hover:text-purple-500 transition-colors duration-300 text-red-500"
               >
                 SALE
@@ -589,13 +618,19 @@ const Header = ({ }) => {
               {/* Wishlist */}
               <button 
                 className="p-2 hover:text-red-500 transition-colors duration-300"
-                onClick={() => handleNavigation("wishlist")}>
+                onClick={() => {
+                  handleNavigation("wishlist");
+                  setMegaMenuOpen(null);
+                }}>
                 <Heart size={24} />
               </button>
 
               {/* Account */}
               <button 
-                onClick={() => handleNavigation("account")}
+                onClick={() => {
+                  handleNavigation("account");
+                  setMegaMenuOpen(null);
+                }}
                 className="hidden md:block p-2 hover:text-red-500 transition-colors duration-300"
               >
                 <User size={24} />
@@ -603,7 +638,10 @@ const Header = ({ }) => {
 
               {/* Cart */}
               <button
-                onClick={openCart}
+                onClick={() => {
+                  openCart();
+                  setMegaMenuOpen(null);
+                }}
                 className="relative p-2 text-[#F3ECE7] hover:text-[#8A0101] transition-colors"
               >
                 <ShoppingCart size={24} />
