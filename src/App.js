@@ -4,6 +4,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import ProductDetail from "./pages/ProductDetail";
+import ProductsPage from "./pages/ProductsPage";
 import CartModal from "./pages/Cart";
 import { CartProvider } from './hooks/useCart';
 import Account from "./pages/Account";
@@ -35,6 +36,17 @@ const App = () => {
             path="/product/:productId" 
             element={<ProductDetail />} 
           />
+          
+          {/* Rotas para categorias e subcategorias */}
+          <Route 
+            path="/tag/:tag" 
+            element={<ProductsPage />} 
+          />
+          <Route 
+            path="/tag/:tag/:subcategory" 
+            element={<ProductsPage />} 
+          />
+          
           <Route
             path="/faq"
             element={<FAQ/>}

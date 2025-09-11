@@ -2,14 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { auth, db, doc, onSnapshot, getDoc } from '../client/firebaseConfig';
-import { Menu, X, ShoppingBag, User, Heart, ShoppingCart } from 'lucide-react';
+import { Menu, X, ShoppingBag, User, Heart, ShoppingCart, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react';
 
 const Header = ({ }) => {
   const navigate = useNavigate();
   const { openCart } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileMenOpen, setMobileMenOpen] = useState(false);
-  const [mobileWomenOpen, setMobileWomenOpen] = useState(false);
+  const [mobileSubMenu, setMobileSubMenu] = useState(null); // 'men', 'women', ou null
   const [cartCount, setCartCount] = useState(0);
   const [megaMenuOpen, setMegaMenuOpen] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -74,17 +73,25 @@ const Header = ({ }) => {
   // Evita scroll do body quando menu mobile está aberto
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    // Reset submenu when main menu closes
+    if (!mobileMenuOpen) {
+      setMobileSubMenu(null);
+    }
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
 
   // Effect para controlar o comportamento do scroll
   useEffect(() => {
+    let touchStartY = 0;
+    let touchEndY = 0;
+    let isMobile = window.innerWidth < 1024;
+    
     const onScroll = () => {
       const currentY = window.scrollY || window.pageYOffset;
       const delta = currentY - lastScrollYRef.current;
 
-      // Não esconder enquanto estiver interagindo na header
-      if (isInteractingRef.current) {
+      // Não esconder enquanto estiver interagindo na header (apenas para desktop)
+      if (isInteractingRef.current && !isMobile) {
         setHeaderVisible(true);
         lastScrollYRef.current = currentY;
         return;
@@ -114,8 +121,49 @@ const Header = ({ }) => {
       lastScrollYRef.current = currentY;
     };
 
+    // Handler para touch events no mobile
+    const handleTouchStart = (e) => {
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e) => {
+      touchEndY = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = () => {
+      // Reset da interação apenas se não estiver na header
+      const headerElement = document.querySelector('header');
+      const target = document.elementFromPoint(touchEndY, touchStartY);
+      
+      if (!headerElement?.contains(target)) {
+        isInteractingRef.current = false;
+      }
+    };
+
+    // Handler para resize
+    const handleResize = () => {
+      isMobile = window.innerWidth < 1024;
+      // Reset interaction state on resize
+      isInteractingRef.current = false;
+    };
+
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('resize', handleResize);
+    
+    // Eventos de touch apenas para mobile
+    if (isMobile) {
+      document.addEventListener('touchstart', handleTouchStart, { passive: true });
+      document.addEventListener('touchmove', handleTouchMove, { passive: true });
+      document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    }
+    
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
   }, []);
 
   // Effect para monitorar mudanças de autenticação
@@ -205,23 +253,31 @@ const Header = ({ }) => {
     men: {
       title: 'MEN',
       items: [
-        { name: 'CAMISETAS', subcategories: ['Oversized', 'Vintage', 'Band Tees', 'Gothic'] },
-        { name: 'CALÇAS', subcategories: ['Cargo', 'Skinny', 'Destroyed', 'Leather'] },
-        { name: 'JAQUETAS', subcategories: ['Leather', 'Bomber', 'Denim', 'Gothic'] },
-        { name: 'ACESSÓRIOS', subcategories: ['Chains', 'Rings', 'Caps', 'Belts'] },
-        { name: 'SHORTS', subcategories: ['Cargo', 'Denim', 'Athletic'] },
-        { name: 'CALÇADOS', subcategories: ['Boots', 'Sneakers', 'Combat'] }
+        { name: 'FOOTWEAR', subcategories: ['Sandals', 'Creepers', 'Sneakers', 'Boots'] },
+        { name: 'TOP', subcategories: ['T-Shirt', 'Tank Tops', 'Outerwear'] },
+        { name: 'BOTTOM', subcategories: ['Pants', 'Shorts'] },
+        { name: 'ACCESSORIES', subcategories: ['Bags', 'Hats and Caps', 'Rings', 'Necklaces', 'Bracelets', 'Belts', 'Gloves', 'Glasses/Sunglasses', 'Socks', 'Others'] }
       ]
     },
     women: {
       title: 'WOMEN',
       items: [
-        { name: 'TOPS', subcategories: ['Crop Tops', 'Tank Tops', 'Gothic', 'Mesh'] },
-        { name: 'VESTIDOS', subcategories: ['Gothic', 'Mini', 'Maxi', 'Bodycon'] },
-        { name: 'SAIAS', subcategories: ['Mini', 'Plissada', 'Leather', 'Tutu'] },
-        { name: 'CALÇAS', subcategories: ['High Waist', 'Skinny', 'Cargo', 'Leather'] },
-        { name: 'JAQUETAS', subcategories: ['Leather', 'Crop', 'Oversized', 'Blazer'] },
-        { name: 'ACESSÓRIOS', subcategories: ['Jewelry', 'Bags', 'Belts', 'Hair'] }
+        { name: 'FOOTWEAR', subcategories: ['Sandals', 'Creepers', 'High Heels', 'Mary Janes', 'Sneakers', 'Boots'] },
+        { name: 'TOP', subcategories: ['T-Shirt', 'Tank Tops', 'Outerwear'] },
+        { name: 'BOTTOM', subcategories: ['Pants', 'Shorts', 'Skirts'] },
+        { name: 'FULL-BODY', subcategories: ['Dresses', 'Jumpsuits'] },
+        { name: 'ACCESSORIES', subcategories: ['Bags', 'Hats and Caps', 'Rings', 'Necklaces', 'Earrings', 'Bracelets', 'Belts', 'Corsets', 'Kerchiefs', 'Gloves', 'Glasses/Sunglasses', 'Socks', 'Others'] }
+      ]
+    },
+    style: {
+      title: 'STYLE',
+      items: [
+        { name: 'GOTH', subcategories: [] },
+        { name: 'STREETWEAR', subcategories: [] },
+        { name: 'Y2K', subcategories: [] },
+        { name: 'GRUNGE', subcategories: [] },
+        { name: 'EMO', subcategories: [] },
+        { name: 'PUNK', subcategories: [] }
       ]
     }
   };
@@ -238,11 +294,29 @@ const Header = ({ }) => {
       <header
         className={getHeaderClasses()}
         style={{ fontFamily: 'Helvetica Neue, sans-serif' }}
-        onMouseEnter={() => { isInteractingRef.current = true; }}
-        onMouseLeave={() => { isInteractingRef.current = false; }}
-        onTouchStart={() => { isInteractingRef.current = true; }}
-        onTouchEnd={() => { isInteractingRef.current = false; }}
-        onTouchCancel={() => { isInteractingRef.current = false; }}
+        onMouseEnter={() => { 
+          if (window.innerWidth >= 1024) {
+            isInteractingRef.current = true; 
+          }
+        }}
+        onMouseLeave={() => { 
+          if (window.innerWidth >= 1024) {
+            isInteractingRef.current = false; 
+          }
+        }}
+        onTouchStart={() => { 
+          if (window.innerWidth < 1024) {
+            isInteractingRef.current = true; 
+          }
+        }}
+        onTouchEnd={() => { 
+          if (window.innerWidth < 1024) {
+            // Delay para permitir cliques
+            setTimeout(() => {
+              isInteractingRef.current = false;
+            }, 300);
+          }
+        }}
       >
         <div className="container mx-auto px-4 md:px-6 xl:px-8 3xl:px-10 4xl:px-12 5xl:px-16 max-w-screen-xl 3xl:max-w-screen-2xl 4xl:max-w-2k 5xl:max-w-4k">
           {/* Top announcement bar */}
@@ -301,26 +375,38 @@ const Header = ({ }) => {
                                 <div className="text-lg lg:text-xl font-bold tracking-wider text-white">
                                   {menuCategories["men"]?.title}
                                 </div>
-                                <div className="text-sm lg:text-base text-gray-200 mt-2">Nova Coleção</div>
+                                <div className="text-sm lg:text-base text-gray-200 mt-2">New Collection</div>
                               </div>
                             </div>
+                          </div>
+                          <div className="mt-8 pt-6 border-t border-gray-800 text-center">
+                            <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base">
+                              VER TODAS AS PEÇAS {menuCategories["men"]?.title}
+                            </button>
                           </div>
                         </div>
 
                         {/* Itens */}
-                        <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                           {menuCategories["men"]?.items.map((category, index) => (
-                            <div key={index} className="space-y-3">
+                            <div key={index} className={`space-y-3 ${category.name === 'ACCESSORIES' ? 'lg:col-span-2' : ''}`}>
                               <h3 className="font-bold text-base tracking-wider text-red-400 border-b border-gray-700 pb-2">
-                                {category.name}
+                                <button 
+                                  className="hover:text-white transition-colors duration-200"
+                                  onClick={() => {
+                                    handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                  }}
+                                >
+                                  {category.name}
+                                </button>
                               </h3>
-                              <ul className="space-y-2">
+                              <ul className={`space-y-2 ${category.name === 'ACCESSORIES' ? 'grid grid-cols-2 lg:grid-cols-5 gap-x-4 gap-y-2' : ''}`}>
                                 {category.subcategories.map((item, subIndex) => (
                                   <li key={subIndex}>
                                     <button 
-                                    className="text-base text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block"
+                                    className="text-base text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block w-full text-left"
                                     onClick={() => {
-                                    handleNavigation(`men/${item.toLowerCase()}`);
+                                    handleNavigation(`tag/${category.name.toLowerCase()}/${item.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
                                     }}
                                     >
                                       {item}
@@ -331,12 +417,6 @@ const Header = ({ }) => {
                             </div>
                           ))}
                         </div>
-                      </div>
-
-                      <div className="mt-8 pt-6 border-t border-gray-800 text-center">
-                        <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base">
-                          VER TODAS AS PEÇAS {menuCategories["men"]?.title}
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -370,26 +450,38 @@ const Header = ({ }) => {
                                 <div className="text-lg lg:text-xl font-bold tracking-wider text-white">
                                   {menuCategories["women"]?.title}
                                 </div>
-                                <div className="text-sm lg:text-base text-gray-200 mt-2">Nova Coleção</div>
+                                <div className="text-sm lg:text-base text-gray-200 mt-2">New Collection</div>
                               </div>
                             </div>
+                          </div>
+                          <div className="mt-8 pt-6 border-t border-gray-800 text-center">
+                            <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base">
+                              VER TODAS AS PEÇAS {menuCategories["women"]?.title}
+                            </button>
                           </div>
                         </div>
 
                         {/* Itens */}
-                        <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                           {menuCategories["women"]?.items.map((category, index) => (
-                            <div key={index} className="space-y-3">
+                            <div key={index} className={`space-y-3 ${category.name === 'ACCESSORIES' ? 'lg:col-span-2' : ''}`}>
                               <h3 className="font-bold text-base tracking-wider text-red-400 border-b border-gray-700 pb-2">
-                                {category.name}
+                                <button 
+                                  className="hover:text-white transition-colors duration-200"
+                                  onClick={() => {
+                                    handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                  }}
+                                >
+                                  {category.name}
+                                </button>
                               </h3>
-                              <ul className="space-y-2">
+                              <ul className={`space-y-2 ${category.name === 'ACCESSORIES' ? 'grid grid-cols-2 lg:grid-cols-6 gap-x-4 gap-y-2' : ''}`}>
                                 {category.subcategories.map((item, subIndex) => (
                                   <li key={subIndex}>
                                     <button 
-                                    className="text-base text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block"
+                                    className="text-base text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block w-full text-left"
                                     onClick={() => {
-                                    handleNavigation(`women/${item.toLowerCase()}`);
+                                    handleNavigation(`tag/${category.name.toLowerCase()}/${item.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
                                     }}
                                     >
                                       {item}
@@ -401,11 +493,74 @@ const Header = ({ }) => {
                           ))}
                         </div>
                       </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                      <div className="mt-8 pt-6 border-t border-gray-800 text-center">
-                        <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base">
-                          VER TODAS AS PEÇAS {menuCategories["women"]?.title}
-                        </button>
+              {/* STYLE */}
+              <div
+                className="relative group"
+                onMouseEnter={() => setMegaMenuOpen("style")}
+                onMouseLeave={() => setMegaMenuOpen(null)}
+              >
+                <button className="text-base font-bold tracking-wider hover:text-red-500 transition-colors duration-300 py-2">
+                  STYLE
+                </button>
+
+                {megaMenuOpen === "style" && (
+                  <div className="fixed left-0 w-full bg-black border-t border-gray-800 shadow-xl z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.95)', backdropFilter: 'blur(10px)' }}>
+                    <div className="container mx-auto px-4 py-8">
+                      <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
+                        {/* Imagem */}
+                        <div className="lg:col-span-2">
+                          <div className="relative h-48 lg:h-64 overflow-hidden rounded-lg">
+                            <img 
+                              src="/Collections-1.jpg" 
+                              alt="Style Collection"
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="text-lg lg:text-xl font-bold tracking-wider text-white">
+                                  {menuCategories["style"]?.title}
+                                </div>
+                                <div className="text-sm lg:text-base text-gray-200 mt-2">Your Style Journey</div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-8 pt-6 border-t border-gray-800 text-center">
+                            <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold tracking-wider transition-colors duration-300 text-base">
+                              VER TODOS OS ESTILOS
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Itens */}
+                        <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {menuCategories["style"]?.items.map((category, index) => (
+                            <div key={index} className="space-y-3">
+                              <h3 className="font-bold text-lg tracking-wider text-red-400 border-b border-gray-700 pb-2">
+                                <button 
+                                  className="hover:text-white transition-colors duration-200"
+                                  onClick={() => {
+                                    handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                  }}
+                                >
+                                  {category.name}
+                                </button>
+                              </h3>
+                              <p className="text-sm text-gray-400">
+                                {category.name === 'GOTH' && 'Dark aesthetic and alternative fashion'}
+                                {category.name === 'STREETWEAR' && 'Urban culture and modern street style'}
+                                {category.name === 'Y2K' && 'Futuristic 2000s revival fashion'}
+                                {category.name === 'GRUNGE' && 'Raw, rebellious and distressed style'}
+                                {category.name === 'EMO' && 'Emotional expression through fashion'}
+                                {category.name === 'PUNK' && 'Rebellious counterculture fashion'}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -462,119 +617,336 @@ const Header = ({ }) => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - Redesigned */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-black border-t border-gray-800" style={{ backgroundColor: 'rgba(0, 0, 0, 0.95)', backdropFilter: 'blur(10px)' }}>
-            <div className="px-4 py-6 space-y-6">
-              {/* Mobile Menu Items */}
-              <div className="space-y-4">
+          <div className="border-t border-gray-800" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}>
+            {/* Menu Header */}
 
-                {/* HOME */}
-                <button
-                  onClick={() => {
-                    handleNavigation("");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
-                >
-                  HOME
-                </button>
 
-                {/* HOMEM - Accordion */}
-                <div>
+            {/* Menu Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto h-full" style={{ 
+              height: 'calc(100vh - 120px)',
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehavior: 'contain'
+            }}>
+              {/* Main Menu */}
+              {!mobileSubMenu && (
+                <div className="p-4 space-y-2">
+                  {/* HOME */}
                   <button
-                    onClick={() => setMobileMenOpen(!mobileMenOpen)}
-                    className="flex justify-between items-center w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
+                    onClick={() => {
+                      handleNavigation("");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center justify-between w-full text-left text-white hover:bg-gray-900 p-4 rounded-lg transition-colors font-bold tracking-wider text-lg"
+                  >
+                    HOME
+                  </button>
+
+                  {/* MEN */}
+                  <button
+                    onClick={() => setMobileSubMenu("men")}
+                    className="flex items-center justify-between w-full text-left text-white hover:bg-gray-900 p-4 rounded-lg transition-colors font-bold tracking-wider text-lg"
                   >
                     MEN
-                    <span className="text-lg">{mobileMenOpen ? "−" : "+"}</span>
+                    <ChevronRight size={20} />
                   </button>
-                  {mobileMenOpen && (
-                    <div className="ml-4 mt-2 space-y-4">
-                      {menuCategories["men"]?.items.map((category, index) => (
-                        <div key={index}>
-                          <div className="text-base font-bold text-red-400">
-                            {category.name}
-                          </div>
-                          <ul className="mt-1 space-y-1">
-                            {category.subcategories.map((sub, subIndex) => (
-                              <li key={subIndex}>
-                                <button
-                                  onClick={() => {
-                                    handleNavigation(`men/${sub.toLowerCase()}`);
-                                    setMobileMenuOpen(false);
-                                  }}
-                                  className="text-base text-gray-300 hover:text-white block"
-                                >
-                                  {sub}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
 
-                {/* MULHER - Accordion */}
-                <div>
+                  {/* WOMEN */}
                   <button
-                    onClick={() => setMobileWomenOpen(!mobileWomenOpen)}
-                    className="flex justify-between items-center w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
+                    onClick={() => setMobileSubMenu("women")}
+                    className="flex items-center justify-between w-full text-left text-white hover:bg-gray-900 p-4 rounded-lg transition-colors font-bold tracking-wider text-lg"
                   >
                     WOMEN
-                    <span className="text-lg">{mobileWomenOpen ? "−" : "+"}</span>
+                    <ChevronRight size={20} />
                   </button>
-                  {mobileWomenOpen && (
-                    <div className="ml-4 mt-2 space-y-4">
-                      {menuCategories["women"]?.items.map((category, index) => (
-                        <div key={index}>
-                          <div className="text-base font-bold text-red-400">
-                            {category.name}
+
+                  {/* STYLE */}
+                  <button
+                    onClick={() => setMobileSubMenu("style")}
+                    className="flex items-center justify-between w-full text-left text-white hover:bg-gray-900 p-4 rounded-lg transition-colors font-bold tracking-wider text-lg"
+                  >
+                    STYLE
+                    <ChevronRight size={20} />
+                  </button>
+
+                  {/* COLLECTIONS */}
+                  <button
+                    onClick={() => {
+                      handleNavigation("collections");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center justify-between w-full text-left text-white hover:bg-gray-900 p-4 rounded-lg transition-colors font-bold tracking-wider text-lg"
+                  >
+                    COLLECTIONS
+                  </button>
+
+                  {/* SALE */}
+                  <button
+                    onClick={() => {
+                      handleNavigation("sale");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center justify-between w-full text-left text-red-400 hover:bg-gray-900 p-4 rounded-lg transition-colors font-bold tracking-wider text-lg"
+                  >
+                    SALE
+                  </button>
+
+                  {/* Account (Mobile Only) */}
+                  <button
+                    onClick={() => {
+                      handleNavigation("account");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center justify-between w-full text-left text-white hover:bg-gray-900 p-4 rounded-lg transition-colors font-bold tracking-wider text-lg md:hidden"
+                  >
+                    <span className="flex items-center">
+                      <User size={20} className="mr-3" />
+                      ACCOUNT
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* Sub Menu - Men */}
+              {mobileSubMenu === "men" && (
+                <div className="h-full">
+                  <div className="p-4 pb-20">
+                    {/* Back Button */}
+                    <button
+                      onClick={() => setMobileSubMenu(null)}
+                      className="flex items-center text-white hover:text-red-500 mb-6 p-2 transition-colors sticky top-0 z-10"
+                      style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)' }}
+                    >
+                      <ArrowLeft size={20} className="mr-2" />
+                      <span className="font-bold">BACK TO MENU</span>
+                    </button>
+
+                    {/* Men's Image Header */}
+                    <div className="relative h-52 mb-6 rounded-lg overflow-hidden">
+                      <img 
+                        src="/Header-1-Men.jpg" 
+                        alt="Men's Collection"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-white tracking-wider">MEN</div>
+                          <div className="text-sm text-gray-200">New Collection</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* View All Button */}
+                    <div className="mb-6">
+                      <button 
+                        onClick={() => {
+                          handleNavigation("men");
+                          setMobileMenuOpen(false);
+                          setMobileSubMenu(null);
+                        }}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white py-3 font-bold tracking-wider transition-colors rounded-lg"
+                      >
+                        VIEW ALL (MEN)
+                      </button>
+                    </div>
+
+                    {/* Men's Categories */}
+                    <div className="space-y-6 pb-8">
+                      {menuCategories["men"]?.items.map((category, index) => (
+                        <div key={index} className="border-b border-gray-800 pb-4 last:border-b-0">
+                          <div className="text-lg font-bold text-red-400 mb-3 tracking-wider">
+                            <button 
+                              className="hover:text-white transition-colors duration-200"
+                              onClick={() => {
+                                handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                setMobileMenuOpen(false);
+                                setMobileSubMenu(null);
+                              }}
+                            >
+                              {category.name}
+                            </button>
                           </div>
-                          <ul className="mt-1 space-y-1">
+                          <div className="grid grid-cols-2 gap-2">
                             {category.subcategories.map((sub, subIndex) => (
-                              <li key={subIndex}>
-                                <button
-                                  onClick={() => {
-                                    handleNavigation(`women/${sub.toLowerCase()}`);
-                                    setMobileMenuOpen(false);
-                                  }}
-                                  className="text-base text-gray-300 hover:text-white block"
-                                >
-                                  {sub}
-                                </button>
-                              </li>
+                              <button
+                                key={subIndex}
+                                onClick={() => {
+                                  handleNavigation(`tag/${category.name.toLowerCase()}/${sub.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
+                                  setMobileMenuOpen(false);
+                                  setMobileSubMenu(null);
+                                }}
+                                className="text-left text-gray-300 hover:text-white hover:bg-gray-900 p-3 rounded-lg transition-colors text-sm"
+                              >
+                                {sub}
+                              </button>
                             ))}
-                          </ul>
+                          </div>
                         </div>
                       ))}
                     </div>
-                  )}
+                  </div>
                 </div>
+              )}
 
-                {/* COLEÇÕES */}
-                <button
-                  onClick={() => {
-                    handleNavigation("collections");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left text-white hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
-                >
-                  COLLECTIONS
-                </button>
+              {/* Sub Menu - Women */}
+              {mobileSubMenu === "women" && (
+                <div className="h-full">
+                  <div className="p-4 pb-20">
+                    {/* Back Button */}
+                    <button
+                      onClick={() => setMobileSubMenu(null)}
+                      className="flex items-center text-white hover:text-red-500 mb-6 p-2 transition-colors sticky top-0 z-10"
+                      style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)' }}
+                    >
+                      <ArrowLeft size={20} className="mr-2" />
+                      <span className="font-bold">BACK TO MENU</span>
+                    </button>
 
-                {/* SALE */}
-                <button
-                  onClick={() => {
-                    handleNavigation("sale");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left text-red-400 hover:text-red-500 transition-colors py-2 font-bold tracking-wider text-base"
-                >
-                  SALE
-                </button>
+                    {/* Women's Image Header */}
+                    <div className="relative h-52 mb-6 rounded-lg overflow-hidden">
+                      <img 
+                        src="/Header-1-Women.jpg" 
+                        alt="Women's Collection"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-white tracking-wider">WOMEN</div>
+                          <div className="text-sm text-gray-200">New Collection</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* View All Button */}
+                    <div className="mb-6">
+                      <button 
+                        onClick={() => {
+                          handleNavigation("women");
+                          setMobileMenuOpen(false);
+                          setMobileSubMenu(null);
+                        }}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white py-3 font-bold tracking-wider transition-colors rounded-lg"
+                      >
+                        VIEW ALL (WOMEN)
+                      </button>
+                    </div>
+
+                    {/* Women's Categories */}
+                    <div className="space-y-6 pb-8">
+                      {menuCategories["women"]?.items.map((category, index) => (
+                        <div key={index} className="border-b border-gray-800 pb-4 last:border-b-0">
+                          <div className="text-lg font-bold text-red-400 mb-3 tracking-wider">
+                            <button 
+                              className="hover:text-white transition-colors duration-200"
+                              onClick={() => {
+                                handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                setMobileMenuOpen(false);
+                                setMobileSubMenu(null);
+                              }}
+                            >
+                              {category.name}
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {category.subcategories.map((sub, subIndex) => (
+                              <button
+                                key={subIndex}
+                                onClick={() => {
+                                  handleNavigation(`tag/${category.name.toLowerCase()}/${sub.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
+                                  setMobileMenuOpen(false);
+                                  setMobileSubMenu(null);
+                                }}
+                                className="text-left text-gray-300 hover:text-white hover:bg-gray-900 p-3 rounded-lg transition-colors text-sm"
+                              >
+                                {sub}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Sub Menu - Style */}
+              {mobileSubMenu === "style" && (
+                <div className="h-full">
+                  <div className="p-4 pb-20">
+                    {/* Back Button */}
+                    <button
+                      onClick={() => setMobileSubMenu(null)}
+                      className="flex items-center text-white hover:text-red-500 mb-6 p-2 transition-colors sticky top-0 z-10"
+                      style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)' }}
+                    >
+                      <ArrowLeft size={20} className="mr-2" />
+                      <span className="font-bold">BACK TO MENU</span>
+                    </button>
+
+                    {/* Style Image Header */}
+                    <div className="relative h-52 mb-6 rounded-lg overflow-hidden">
+                      <img 
+                        src="/Collections-1.jpg" 
+                        alt="Style Collection"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-white tracking-wider">STYLE</div>
+                          <div className="text-sm text-gray-200">Your Style Journey</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* View All Button */}
+                    <div className="mb-6">
+                      <button 
+                        onClick={() => {
+                          handleNavigation("style");
+                          setMobileMenuOpen(false);
+                          setMobileSubMenu(null);
+                        }}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white py-3 font-bold tracking-wider transition-colors rounded-lg"
+                      >
+                        VIEW ALL STYLES
+                      </button>
+                    </div>
+
+                    {/* Style Categories */}
+                    <div className="space-y-4 pb-8">
+                      {menuCategories["style"]?.items.map((category, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            handleNavigation(`tag/${category.name.toLowerCase()}`);
+                            setMobileMenuOpen(false);
+                            setMobileSubMenu(null);
+                          }}
+                          className="w-full text-left bg-gray-900 hover:bg-gray-800 p-4 rounded-lg transition-colors"
+                        >
+                          <div className="text-lg font-bold text-red-400 mb-2 tracking-wider">
+                            {category.name}
+                          </div>
+                          <div className="text-sm text-gray-300">
+                            {category.name === 'GOTH' && 'Dark aesthetic and alternative fashion'}
+                            {category.name === 'STREETWEAR' && 'Urban culture and modern street style'}
+                            {category.name === 'Y2K' && 'Futuristic 2000s revival fashion'}
+                            {category.name === 'GRUNGE' && 'Raw, rebellious and distressed style'}
+                            {category.name === 'EMO' && 'Emotional expression through fashion'}
+                            {category.name === 'PUNK' && 'Rebellious counterculture fashion'}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Menu Footer */}
+            <div className="border-t border-gray-800 p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}>
+              <div className="text-center text-gray-400 text-sm">
+                VANADUS • FOR THE UNTAMED
               </div>
             </div>
           </div>

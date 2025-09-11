@@ -487,11 +487,6 @@ const Home = () => {
 
   // Helper para transformar dados do produto SECTION
   const transformProduct = (product) => {
-    // Log para verificar estrutura completa do produto
-    console.log('📦 Produto completo recebido:', JSON.stringify(product, null, 2));
-    
-    // Preservar todas as informações das variantes
-    // Garante que cada variante preserve todos os campos essenciais
     const variants = product.variants?.edges?.map(edge => {
       const v = edge.node;
       return {
@@ -509,7 +504,6 @@ const Home = () => {
     
     // Processar metafields principais (incluindo metaobjeto target-gender do Shopify)
     if (product.metafields && Array.isArray(product.metafields)) {
-      console.log('🔍 Metacampos principais encontrados para produto:', product.title, product.metafields);
       
       product.metafields.forEach(metafield => {
         if (metafield && metafield.key && metafield.value !== null) {
@@ -570,16 +564,13 @@ const Home = () => {
                 // Mapeamento baseado no ID conhecido do metaobjeto
                 let genderFromId = null;
                 
-                // IDs conhecidos do Shopify Admin (você pode expandir conforme necessário)
                 const genderIdMap = {
-                  '157432053980': 'WOMEN',  // ID encontrado nos logs
-                  // Adicione outros IDs conforme descobrir
+                  '157432053980': 'WOMEN',
                 };
                 
                 if (metaobjectId && Object.keys(genderIdMap).some(id => metaobjectId.includes(id))) {
                   const foundId = Object.keys(genderIdMap).find(id => metaobjectId.includes(id));
                   genderFromId = genderIdMap[foundId];
-                  console.log('🆔 Gênero identificado por ID do metaobjeto:', genderFromId, 'ID:', foundId);
                 }
                 
                 // Decisão final do gênero (prioridade: ID > indicadores textuais)
@@ -620,12 +611,9 @@ const Home = () => {
                     inferredFrom: inferredFrom
                   };
                   
-                  console.log('🤖 Gênero identificado para', product.title, ':', genderValue, 
-                             '(Método:', inferredFrom, 'Fem:', hasFemaleIndicators, 'Masc:', hasMaleIndicators, 'ID:', metaobjectId, ')');
                 } else {
-                  console.log('🚫 Nenhum gênero identificado para', product.title, '- aparecerá apenas em ALL');
+
                 }
-                console.log('🎯 Metaobjeto target-gender processado:', genderValue, 'ID original:', metaobjectId, 'para produto:', product.title);
               }
             } catch (error) {
               console.warn('⚠️ Erro ao processar metaobjeto target-gender:', error, 'Valor:', metafield.value);
@@ -641,7 +629,6 @@ const Home = () => {
                 namespace: metafield.namespace || 'shopify',
                 source: 'metaobject'
               };
-              console.log('🎯 Metaobjeto target-gender encontrado via references:', genderLabel, 'para produto:', product.title);
             }
           } else {
             // Outros metafields normais
@@ -657,7 +644,6 @@ const Home = () => {
     
     // Processar metafields customizados como fallback
     if (product.customMetafields && Array.isArray(product.customMetafields)) {
-      console.log('🔍 Metacampos customizados encontrados para produto:', product.title, product.customMetafields);
       
       product.customMetafields.forEach(metafield => {
         if (metafield && metafield.key && metafield.value !== null) {
@@ -669,18 +655,9 @@ const Home = () => {
               namespace: metafield.namespace || 'custom',
               source: 'custom'
             };
-            
-            // Log específico para genero_alvo
-            if (metafield.key === 'genero_alvo') {
-              console.log('🎯 Metacampo custom genero_alvo encontrado:', metafield.value, 'para produto:', product.title);
-            }
           }
         }
       });
-    }
-    
-    if (Object.keys(metafields).length === 0) {
-      console.log('⚠️ Nenhum metacampo encontrado para produto:', product.title);
     }
 
     // Usar a primeira variante disponível para exibição principal
@@ -717,9 +694,6 @@ const Home = () => {
       _debugNote: hasInvertedValues ? 'Valores invertidos temporariamente para demonstração' : 'Valores corretos'
     };
 
-    // Log do produto final transformado
-    console.log('✅ Produto transformado:', finalProduct.name, 'Metacampos:', finalProduct.metafields);
-    
     return finalProduct;
   };
 
