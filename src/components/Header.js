@@ -387,7 +387,7 @@ const Header = ({ }) => {
                                 setMegaMenuOpen(null);
                               }}
                             >
-                              VER TODAS AS PEÇAS {menuCategories["men"]?.title}
+                              VIEW ALL {menuCategories["men"]?.title}
                             </button>
                           </div>
                         </div>
@@ -400,7 +400,7 @@ const Header = ({ }) => {
                                 <button 
                                   className="hover:text-white transition-colors duration-200"
                                   onClick={() => {
-                                    handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                    handleNavigation(`tag/men/${category.name.toLowerCase()}`);
                                     setMegaMenuOpen(null);
                                   }}
                                 >
@@ -413,7 +413,7 @@ const Header = ({ }) => {
                                     <button 
                                     className="text-base text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block w-full text-left"
                                     onClick={() => {
-                                    handleNavigation(`tag/${category.name.toLowerCase()}/${item.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
+                                    handleNavigation(`tag/men/${category.name.toLowerCase()}/${item.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
                                     setMegaMenuOpen(null);
                                     }}
                                     >
@@ -470,7 +470,7 @@ const Header = ({ }) => {
                                 setMegaMenuOpen(null);
                               }}
                             >
-                              VER TODAS AS PEÇAS {menuCategories["women"]?.title}
+                              VIEW ALL {menuCategories["women"]?.title}
                             </button>
                           </div>
                         </div>
@@ -483,7 +483,7 @@ const Header = ({ }) => {
                                 <button 
                                   className="hover:text-white transition-colors duration-200"
                                   onClick={() => {
-                                    handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                    handleNavigation(`tag/women/${category.name.toLowerCase()}`);
                                     setMegaMenuOpen(null);
                                   }}
                                 >
@@ -496,7 +496,7 @@ const Header = ({ }) => {
                                     <button 
                                     className="text-base text-gray-300 hover:text-white hover:translate-x-1 transition-all duration-200 block w-full text-left"
                                     onClick={() => {
-                                    handleNavigation(`tag/${category.name.toLowerCase()}/${item.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
+                                    handleNavigation(`tag/women/${category.name.toLowerCase()}/${item.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
                                     setMegaMenuOpen(null);
                                     }}
                                     >
@@ -779,7 +779,7 @@ const Header = ({ }) => {
                     <div className="mb-6">
                       <button 
                         onClick={() => {
-                          handleNavigation("men");
+                          handleNavigation("tag/men");
                           setMobileMenuOpen(false);
                           setMobileSubMenu(null);
                         }}
@@ -797,7 +797,7 @@ const Header = ({ }) => {
                             <button 
                               className="hover:text-white transition-colors duration-200"
                               onClick={() => {
-                                handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                handleNavigation(`tag/men/${category.name.toLowerCase()}`);
                                 setMobileMenuOpen(false);
                                 setMobileSubMenu(null);
                               }}
@@ -810,7 +810,7 @@ const Header = ({ }) => {
                               <button
                                 key={subIndex}
                                 onClick={() => {
-                                  handleNavigation(`tag/${category.name.toLowerCase()}/${sub.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
+                                  handleNavigation(`tag/men/${category.name.toLowerCase()}/${sub.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
                                   setMobileMenuOpen(false);
                                   setMobileSubMenu(null);
                                 }}
@@ -860,7 +860,7 @@ const Header = ({ }) => {
                     <div className="mb-6">
                       <button 
                         onClick={() => {
-                          handleNavigation("women");
+                          handleNavigation("tag/women");
                           setMobileMenuOpen(false);
                           setMobileSubMenu(null);
                         }}
@@ -878,7 +878,7 @@ const Header = ({ }) => {
                             <button 
                               className="hover:text-white transition-colors duration-200"
                               onClick={() => {
-                                handleNavigation(`tag/${category.name.toLowerCase()}`);
+                                handleNavigation(`tag/women/${category.name.toLowerCase()}`);
                                 setMobileMenuOpen(false);
                                 setMobileSubMenu(null);
                               }}
@@ -891,7 +891,7 @@ const Header = ({ }) => {
                               <button
                                 key={subIndex}
                                 onClick={() => {
-                                  handleNavigation(`tag/${category.name.toLowerCase()}/${sub.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
+                                  handleNavigation(`tag/women/${category.name.toLowerCase()}/${sub.toLowerCase().replace(/\s+/g, '-').replace(/[\/]/g, '-')}`);
                                   setMobileMenuOpen(false);
                                   setMobileSubMenu(null);
                                 }}

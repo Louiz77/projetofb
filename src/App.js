@@ -37,7 +37,16 @@ const App = () => {
             element={<ProductDetail />} 
           />
           
-          {/* Rotas para categorias e subcategorias */}
+          {/* Rotas para categorias e subcategorias com gênero */}
+          <Route 
+            path="/tag/:gender/:category" 
+            element={<ProductsPage />} 
+          />
+          <Route 
+            path="/tag/:gender/:category/:subcategory" 
+            element={<ProductsPage />} 
+          />
+          {/* Rotas de compatibilidade (sem gênero) - para URLs antigas */}
           <Route 
             path="/tag/:tag" 
             element={<ProductsPage />} 
